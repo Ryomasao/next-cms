@@ -1,0 +1,8 @@
+{
+  "editor.tabSize": 2,
+  // formatonsaveはvscodeで非推奨になってる
+  // prettier単独で使いたい場合はどうするんだっけ
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
+}
