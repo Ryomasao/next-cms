@@ -1,0 +1,15 @@
+/**
+全体に適用するスタイル設定
+moduleはスコープありきなので、pureなscssにする
+**/
+// ベースは、以下の記事を参考にdestyleでリセットをかけることにした
+// https://webdesign-trends.net/entry/8137#A_Modern_CSS_Reset
+@import 'destyle.css';
+
+html {
+  font-size: 62.5%;
+}
+
+body {
+  font-size: 1.6rem;
+}
