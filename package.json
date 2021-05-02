@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx .",
-    "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx --fix ."
+    "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx --fix .",
+    "export": "next build && next export"
   },
   "husky": {
     "hooks": {
@@ -20,7 +21,9 @@
     ]
   },
   "dependencies": {
+    "base-64": "^1.0.0",
     "classnames": "^2.3.1",
+    "date-fns": "^2.21.1",
     "destyle.css": "^2.0.2",
     "next": "10.2.0",
     "react": "17.0.2",
@@ -40,9 +43,12 @@
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-react": "^7.23.2",
     "eslint-plugin-react-hooks": "^4.2.0",
+    "gray-matter": "^4.0.3",
     "husky": "^6.0.0",
     "lint-staged": "^10.5.4",
     "prettier": "^2.2.1",
+    "remark": "^13.0.0",
+    "remark-html": "^13.0.1",
     "typescript": "^4.2.4"
   }
 }
