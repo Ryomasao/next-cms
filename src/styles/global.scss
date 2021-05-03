@@ -5,6 +5,8 @@ moduleはスコープありきなので、pureなscssにする
 // ベースは、以下の記事を参考にdestyleでリセットをかけることにした
 // https://webdesign-trends.net/entry/8137#A_Modern_CSS_Reset
 @import 'destyle.css';
+// コードハイライトのテーマ
+@import './prism-material-oceanic.css';
 
 html {
   font-size: 62.5%;
@@ -13,4 +15,8 @@ html {
 body {
   // SPは15pxをデフォルトにする
   font-size: 1.5rem;
+}
+
+:root {
+  --c-gray: #93a5b1
 }
