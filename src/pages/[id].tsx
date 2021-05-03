@@ -29,5 +29,5 @@ export async function getStaticProps({
 export default function Post(
   props: InferGetStaticPropsType<typeof getStaticProps>,
 ) {
-  return <PostPage contentHtml={props.post.contentHtml} />
+  return <PostPage post={props.post} />
 }

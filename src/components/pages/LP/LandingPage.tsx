@@ -12,7 +12,10 @@ type Props = {
 export default function LandingPage(props: Props) {
   return (
     <BaseTemplate>
+      {/** 
+     * 
       <HeroSection />
+    */}
       <PostSection posts={props.posts} className={style.postSection} />
       <FooContent />
     </BaseTemplate>

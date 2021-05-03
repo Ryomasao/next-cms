@@ -3,3 +3,7 @@ export type Post = {
   title: string
   date: string
 }
+
+export type PostDetail = Post & {
+  contentHtml: string
+}

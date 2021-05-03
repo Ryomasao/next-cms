@@ -50,9 +50,12 @@ export async function getPostData(id: string) {
     .process(matterResult.content)
   const contentHtml = processedContent.toString()
 
+  const date = parse(matterResult.data.time, 'yyyy-MM-dd HH:mm', new Date())
   return {
     id,
     contentHtml,
+    date: format(date, 'yyyy/MM/dd HH:mm:ss'),
+    title: matterResult.data.title,
     ...matterResult.data,
   }
 }

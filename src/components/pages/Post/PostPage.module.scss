@@ -1,0 +1,26 @@
+.container {  
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.title {
+  font-weight: bold;
+  font-size:3rem;
+  padding: 20px;
+
+  text-align: center;
+}
+
+.meta {
+  text-align: center;
+  font-size: 1.2rem;
+  color:var(--c-gray);
+}
+
+.content {
+  margin-top: 30px;
+  background-color: var(--c-card-bg);
+  padding: 10px 20px;
+  line-height: 1.9;
+  border-radius: 10px;
+}

@@ -15,8 +15,13 @@ html {
 body {
   // SPは15pxをデフォルトにする
   font-size: 1.5rem;
+  background-color: var(--c-bg);
+  color: var(--c-text);
 }
 
 :root {
-  --c-gray: #93a5b1
+  --c-bg: #f5fffa;
+  --c-text: #7a7a7a;
+  --c-card-bg: #ffffff;
+  --c-gray: #c9caca;
 }

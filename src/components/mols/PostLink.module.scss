@@ -1,5 +1,8 @@
 .article {
-  padding: 20px 0
+  padding: 20px 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background-color: var(--c-card-bg);
 }
 
 .date {
@@ -10,4 +13,5 @@
 .title {
   padding: 10px 0;
   font-weight: bold;
+  color: var(--c-text);
 }
