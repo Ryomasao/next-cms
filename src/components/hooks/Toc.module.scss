@@ -1,0 +1,12 @@
+.toc {
+  background-color: var(--c-card-bg);
+  border-radius: 10px;
+  line-height: 1.9;
+  padding: 1em 2em;
+  position: sticky;
+  top: 0;
+
+  li {
+    list-style: none;
+  }
+}

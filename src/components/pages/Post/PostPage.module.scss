@@ -1,5 +1,7 @@
-.container {  
-  max-width: 800px;
+@import  'styles/mixin.scss';
+
+.pageContainer {  
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -17,10 +19,31 @@
   color:var(--c-gray);
 }
 
-.content {
+.contentContainer {
   margin-top: 2em;
+  display: grid;
+  grid-template-columns: 1fr;
+
+  @include mq(lg) {
+    grid-template-columns: 1fr 250px;
+  }
+}
+
+.content {
   background-color: var(--c-card-bg);
   padding: 1em 2em;
   line-height: 1.9;
   border-radius: 10px;
+
+  @include mq(lg) {
+    margin-right: 10px;
+  }
+}
+
+.tocContainer {
+  display: none;
+
+  @include mq(lg) {
+    display: block;
+  }
 }
