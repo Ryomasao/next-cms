@@ -2,8 +2,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const path = require('path')
+const withMDX = require('@next/mdx')({
+  extension: /\.(md|mdx)$/,
+})
 
-module.exports = {
+module.exports = withMDX({
   webpack(config) {
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -11,4 +14,4 @@ module.exports = {
     }
     return config
   },
-}
+})

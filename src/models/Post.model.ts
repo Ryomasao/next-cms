@@ -6,4 +6,5 @@ export type Post = {
 
 export type PostDetail = Post & {
   contentHtml: string
+  mdxSource: any
 }
