@@ -1,8 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
-//import remark from 'remark'
-//import html from 'remark-html'
 import prism from 'remark-prism'
 import { parse, format } from 'date-fns'
 import { serialize } from 'next-mdx-remote/serialize'
@@ -15,7 +13,8 @@ const postsDirectory = path.join(process.cwd(), 'docs/hatena/work2')
  */
 export function getAllPostData() {
   const fileNames = fs.readdirSync(postsDirectory)
-  const allPostData = fileNames.map((fileName) => {
+
+  const allPostsData = fileNames.map((fileName) => {
     const fullPath = path.join(postsDirectory, fileName)
     const fileContents = fs.readFileSync(fullPath, 'utf-8')
     const matterResult = matter(fileContents)
@@ -25,9 +24,21 @@ export function getAllPostData() {
       id: fileName.replace(/\.(md|mdx)$/, ''),
       date: format(date, 'yyyy/MM/dd HH:mm:ss'),
       title: matterResult.data.title,
+      ...(matterResult.data as Meta),
     }
   })
-  return allPostData
+
+  return allPostsData
+    .filter((post) => {
+      return post.status !== 'draft'
+    })
+    .sort((a, b) => {
+      if (a.date < b.date) {
+        return 1
+      } else {
+        return -1
+      }
+    })
 }
 
 export function getAllPostIds() {
@@ -38,6 +49,11 @@ export function getAllPostIds() {
     },
   }))
   return idList
+}
+
+type Meta = {
+  status?: 'draft'
+  tag?: string[]
 }
 
 /**
