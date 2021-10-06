@@ -12,3 +12,8 @@ tsconfig.jsonのstrictのみtrueに変更
 
 https://qiita.com/282Haniwa/items/dcce1ba6bb6ae541893e
 
+## はてなブログの記事をマークダウンにする際に利用させていただいたもの
+
+感謝！
+https://gist.github.com/naoty/6019913a52e6af27088fd8098047dbc0
+
