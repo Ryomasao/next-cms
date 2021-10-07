@@ -33,7 +33,7 @@ export default function PostPage(props: Props) {
           <section className={`${style.content} content`}>
             {/**
              * ・Post内のメインコンテンツはmarkdownで書き出す
-             * ・componentsにjsxを渡すことで、はmarkdown内でjsxを利用できる
+             * ・componentsにjsxを渡すことでmarkdown内でjsxを利用できる
              * */}
 
             <MDXRemote {...mdxSource} components={components} />

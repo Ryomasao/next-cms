@@ -1,9 +1,10 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
-import prism from 'remark-prism'
+import prism from '@mapbox/rehype-prism'
 import { parse, format } from 'date-fns'
 import { serialize } from 'next-mdx-remote/serialize'
+import addFileName from './addFileName'
 
 const postsDirectory = path.join(process.cwd(), 'docs/hatena/work2')
 
@@ -90,11 +91,27 @@ export async function getPostData(id: string) {
   const { content, data } = matter(fileContents)
   const date = parse(data.time, 'yyyy-MM-dd HH:mm', new Date())
   // remark: markdownを構文解析。htmlに変換できる。
-  // rehype: htmlを構文解析。html→html？
+  // rehype: htmlを構文解析。html→html
 
   const mdxSource = await serialize(content, {
     mdxOptions: {
-      remarkPlugins: [prism],
+      //remarkPlugins: [prism],
+      // 記憶があんまりないから間違ってるかも
+      rehypePlugins: [
+        // codeblockにファイル名を表示させたかった。プラグインが見つからなかったので、追加。
+        [
+          addFileName,
+          // pluginのoptionに渡す
+          // こんなかんじの構成にする
+          // div.code-container
+          //  p:filename
+          //  pre
+          //    code
+          { tagName: 'div', attributes: { className: 'code-container' } },
+        ],
+        // prismをremarkじゃなくってrehypeに寄せた理由が思い出せない
+        prism,
+      ],
     },
   })
   return {

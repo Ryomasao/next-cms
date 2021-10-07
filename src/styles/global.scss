@@ -64,6 +64,24 @@ strong {
   background: linear-gradient(transparent 70%, yellow 70%); 
 }
 
+// コードブロックを囲むコンテナ
+.code-container {
+  position: relative;
+}
+
+// コードブロックのファイル名
+.file-name {
+  position: absolute;
+  font-family: Roboto Mono, monospace;
+  font-size: 0,9em;
+  color: black;
+  background: yellow;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  z-index: 1;
+}
+
+
 h1 {
   font-size: 1.6em;
   font-weight: bold;
