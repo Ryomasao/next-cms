@@ -1,3 +1,9 @@
+/*
+origin
+https://github.com/PrismJS/prism-themes/blob/master/themes/prism-material-oceanic.css
+変更したい箇所は直接変更を加えちゃってます。
+*/
+
 code[class*="language-"],
 pre[class*="language-"] {
 	text-align: left;
@@ -49,7 +55,11 @@ pre[class*="language-"] {
 	overflow: auto;
 	position: relative;
 	margin: 0.5em 0;
-	padding: 1.25em 1em;
+	/*codeblockにファイル名を表示したいので、padding-topを余分にとる*/
+	padding-top: 2em;
+	padding-left: 1em;
+	padding-right: 1em;
+	padding-bottom: 1.25em;
 }
 
 .language-css > code,
