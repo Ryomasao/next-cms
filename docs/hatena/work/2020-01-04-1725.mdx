@@ -1,0 +1,258 @@
+---
+title: ApacheでCGIを実行する仕組みをのぞいてみる
+time: 2020-01-04 17:25
+---
+
+過去にPHPで以下のコードを実行した場合、この`print`の結果はどこに吐かれるんだろう、と混乱したことがあった。
+
+```
+print("Hello World");
+```
+
+CLIで実行すれば、制御端末のコンソールに表示されるんだろうけど、NginxやApacheのようにWebサーバー越しで実行している場合、あれーとわからなくなったのだ。 実際のところ記憶が曖昧だけど、HTMLとして出力されていたり、どっかのログに吐かれていたような気がする。
+
+この疑問を解消しようと思ったとき、そもそもC言語で実装されているNginxやApacheでどうやってPHPを動かしているんだろうという部分に行き当たることになった。
+
+ちょうど年末からLinuxでWebサーバーをお試しでつくってみようということをやっていたので、実装の参考にするべくApacheのソースコードを眺めつつ、まずはApacheから任意のプログラムを実行するCGIの仕組みについて調べることにした。
+
+Linuxの基本調べるにあたっては、以下の書籍を参考にしています。
+
+[![ふつうのLinuxプログラミング 第2版 Linuxの仕組みから学べるgccプログラミングの王道](https://images-fe.ssl-images-amazon.com/images/I/51P7Lxl0cKL._SL160_.jpg "ふつうのLinuxプログラミング 第2版 Linuxの仕組みから学べるgccプログラミングの王道")](https://www.amazon.co.jp/exec/obidos/ASIN/4797386479/hatena-blog-22/)
+
+[ふつうのLinuxプログラミング 第2版 Linuxの仕組みから学べるgccプログラミングの王道](https://www.amazon.co.jp/exec/obidos/ASIN/4797386479/hatena-blog-22/)
+
+- 作者:青木 峰郎
+- 出版社/メーカー: SBクリエイティブ
+- 発売日: 2017/09/22
+- メディア: 単行本
+
+- [まずは結論](#%E3%81%BE%E3%81%9A%E3%81%AF%E7%B5%90%E8%AB%96)
+- [C言語からNode.jsを実行する](#C%E8%A8%80%E8%AA%9E%E3%81%8B%E3%82%89Nodejs%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%99%E3%82%8B)
+  - [基本](#%E5%9F%BA%E6%9C%AC)
+  - [forkと組み合わせる](#fork%E3%81%A8%E7%B5%84%E3%81%BF%E5%90%88%E3%82%8F%E3%81%9B%E3%82%8B)
+  - [子プロセスの結果を親プロセスで受け取る](#%E5%AD%90%E3%83%97%E3%83%AD%E3%82%BB%E3%82%B9%E3%81%AE%E7%B5%90%E6%9E%9C%E3%82%92%E8%A6%AA%E3%83%97%E3%83%AD%E3%82%BB%E3%82%B9%E3%81%A7%E5%8F%97%E3%81%91%E5%8F%96%E3%82%8B)
+    - [パイプ](#%E3%83%91%E3%82%A4%E3%83%97)
+  - [FastCGI](#FastCGI)
+
+# まずは結論
+
+- 自プロセスを新しいプログラムで上書きして実行するAPIである`exec`を使う。
+
+以下はApacheの該当部分のソースコード。
+
+```
+else if (attr->cmdtype == APR_PROGRAM) {
+            if (attr->detached) {
+                apr_proc_detach(APR_PROC_DETACH_DAEMONIZE);
+            }
+
+            execve(progname, (char * const *)args, (char * const *)env);
+        }
+```
+
+- 上記のexecはfork & execで実行されるので、毎回プロセスを生成する必要があり、その分のオーバーヘッドが大きい。
+
+# C言語からNode.jsを実行する
+
+あれ？PHPは？と思ったけど、ひとまずC言語以外ならなんでもいいかと思い、気づいたらNode.jsをインストールしていた。 ということでC言語からNode.jsを実行してみる。
+
+## 基本
+
+実行するjsは以下のように文字列を標準出力に吐くだけのプログラム。
+
+**sample.js**
+
+```
+console.log("hello");
+```
+
+これをC言語から呼ぶには、`exec`族と呼ばれる関数を使う。`exec`族にはいろんな種類があるんだけど、ここでは`execve`を使うことにする。`execve`は引数で指定したプログラムを自プロセスに上書きしてくれるLinuxのシステムコールで、他のexec族の関数は`execve`をラップしているライブラリ関数とのこと。
+
+以下のように使うことができる。
+
+**main.c**
+
+```
+void main() {
+  char *argv[3] = {"node", "sample.js", NULL};
+
+  // `execve`の第1引数には、実行するプログラムのパスを書いて、第2引数にはプログラムに渡す引数を文字列の配列として渡す。
+  // 文字列の配列の最初の要素はプログラムの名前をセットする慣習があるので、`node`という文字列をセットした。
+  // 第3引数は、プログラムを実行する際の環境変数を設定する。NULL の場合、現在の環境変数をそのまま使う。
+  execve("/usr/bin/node", argv, NULL);
+
+  printf("execveが成功しているのであれば、このコードは実行されない\n");
+  exit(1);
+}
+```
+
+前述の通り、`execve`は引数で指定したプログラムを自プロセスに上書きするので、`execve`以降の処理は実行されることがない。
+
+これを実行すると、以下のように`sample.js`の実行結果が標準出力に表示された。すごい。
+
+```
+$ ./exec
+hello
+```
+
+## forkと組み合わせる
+
+これで目的の8割ぐらいは達成できたんだけれども、WebサーバーのCGIとして使う場合、Node.jsで処理した結果をHTTPのレスポンスとして返す必要がでてくる。
+
+今のままだと、Node.jsの処理の実行が終わるとそのままプログラムが終了してしまうため、これに対応するために`fork`を使うことにする。
+
+`fork`は自身のプロセスをコピーして新しいプロセスをつくるLinuxのシステムコール。`execve`は任意のプログラムをプロセスに上書きするので、forkしてそれ用にプロセス一個つくっとこうという感じでしょうかね。
+
+[プロセスをforkしてみる - 豆腐とコンソメ](https://www.tohuandkonsome.site/entry/2018/06/14/204835)<cite class="hatena-citation"><a href="https://www.tohuandkonsome.site/entry/2018/06/14/204835">www.tohuandkonsome.site</a></cite>
+
+forkと組み合わせると以下の通りになります。
+
+```
+void main() {
+  pid_t pid;
+  pid = fork();
+
+  if(pid < 0) {
+    fprintf(stderr, "fork(2) failed\n");
+    exit(1);
+  }
+
+  if(pid == 0) {
+    // 子プロセス
+    char *argv[3] = {"hoge", "sample.js", NULL};
+    execve("/usr/bin/node", argv, NULL);
+
+    printf("execveが成功しているのであれば、このコードは実行されない\n");
+   exit(1);
+  } else {
+    // 親プロセス
+
+    //ここに子プロセスの終了をまって、結果を受け取るコードを書く
+    int status;
+    wait(&status);
+  }
+  exit(0);
+}
+```
+
+## 子プロセスの結果を親プロセスで受け取る
+
+最後に子プロセスで実行したNode.jsの結果を親プロセスで取得する。 ここでいうNode.jsの結果とは、`console.log()`で標準出力に出力している文字列`hello`を指している。
+
+まずは、Node.jsで使う標準出力の出力先を任意のファイルに変更してみることにする。 これは`dup`関数を使用することで実現できる。
+
+```
+void main() {
+  pid_t pid;
+  int fd;
+
+  // 子プロセスが標準出力に吐く結果を保持するファイル
+  fd = open("sample.txt", O_RDWR);
+  if(fd < 0) {
+    fprintf(stderr, "open(2) failed\n");
+    exit(1);
+  }
+
+  pid = fork();
+
+  if(pid < 0) {
+    fprintf(stderr, "fork(2) failed\n");
+    exit(1);
+  }
+
+  if(pid == 0) {
+    // 子プロセス
+
+    // もともとの標準出力はクローズして
+    close(STDOUT_FILENO);
+    // sample.txtにつながっているファイルディスクリプタfdを、子プロセスの標準出力に割り当てる
+    dup2(fd, STDOUT_FILENO);
+    char *argv[3] = {"hoge", "sample.js", NULL};
+    execve("/usr/bin/node", argv, NULL);
+
+    printf("execveが成功しているのであれば、このコードは実行されない\n");
+    exit(1);
+  } else {
+    // 親プロセス
+    int status;
+    wait(&status);
+  }
+  exit(0);
+}
+```
+
+この状態で実行すると、`sample.txt`には文字列`hello`が書き込まれることが確認できた。  
+これによって、子プロセスでファイルに書き込んだ文字列を親プロセスでオープンしで読むことができそうな気がする。
+
+とはいえ、ファイルのオープン・クローズだったりはオーバーヘッドが高いと聞くので普通はこんなやり方をせずに、プロセス同士でやり取りできるパイプを使う。
+
+### パイプ
+
+パイプを使うと、ファイルを用意することなく、プロセス間でデータのやりとりが行える。
+
+```
+int main() {
+  pid_t pid;
+  char *argv[3] = {"node", "sample.js", NULL};
+  int fds[2];
+  char buf[100];
+
+  // pipeは、自分のプロセスへの読み取りと書き込み用のファイルディスクリプタを返してくれる。
+  // fds[0]はread fds[1]はwrite
+  pipe(fds);
+  pid = fork();
+
+  if(pid < 0) {
+    fprintf(stderr, "fork(2) failed\n");
+    exit(1);
+  }
+
+  if(pid == 0) {
+    // 子プロセスの場合
+
+    // pipeで作成したファイルディスクリプタはforkした場合、そのまま子プロセスに複製される。
+    // これにより、子プロセスで書き込み用ファイルディスクリプタに書いて、親プロセスで読み取り用のファイルディスクリプタを読むことでやりとりが可能。
+
+    // 子プロセスではread用のファイルディスクリプタは使わないのでクローズする。
+    close(fds[0]);
+    // もともとの標準出力は使わないのでクローズ。
+    close(STDOUT_FILENO);
+    // 標準出力にpipeで作った書き込み用ファイルディスクリプタを割り当てる
+    dup2(fds[1], STDOUT_FILENO);
+
+    execve("/usr/bin/node", argv, NULL);
+
+    printf("execveが成功しているのであれば、このコードは実行されない\n");
+    exit(1);
+  } else {
+    // 親プロセス
+    int status;
+    // 親プロセスは、write用のファイルディスクリプタは使わないのでクローズする。
+    close(fds[1]);
+    // 子プロセスの終了を待つ
+    wait(&status);
+    // 子プロセスが書き出した結果を読み込む
+    read(fds[0], buf, 100);
+
+    printf("parent fds[1]: %s\n", buf);
+  }
+
+  return 0;
+}
+```
+
+実際のApacheのコードを読んでも、dupを使ってることが確認できた。
+
+## FastCGI
+
+FastCGIは既存のCGIがリクエストの度にプロセスを生成するオーバーヘッドを解消するための規格。 プロトコルの詳細はこのへんに書いてある。[https://fastcgi-archives.github.io/FastCGI\_A\_High-Performance\_Web\_Server\_Interface\_FastCGI.html](https://fastcgi-archives.github.io/FastCGI_A_High-Performance_Web_Server_Interface_FastCGI.html)
+
+ApacheでFastCGIをやる場合、mod\_fcgidとmod\_fastcgiがある。 前者はApacheが提供していて、後者はFastCGIの規格を作った？会社が提供している。
+
+後者は公式でメンテされることがないので、もし使うのであれば前者がよいかも。 mod\_fcgidを使ってみたところ、以下の3つのプロセスが起動することが確認できる。
+
+・Apache本体  
+・CGI処理用デーモン   
+・CGI本体
+
+大事なのは、FastCGIの規格は、CGI処理用デーモンだけじゃなくって、CGI本体にも適用させる必要がある。 C言語でサンプルのFastCGIをつくるのであれば、以下のtiny-fcgi.cが参考になる。[https://fastcgi-archives.github.io/FastCGI\_Developers\_Kit\_FastCGI.html](https://fastcgi-archives.github.io/FastCGI_Developers_Kit_FastCGI.html)実装を見ると、CGI側でLoopしてリクエストを待ち続けていることがわかる。 Perl・Cとかのライブラリは提供されているけど、仮にNode.jsでFastCGIをやりたいとなると、自分でFastCGIの規格を読んで実装する必要がある。 ※それっぽいパッケージはいくつかありそうだった。 とはいえ、Node.jsはhttpモジュールでWebサーバーとしての機能がデフォルトで用意されていて、かつノンブロッキングI/O(あんまわかってない)の考え方のもと作られているから、わざわざApache + FastCGIでNode.jsみたいな構成でやる意味はない。[https://groups.google.com/forum/#!topic/nodejs\_jp/-BytMnNPshM](https://groups.google.com/forum/#!topic/nodejs_jp/-BytMnNPshM)

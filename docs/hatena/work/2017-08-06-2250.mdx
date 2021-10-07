@@ -1,0 +1,27 @@
+---
+title: 
+time: 2017-08-06 22:50
+---
+
+## 各種環境の管理
+
+こちらを参考にさせていただきました。
+
+[Node.jsでの環境変数の使い方 - 30歳からのプログラミング](http://numb86-tech.hatenablog.com/entry/2017/01/24/000940)<cite class="hatena-citation"><a href="http://numb86-tech.hatenablog.com/entry/2017/01/24/000940">numb86-tech.hatenablog.com</a></cite>
+
+dotenvを使うことにします。
+
+インストール
+
+```
+$ npm install dotenv --save
+```
+
+ルートディレクトリ(app.jsとかあるところ)に.envファイルを作成する。
+
+**.env**
+
+```
+1 //socket通信する場合のFlaskのWebサーバー
+  2 NODE_FLASK_IP = IPアドレス:ポート番号
+```

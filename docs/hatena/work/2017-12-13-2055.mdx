@@ -1,0 +1,353 @@
+---
+title: Vue.jsでつくるオブジェクト指向フォーム(1)
+time: 2017-12-13 20:55
+---
+
+Laravelで掲示板を作成している途中だけれども、その素材をもとにVue.jsでオブジェクト指向フォームを作ってみるよ。
+
+[Laravelで始めるTDD開発 (5):登録ページを作成する - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/12/04/215550)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/12/04/215550">www.tohuandkonsome.site</a></cite>
+
+オブジェクト指向フォームってなによ？と思われたあなた。自分もよくわからないんだ。
+
+でも、おお！ってなったので振り返りながら書いていこうと思います。
+
+教材は毎度お世話になっております、Laracastになります。
+
+[Object-Oriented Forms: Part 1](https://laracasts.com/series/learn-vue-2-step-by-step/episodes/19)<cite class="hatena-citation"><a href="https://laracasts.com/series/learn-vue-2-step-by-step/episodes/19">laracasts.com</a></cite>
+
+- [準備　](#%E6%BA%96%E5%82%99)
+- [とりあえずAjaxでPostするようにしていくよ　](#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9AAjax%E3%81%A7Post%E3%81%99%E3%82%8B%E3%82%88%E3%81%86%E3%81%AB%E3%81%97%E3%81%A6%E3%81%84%E3%81%8F%E3%82%88)
+- [フォームのデータをとってくる：v-model](#%E3%83%95%E3%82%A9%E3%83%BC%E3%83%A0%E3%81%AE%E3%83%87%E3%83%BC%E3%82%BF%E3%82%92%E3%81%A8%E3%81%A3%E3%81%A6%E3%81%8F%E3%82%8Bv-model)
+  - [v-modelを使う。](#v-model%E3%82%92%E4%BD%BF%E3%81%86)
+    - [axiosを使ってサーバにpostする](#axios%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%82%B5%E3%83%BC%E3%83%90%E3%81%ABpost%E3%81%99%E3%82%8B)
+      - [ちょっと横道に入る](#%E3%81%A1%E3%82%87%E3%81%A3%E3%81%A8%E6%A8%AA%E9%81%93%E3%81%AB%E5%85%A5%E3%82%8B)
+    - [レスポンスを受け取ろう](#%E3%83%AC%E3%82%B9%E3%83%9D%E3%83%B3%E3%82%B9%E3%82%92%E5%8F%97%E3%81%91%E5%8F%96%E3%82%8D%E3%81%86)
+
+### 準備　
+
+自分は、Laravelをサーバー側のアプリケーションとして用意しています。  
+そして、以下のような、「タイトル」と「本文」をサーバー側にpostするhtmlを用意しています。 （Laravelなので正確にはbladeだよ！)
+
+**create\_ajax.blade.php(抜粋)**
+
+```
+<div class="container justfy-center">
+    <form class="simple-form" action="/thread" method="post">
+        {{csrf_field()}}
+       <div class="simple-form__group">
+            <label class="simple-form__title" for="title">タイトルlabel> 
+            <input class="simple-form__input" type="text" name="title">
+       div>
+       <div class="simple-form__group">
+            <label class="simple-form__title" for="title">本文label> 
+            <input class="simple-form__input" type="text" name="body">
+       div>
+       <div class="simple-form__footer">
+            <button class="simple-form__submit-btn">Postbutton>
+       div>
+    form>
+div>
+```
+
+このhtmlをブラウザでみてみると、こんな感じの画面になります。
+
+<figure class="figure-image figure-image-fotolife" title="今回利用するフォームのイメージ"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171212/20171212213323.png" alt="f:id:konoemario:20171212213323p:plain" title="f:id:konoemario:20171212213323p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>今回利用するフォームのイメージ</figcaption></figure>
+
+続いては、肝心のVue.jsになります。  
+さきほどのhtml内の.simple-formをエレメントとしてVueインスタンスを作成しています。
+
+**app.js**
+
+```
+const app = new Vue({
+    el: '.simple-form'
+});
+```
+
+また、Laravelなので`require('vue')`してwebpackでコンパイルしていたりしますが、そのへんは割愛しているよ。
+
+### とりあえずAjaxでPostするようにしていくよ　
+
+なにはともあれ？とりあえずAjaxでサーバにpostしてみるよ！
+
+まずは、フォームでボタンを押下したときに発生するデフォルトのイベント`submit`をキャンセルして、Vueインスタンスのメソッドを呼ぶ様にしよう。  
+**create\_ajax.blade.php(抜粋)**
+
+```
+<div class="container justfy-center">
+    
+    <form class="simple-form" action="/thread" method="post" v-on:submit.prevent="onSubmit">
+```
+
+Vueインスタンス側には、試しにメソッドが呼べているかどうか確認するために、`console.log()`で何かしらだしてみる。
+
+**app.js**
+
+```
+const app = new Vue({
+    el: '.simple-form',
+    methods:{
+        onSubmit:function(){
+            console.log("submit!!!");
+        }
+    }
+});
+```
+
+そうすると、こんな感じでボタンを押すたびに、ブラウザのコンソールに文字列が出力されるね！
+
+<figure class="figure-image figure-image-fotolife" title="submitしたとき"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171212/20171212214222.png" alt="f:id:konoemario:20171212214222p:plain" title="f:id:konoemario:20171212214222p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>submitしたとき</figcaption></figure>
+
+これで、submitのイベントをVueインスタンスのメソッド`onSubmit`に置き換えることができました。  
+`onSubmit`をしたらフォームの入力データを取ってきて、リクエストデータをつくってサーバーにpostするんだな！ってなんとなく見えてきました。
+
+### フォームのデータをとってくる：v-model
+
+では、さっそくフォームの入力データをとってきます。
+
+入力データをjavascriptでとってくる場合、formにname属性をつけて、それをdocumentオブジェクトから見て〜みたいなことをしますよね！（今日知った。)
+
+参考にさせていただいたサイト  
+[ピュアな JavaScript でフォーム(form)系要素の値を取得, 設定する方法一覧 | phiary](http://phiary.me/js-form-value-accessor/#post-h2-id-4)
+
+Vue.jsの場合はv-modelを使って、データバインディングをしていきます。
+
+#### v-modelを使う。
+
+では、さっそくv-modelをつかってフォームバインディングをしていくよ! html側はこんな感じにフォームのコントロール系のタグと、Vueインスタンスの変数をバインディングしてあげます。
+
+**create\_ajax.blade.php**
+
+```
+<div class="container justfy-center">
+    
+    <form class="simple-form" action="/thread" method="post" v-on:submit.prevent="onSubmit">
+        {{csrf_field()}}
+       <div class="simple-form__group">
+            <label class="simple-form__title" for="title">タイトルlabel> 
+             
+            <input class="simple-form__input" type="text" name="title" v-model="title">
+       div>
+       <div class="simple-form__group">
+            <label class="simple-form__title" for="title" >本文label> 
+            <input class="simple-form__input" type="text" name="body" v-model="body">
+       div>
+       <div class="simple-form__footer">
+            <button class="simple-form__submit-btn">Postbutton>
+       div>
+    form>
+div>
+```
+
+一方の`app.js`には、バインドするデータを`data`配下に定義してあげます。  
+また、中身を確認するために、さきほどの`onSubmit`メソッド内にバインドするデータを表示する処理を追加しておきます。
+
+**app.js**
+
+```
+const app = new Vue({
+    el: '.simple-form',
+    data:{
+        title:'',
+        body:'',
+    },
+    methods:{
+        //Formのsubmitイベントが発生したとき
+        onSubmit:function(){
+            console.log('title='+ this.title);
+            console.log('body='+ this.body);
+        }
+    }
+});
+```
+
+この状態で、ブラウザを開いて、フォームに値を入力してボタンを押してみましょう。
+
+こんな感じで、コンソールに入力された内容が出力されると思うんだ！
+
+<figure class="figure-image figure-image-fotolife" title="フォームの入力内容がVueインスタンスのdataに反映されている"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171212/20171212220058.png" alt="f:id:konoemario:20171212220058p:plain" title="f:id:konoemario:20171212220058p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>フォームの入力内容がVueインスタンスのdataに反映されている</figcaption></figure>
+
+イメージにするとこんな感じだね！
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171211/20171211235836.png" alt="f:id:konoemario:20171211235836p:plain" title="f:id:konoemario:20171211235836p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>v-modelのイメージ(1)</figcaption></figure>
+
+逆にVueインスタンスのdataの値を変更したら、その内容がブラウザに表示されるのかしら。  
+試しにやってみよう。
+
+`submit`を行う以外にもうひとつ確認用のボタンを追加すると、
+
+**create\_ajax.blade.php(抜粋)**
+
+```
+<div class="simple-form__footer">
+            
+            <button button="button" class="simple-form__submit-btn" v-on:click="changeTitle">change!button>
+            <button class="simple-form__submit-btn">Postbutton>
+       div>
+```
+
+ブラウザはこんな感じになって、
+
+<figure class="figure-image figure-image-fotolife" title="確認用の画面"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171212/20171212220952.png" alt="f:id:konoemario:20171212220952p:plain" title="f:id:konoemario:20171212220952p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>確認用の画面</figcaption></figure>
+
+`app.js`に値をかえるメソッド`changeTitle`を書いてあげます。
+
+**app.js**
+
+```
+el: '.simple-form',
+    data:{
+        title:'',
+        body:'',
+    },
+    methods:{
+        //Formのsubmitイベントが発生したとき
+        onSubmit:function(){
+            console.log('title='+ this.title);
+            console.log('body='+ this.body);
+        },
+        //titleの値を変えてみる(あとで消す)
+        changeTitle:function(){
+            this.title="change!"
+        }
+    }
+});
+```
+
+これで、ブラウザで確認用のボタンを押すと、
+
+<figure class="figure-image figure-image-fotolife" title="確認用の画面の結果"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171212/20171212221130.png" alt="f:id:konoemario:20171212221130p:plain" title="f:id:konoemario:20171212221130p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>確認用の画面の結果</figcaption></figure>
+
+こんな感じで、ブラウザ側の表示もちゃんとかわることがわかるね！
+
+こちらもくどいですが、イメージにするとこんな感じですかね。
+
+<figure class="figure-image figure-image-fotolife" title="v-modelのイメージ(2)"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171212/20171212212359.png" alt="f:id:konoemario:20171212212359p:plain" title="f:id:konoemario:20171212212359p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>v-modelのイメージ(2)</figcaption></figure>
+
+##### axiosを使ってサーバにpostする
+
+フォームの入力データがバインディグで簡単に取得できることがわかったので、さっそくデータをサーバーにpostしてみよう。
+
+純粋なjavascriptだとXMLHttpRequestオブジェクトを使って〜みたいなことをするかと思います。
+
+ためになる記事  
+[JavascriptのAjaxについての基本まとめ - Qiita](https://qiita.com/katsunory/items/9bf9ee49ee5c08bf2b3d)
+
+が、ここではより簡単にAjaxを利用できるaxiosを使っていきます。
+
+axiosの導入自体は割愛しちゃうんだよ！  
+とりあえずだったらCDNを使っちゃえばいいからね！Laravelだと標準で用意されているよ！
+
+こんな感じで、`axios.post`で送信先のurlと送信するデータを書いていくよ。  
+ここでは固定の文字列`hello`と`pinky`を送ってるね。
+
+**app.js**
+
+```
+el: '.simple-form',
+    data:{
+        title:'',
+        body:'',
+    },
+    methods:{
+        //Formのsubmitイベントが発生したとき
+        onSubmit:function(){
+            axios.post('/thread',{
+                title:'hello!',
+                body:'pinky!'
+            })
+        },
+    }
+});
+```
+
+データバインディングしたデータを送るのであれば、`this.title'みたいに定義しちゃえばいいね！
+
+**app.js**
+
+```
+el: '.simple-form',
+    data:{
+        title:'',
+        body:'',
+    },
+    methods:{
+        //Formのsubmitイベントが発生したとき
+        onSubmit:function(){
+            axios.post('/thread',{
+                title: this.title,
+                body: this.body
+            })
+        },
+    }
+});
+```
+
+ええい、定義してあるものは全部送るんじゃ！というのであればthis.$dataってしとくと、dataで定義しているデータを全部送っちゃうよ。  
+恐ろしい子！
+
+**app.js**
+
+```
+el: '.simple-form',
+    data:{
+        title:'',
+        body:'',
+    },
+    methods:{
+        //Formのsubmitイベントが発生したとき
+        onSubmit:function(){
+            axios.post('/thread', this.$data);
+        },
+    }
+});
+```
+
+###### ちょっと横道に入る
+
+データを送るっていってるけど、何を送ってるんだよ！と思った方がもしかしたらいるかもしれません。  
+Chromeをデペロッパーツールで開いて、Networkをみるとリクエストだったりレスポンスの中身が見れるから、ぜひ見てみよう！
+
+簡単に抜粋すると、サーバーにはこんな感じでリクエストを送っているよ。
+
+**HTTPリクエストの中身**
+
+```
+//HTTPリクエストヘッダーがあって
+POST /thread HTTP/1.1
+Host: homestead.app
+Connection: keep-alive
+Content-Length: 34
+Pragma: no-cache
+Cache-Control: no-cache
+//(省略)
+
+//ヘッダーに一行あけて、リクエストbodyの内容がセットされているね。
+{"title":"hello!","body":"pinky!"}
+```
+
+本当に参考程度だったね！
+
+##### レスポンスを受け取ろう
+
+今、axiosでpostするぜ！って処理になってるんだけれども、リクエストを投げっぱなしで結果がわからないね、
+
+<figure class="figure-image figure-image-fotolife" title="レスポンスを処理しよう"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171213/20171213194952.png" alt="f:id:konoemario:20171213194952p:plain" title="f:id:konoemario:20171213194952p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>レスポンスを処理しよう</figcaption></figure>
+
+なので、こんな感じにレスポンスを受け取ってあげよう。
+
+**app.js(抜粋)**
+
+```
+onSubmit:function(){
+            axios.post('/thread', this.$data)
+            //HTTPリクエストが成功したとき
+            .then(response => console.log(response.data))
+            //HTTPリクエエストが失敗した時
+            .catch(error => console.log(error.response));
+        },
+```
+
+ちなみにHTTPリクエストが失敗って、何をもって失敗なんだろうかという点だけれども、公式ドキュメントをさらっと読むと、デフォルトだとHTTPステータスコートが200番台のときは成功みたい（あってるかな？）
+
+やばい！最後がなんか投げやりになってる、ちっとも話が進まない！というところで次回に回します。

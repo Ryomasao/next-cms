@@ -1,0 +1,118 @@
+---
+title: Vueのv-modelのメモ
+time: 2020-07-27 11:29
+---
+
+`v-model="data"` は`:value="data" @input="e => data = e.target.value"`のことだよ！と覚えていて、久しぶりVueをさわったら、よくわからなくなったのでメモ。
+
+## CheckBox
+
+[フォーム入力バインディング — Vue.js](https://jp.vuejs.org/v2/guide/forms.html#%E3%83%81%E3%82%A7%E3%83%83%E3%82%AF%E3%83%9C%E3%83%83%E3%82%AF%E3%82%B9)
+
+```js
+<template>
+  <div id="app">
+    <div>
+      <h1>NativeSingleCheckBox</h1>
+      <input type="checkbox" v-model="single">
+      <p>SingleValue: {{single}}</p>
+    </div>
+
+    <div>
+      <h1>NativeMulitiCheckBox</h1>
+      <input type="checkbox" value="1" v-model="multi">
+      <input type="checkbox" value="2" v-model="multi">
+      <p>MultiValue: {{multi}}</p>
+    </div>
+
+    <div>
+      <h1>PureCheckBoxComponent</h1>
+      <PureCheckBox value="1" @input="onChange" :checked="pureValue"/>
+      <p>PureValue: {{pureValue}}</p>
+    </div>
+
+    <div>
+      <h1>V-ModelCheckBoxComponent</h1>
+      <CheckBox v-model="vModelValue" value="1"/>
+      <p>vModelValue: {{vModelValue}}</p>
+    </div>
+  </div>
+</template>
+
+<script>
+import CheckBox from "./components/CheckBox";
+import PureCheckBox from "./components/PureCheckBox";
+
+export default {
+  name: "App",
+  components: {
+    CheckBox,
+    PureCheckBox
+  },
+  methods: {
+    onChange(value) {
+      this.pureValue = value;
+    }
+  },
+  data() {
+    return {
+      single: false,
+      multi: [],
+      pureValue: "",
+      vModelValue: ""
+    };
+  }
+};
+</script>
+```
+
+```js
+<template>
+  <div>
+    <input type="checkbox" :value="value" @input="onChange">
+    {{checked ? 'yes' : 'no'}}
+  </div>
+</template>
+
+<script>
+export default {
+  model: {
+    prop: "checked"
+  },
+  props: ["value", "checked"],
+  methods: {
+    onChange(e) {
+      if (e.target.checked) {
+        this.$emit("input", e.target.value);
+      } else {
+        this.$emit("input", "");
+      }
+    }
+  }
+};
+</script>
+```
+
+```js
+<template>
+  <div>
+    <input type="checkbox" :value="value" @input="onChange">
+    {{checked ? 'yes' : 'no'}}
+  </div>
+</template>
+
+<script>
+export default {
+  props: ["value", "checked"],
+  methods: {
+    onChange(e) {
+      if (e.target.checked) {
+        this.$emit("input", e.target.value);
+      } else {
+        this.$emit("input", "");
+      }
+    }
+  }
+};
+</script>
+```

@@ -1,0 +1,284 @@
+---
+title: apachectlを読む
+time: 2017-09-02 17:55
+---
+
+こちらを参考にさせていただきました。  
+[シェルスクリプトBash入門 - Qiita](http://qiita.com/ebisennet/items/573618ab827ce1660b0e)<cite class="hatena-citation"><a href="http://qiita.com/ebisennet/items/573618ab827ce1660b0e">qiita.com</a></cite>
+
+- [とりあえずHelloWorld](#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9AHelloWorld)
+- [Shebang(シバン)](#Shebang%E3%82%B7%E3%83%90%E3%83%B3)
+  - [補足：/usr/bin/env python ってなんだ](#%E8%A3%9C%E8%B6%B3usrbinenv-python-%E3%81%A3%E3%81%A6%E3%81%AA%E3%82%93%E3%81%A0)
+  - [補足：/bin/bash /bin/sh ってなんだ](#%E8%A3%9C%E8%B6%B3binbash-binsh-%E3%81%A3%E3%81%A6%E3%81%AA%E3%82%93%E3%81%A0)
+- [apachectlを読み解くにあたっての基本的な文法](#apachectl%E3%82%92%E8%AA%AD%E3%81%BF%E8%A7%A3%E3%81%8F%E3%81%AB%E3%81%82%E3%81%9F%E3%81%A3%E3%81%A6%E3%81%AE%E5%9F%BA%E6%9C%AC%E7%9A%84%E3%81%AA%E6%96%87%E6%B3%95)
+  - [引数を受け取る](#%E5%BC%95%E6%95%B0%E3%82%92%E5%8F%97%E3%81%91%E5%8F%96%E3%82%8B)
+  - [ついでに変数](#%E3%81%A4%E3%81%84%E3%81%A7%E3%81%AB%E5%A4%89%E6%95%B0)
+- [apachectlを読む](#apachectl%E3%82%92%E8%AA%AD%E3%82%80)
+
+## とりあえずHelloWorld
+
+定番のHelloWorldをとりあえず書いた。 vimで編集したのをコピっているので、行番号もコピペされちゃってる。
+
+**hello.sh**
+
+```
+1 #!/bin/bash
+  2 echo "Hello World!"
+  3 exit 0
+```
+
+**実行権限を与える**
+
+```
+$ chmod +x hello.sh
+```
+
+**実行**
+
+```
+$ ./hello.sh 
+Hello World!
+```
+
+無事、表示されました。
+
+## Shebang(シバン)
+
+一行目の「#!/bin/bash」ってなんのためだっけ。
+
+**hello.sh**
+
+```
+1 #!/bin/bash
+  2 echo "Hello World!"
+  3 exit 0
+```
+
+調べてみると、こちらに素敵な記事がありました。
+
+[Python初歩からの学習メモ1 - Qiita](http://qiita.com/sesame/items/47d2694616eadb35d4bc)
+
+> Unix/Linux系の環境では、スクリプトの1行目にShebangを記載しておき、スクリプト自体を実行することで、Shebangに記載されたプログラム(例えばPython)を実行しそのプログラムに、スクリプトの内容を渡し動作させることができる。
+> 
+> つまり、上記のsample.pyを$ ./sample.pyのように実行すると、Shebangによってpythonプログラムが実行され、pythonプログラムにsample.pyの内容が渡され、処理される。
+
+シバンを記載しておくと、実行するインタプリタを実行時に書かなくて済むということですかね。
+
+試しに、検証してみます。
+
+まずは、さきほどのhello.shのシバン行を削除して実行してみます。
+
+**hello.sh**
+
+```
+1 echo "Hello World!"
+  2 exit 0
+```
+
+**実行**
+
+```
+$ ./hello.sh 
+Hello World!
+```
+
+特に問題はないですね。
+
+続いて、シェルスクリプトではなくpythonの「HelloWorld」を書いたものになります。  
+実行されるバージョンが気になったので、platformモジュールをインポートしてます。
+
+**hello.py**
+
+```
+1 import platform
+  2 print("HelloWorld!")
+  3 print(platform.python_version())
+```
+
+**実行**
+
+```
+$ ./hello.py
+./hello.py: line 1: import: command not found
+./hello.py: line 2: syntax error near unexpected token `"HelloWorld!"'
+./hello.py: line 2: `print("HelloWorld!")'
+```
+
+エラーになっちゃいました。  
+シバン行になにも書いていない場合、デフォルトのシェル（自分の環境ではbashかな？)で実行されるため、そんなコマンドないよ！といわれちゃいます。
+
+これを以下のように、実行時にpythonと指定してあげれば、シバン行がなくともpythonで実行されます。
+
+**pythonを指定して実行**
+
+```
+$ python hello.py 
+HelloWorld!
+3.5.1
+```
+
+以下のように、シバン行を記載してあげると
+
+```
+1 #!/usr/bin/env python
+  2 import platform
+  3 print("HelloWorld!")
+  4 print(platform.python_version())
+```
+
+pythonを指定しなくとも、無事pythonが実行されることが確認できた。
+
+**実行**
+
+```
+$ ./hello.py
+HelloWorld!
+3.5.1
+```
+
+##### 補足：/usr/bin/env python ってなんだ
+
+本筋から離れちゃうけれども、気になるのでメモ。  
+「/usr/bin/env」は、環境変数とかを確認するときに使うシェルのコマンド「env」そのもの。
+
+**envのパス確認**
+
+```
+$ which env
+/usr/bin/env
+```
+
+以下のように書くと、環境変数のPATHから、pythonのパスを探して実行してくれるみたい。  
+といっても、単純にpythonとするだけでも、環境変数のPATHから探しにいくので、コマンドライン上ではあんま意味がないのかな。
+
+**試しに実行**
+
+```
+$ env python
+```
+
+##### 補足：/bin/bash /bin/sh ってなんだ
+
+シバン行の例をみると、「#!/bin/bash」と「#!bin/sh」と例がいくつかあります。
+
+bashとかshとかは、シェルの種類です。  
+シバン行に書いた場合は、実行されるシェルを指定していることになります。
+
+以下に各シェルの比較記事がありましたので、記載させていただきます。  
+[http://www2u.biglobe.ne.jp/~hsaka/docs/shell.html](http://www2u.biglobe.ne.jp/~hsaka/docs/shell.html)
+
+気になった、bashとshですが、ほとんど同じものと思っちゃってもよさそうです。(微妙に違いがあるっぽい。。。)
+
+シバン行ではなく、以下のように実行してみたところ特に問題はありませんでした。
+
+**bashで実行**
+
+```
+$ bash hello.sh
+Hello World!
+```
+
+**shで実行**
+
+```
+$ sh hello.sh
+Hello World!
+```
+
+今回の記事ではbashを使用していきます。
+
+## apachectlを読み解くにあたっての基本的な文法
+
+### 引数を受け取る
+
+そこからやんのか、という点はおいておき、まずは引数を受けとってみます。  
+さきほどの「hello.sh」に以下のコードを追加しました。
+
+**hello.sh**
+
+```
+1 #!/bin/bash
+ (中略)
+ 13 #CHAPTER1:引数を受け取る
+ 14 #以下のように実行する。
+ 15 #
+ 16 #$./hello.sh ayane 1207 
+ 17 #
+ 18 echo "CHAPTER1 START=============================="
+ 19 
+ 20 #ファイル名
+ 21 echo $0
+ 22 
+ 23 #1個目の引数 ちなみに文字列を繋げるときはくっつけちゃっていいみたい。
+ 24 echo "Hello "$1"!"
+ 25 #2個目の引数
+ 26 echo $2
+ 27 
+ 28 #全部の引数
+ 29 echo $@
+ 30 
+ 31 #引数の個数
+ 32 echo $#
+```
+
+こちらを実行すると、以下のような結果になります。
+
+```
+$ ./hello.sh ayane 1207
+CHAPTER1 START==============================
+./hello.sh
+Hello ayane!
+1207
+ayane 1207
+2
+```
+
+### ついでに変数
+
+ついでに変数もいっときます。  
+といっても、そんなに難しくな、あれぇ。  
+なんかややこしいというか、どれにすりゃいいんだみたいな状態になりました。
+
+```
+34 #CHAPTER2:変数
+ 35 #以下のように実行する。
+ 36 #
+ 37 #$./hello.sh ayane 1207 
+ 38 #
+ 39 echo "CHAPTER2 START=============================="
+ 40 
+ 41 
+ 42 GREETING="ohanky!!! "
+ 43 FILENAME=$0
+ 44 NAME1=$1
+ 45 
+ 46 #これでもいいみたい
+ 47 NAME2="$1"
+ 48 
+ 49 #さらにいえばこれも
+ 50 NAME3="${1}"
+ 51 
+ 52 #これもいけるうわああん
+ 53 NAME4=${1}
+ 54 
+ 55 echo $GREETING
+ 56 echo $FILENAME
+ 57 echo $NAME1
+ 58 echo $NAME2
+```
+
+とりあえず、参照するときは$をつけようと覚えました。
+
+## apachectlを読む
+
+ようやく本題です。
+
+とりあえず、Apacheの起動のコマンドといえば以下になります。
+
+**Apacheの起動**
+
+```
+$ apachectl start
+```
+
+これが、どういった仕組みで動いているのかを見てみます。

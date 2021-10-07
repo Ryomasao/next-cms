@@ -1,0 +1,423 @@
+---
+title: Djangoを学ぶ(2)：ブログサイトの作成
+time: 2017-06-08 16:30
+---
+
+# 前回からの続き
+
+[Djangoを学ぶ(1) - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/06/03/221238)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/06/03/221238">tohutokonsome.hatenablog.com</a></cite>
+
+前回は、Djangoで作成したプロジェクトに対して、手動でviews.pyを作成して、簡単なWebページを作成した。
+
+今回はよりDjangoらしい機能を使っていきます。
+
+- [前回からの続き](#%E5%89%8D%E5%9B%9E%E3%81%8B%E3%82%89%E3%81%AE%E7%B6%9A%E3%81%8D)
+- [今回作成するもの](#%E4%BB%8A%E5%9B%9E%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B%E3%82%82%E3%81%AE)
+- [プロジェクトの作成とモデルの作成](#%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%81%AE%E4%BD%9C%E6%88%90%E3%81%A8%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E4%BD%9C%E6%88%90)
+  - [templatesとhome.htmlの作成](#templates%E3%81%A8homehtml%E3%81%AE%E4%BD%9C%E6%88%90)
+  - [views.pyとurls.pyの編集](#viewspy%E3%81%A8urlspy%E3%81%AE%E7%B7%A8%E9%9B%86)
+  - [setting.pyの編集](#settingpy%E3%81%AE%E7%B7%A8%E9%9B%86)
+  - [モデルの作成](#%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E4%BD%9C%E6%88%90)
+  - [makemigrationとmigration](#makemigration%E3%81%A8migration)
+- [Django Admin](#Django-Admin)
+  - [管理ユーザーの作成](#%E7%AE%A1%E7%90%86%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%81%AE%E4%BD%9C%E6%88%90)
+  - [管理画面をさわってみる](#%E7%AE%A1%E7%90%86%E7%94%BB%E9%9D%A2%E3%82%92%E3%81%95%E3%82%8F%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B)
+- [管理者画面で作成したデータをpythonでさわる](#%E7%AE%A1%E7%90%86%E8%80%85%E7%94%BB%E9%9D%A2%E3%81%A7%E4%BD%9C%E6%88%90%E3%81%97%E3%81%9F%E3%83%87%E3%83%BC%E3%82%BF%E3%82%92python%E3%81%A7%E3%81%95%E3%82%8F%E3%82%8B)
+- [一旦、ここまでをまとめ](#%E4%B8%80%E6%97%A6%E3%81%93%E3%81%93%E3%81%BE%E3%81%A7%E3%82%92%E3%81%BE%E3%81%A8%E3%82%81)
+
+# 今回作成するもの
+
+以下のようなブログサイトを作成してみたいと思います。
+
+**TOP画面**  
+ ![f:id:konoemario:20170608151428j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170608/20170608151428.jpg "f:id:konoemario:20170608151428j:plain:w500")
+
+**詳細画面**  
+ 　　 ![f:id:konoemario:20170608151432j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170608/20170608151432.jpg "f:id:konoemario:20170608151432j:plain:w500")
+
+# プロジェクトの作成とモデルの作成
+
+前回同様に、まずプロジェクトを作成します。  
+ブログサイトの名前は「ohankyblog」としました。
+
+```
+#プロジェクトの名前はohankyblog
+masao-3:myblog konoe_mario$ django-admin startproject ohankyblog
+```
+
+そして、前回と大きく異なる点として、「startapp」なるコマンドを用いてアプリケーションを作成します。  
+記事を管理するアプリケーションということで、「posts」とします。  
+アプリケーションがどういった単位で作成すべきなのか、という点がイメージできていませんが、とりあえず続行します。
+
+```
+#作成するアプリケーションはposts
+masao-3:myblog konoe_mario$ python manage.py startapp posts
+```
+
+この「startapp posts」とすることで、新たにpostsディレクトリとその配下にいろいろなファイルが追加されているのが確認できます。
+
+```
+masao-3:myblog konoe_mario$ tree
+.
+├── manage.py
+├── ohankyblog
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+#startapp potstsを行う事で作成されるファイルたち
+└── posts
+    ├── __init__.py
+    ├── admin.py
+    ├── apps.py
+    ├── migrations
+    │   └── __init__.py
+    ├── models.py
+    ├── tests.py
+    └── views.py
+```
+
+その配下のファイルには、前回手動で作成した、「views.py」が作成されていることに気づきます。  
+きっと、作成されたviews.pyにHTTPリクエストから呼ばれる関数を書くんだな、と想像できますね。
+
+## templatesとhome.htmlの作成
+
+とりあえず、前回と同様にトップ画面を作成していきます。   
+トップ画面である、home.htmlファイルを以下のようにtemplatesディレクトリ配下におきます。  
+templatesディレクトリの中にさらにpostsディレクトリを置く意図がいまいちわかりませんが、こちらもUdemyの動画にならいます。  
+home.htmlはこの段階では適当な内容なので、内容は割愛します。
+
+```
+└── posts
+    ├── __init__.py
+    ├── __pycache__
+    ├── admin.py
+    ├── apps.py
+    ├── migrations
+    ├── models.py
+#posts配下にtemplatesとhome.htmlを作成した。
+    ├── templates
+    │   └── posts
+    │   └── home.html
+    ├── tests.py
+    └── views.py
+```
+
+## views.pyとurls.pyの編集
+
+このへんは慣れてきました。  
+posts配下のviews.pyにhome.htmlを返す関数と、urls.pyにurlの情報を定義します。
+
+**views.py**
+
+```
+from django.shortcuts import render
+
+# Create your views here.
+def home(request):
+    return render(request, 'posts/home.html')
+```
+
+**urls.py**
+
+```
+from django.conf.urls import url
+from django.contrib import admin
+import posts.views
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    #home
+    url(r'^$',posts.views.home, name='home'),
+]
+```
+
+前回は言われるがままに書いていましたが、「r'^$‘」って正規表現で、「^」は先頭一致、「$」は末尾一致で、組み合わせることで何も入力されていない(つまり、ルートディレクトリである)ことを表現している気がします。
+
+## setting.pyの編集
+
+urls.pyとviews.pyを編集したらもう参照できるかな？と思いきや、前回定義したhome.htmlの場所を定義していません。  
+前回は、setting.pyのTEMPLATESに記載しましたが、startappでアプリケーションを作成する正規の方法では、setting.pyのINSTALL\_APPSに作成したアプリケーション「posts」を追加すればいいみたいです。
+
+**setting.py**
+
+```
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'posts', <----これ
+]
+```
+
+これを行うことで、Djangoはpostsアプリケーションがあるんだなって認識してくれるみたいです。   
+この状態でrunserverして、ルートディレクトリにアクセスすれば、home.htmlが表示されるかと思います。
+
+## モデルの作成
+
+さて、モデルというものがここででてきます。
+
+いまいちよくわかってませんが、データをもってるクラスって思っていればいいのかもしれません。  
+MVCモデルのMの部分だよってことなのかな。
+
+※このへんをみるとモデルとは、データベースの定義と追加のメタデータの定義とある。  
+[はじめての Django アプリ作成、その 1 — Django v1.0 documentation](http://djangoproject.jp/doc/ja/1.0/intro/tutorial01.html)
+
+さっそく、posts配下にあるmodels.pyを編集していきます。
+
+```
+└── posts
+    ├── __init__.py
+    ├── __pycache__
+    ├── admin.py
+    ├── apps.py
+    ├── migrations
+    ├── models.py <---これ！
+    ├── templates
+    │   └── posts
+    │   └── home.html
+    ├── tests.py
+    └── views.py
+```
+
+編集した内容は以下の通りです。
+
+**models.py**
+
+```
+from django.db import models
+
+# Create your models here.
+
+class Post(models.Model):
+    '''
+    記事の内容を管理するクラスと思われる。  
+
+    modelの定義はここに詳しく書いてある。
+    https://docs.djangoproject.com/ja/1.11/ref/models/fields/
+    '''
+    #タイトル
+    title = models.CharField(max_length=250)
+    #発行日
+    pub_date = models.DateTimeField()
+    #適当な画像
+    image = models.ImageField(upload_to='media/')
+    #記事本文
+    body = models.TextField()
+```
+
+いろいろとでていますが、 記事の内容を構成する要素を定義しています。   
+気になる、models.CharField()あたりですが、これがデータの型を表しているみたいです。  
+title要素は、Char型の要素ですよ、っていうのと、引数にmax\_lengthを与えることで最大250文字ってことを定義しているみたいです。
+
+詳細は以下に書いてあります。  
+[モデルフィールドリファレンス | Django documentation | Django](https://docs.djangoproject.com/ja/1.11/ref/models/fields/)
+
+さてさて、ここで「title」は「Char型」だよと定義する意味なんですが、冒頭の「モデルとはデータベースの定義」ということを思い出します。
+
+つまり、ここで定義したデータ型をもつPostsテーブルをDjangoが作成してくれるみたいです。  
+テーブルっていっても、データベースなんかどこにあるんだっけ、と思ったのですが、setting.pyをみたりすると、sqlliteなる記述を発見できるかと思います。  
+つまり、デフォルトでsqlliteというデータベースが存在しているみたいです。
+
+## makemigrationとmigration
+
+モデルに情報を定義したら、その次は、「makemigration」と「migration」コマンドを実行します。
+
+一旦、テスト用のWebサーバーを起動していたら、落としときます。   
+※必須じゃないかも。
+
+「makemigration」を実行することで、さきほどのモデルに定義した情報をもとにファイル「0001\_initial.py」が作成されます。
+
+```
+masao-3:myblog konoe_mario$ python3 manage.py makemigrations
+Migrations for 'posts':
+  posts/migrations/0001_initial.py
+    - Create model Posts
+```
+
+これは、DBのスキーマを作成するためのpythonコードが書かれているみたい。  
+sqlmigrateコマンドを実行すことで、DDL文の形式で確認することができます。
+
+```
+masao-3:ohankyblog konoe_mario$ python manage.py sqlmigrate posts 0001
+BEGIN;
+--
+-- Create model Post
+--
+CREATE TABLE "posts_post" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "title" varchar(250) NOT NULL, "pub_date" datetime NOT NULL, "image" varchar(100) NOT NULL, "body" text NOT NULL);
+COMMIT;
+```
+
+そして、このDDL文を実行するコマンドが、「migrate」になります。
+
+```
+masao-3:ohankyblog konoe_mario$ python manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, posts, sessions
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying posts.0001_initial... OK
+  Applying sessions.0001_initial... OK
+```
+
+初回のmigrateなんで、いろいろでてる。  
+postsも表示されているので、うまくいったみたい。
+
+# Django Admin
+
+さきほど、モデルを編集して、migrateして〜みたいなことをしたので、sqlliteにPostsモデルの定義をもつテーブルが作成されたはずです。
+
+では、実際に作成したテーブルに値を入れるにはどうしたらいいんだろう、ということで、前回スルーした以下のDjango管理者画面について触れていきます。
+
+```
+from django.conf.urls import url
+from django.contrib import admin
+#views.pyのohanky関数を呼ぶためにimport
+from . import views
+
+urlpatterns = [
+    #Djangoの管理者画面。今回触れないんだ。  
+    url(r'^admin/', admin.site.urls),
+    #ohankyworld/でアクセスすると関数ohankyworldが呼び出される
+    url(r'^ohankyworld/', views.ohankyworld),
+]
+```
+
+「[http://localhost:8000/admin](http://localhost:8000/admin)」にアクセスすると、以下のような画面が開きます。
+
+![f:id:konoemario:20170606222553p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170606/20170606222553.png "f:id:konoemario:20170606222553p:plain:w500")
+
+Djangoはこの管理画面からさきほど作成したモデルのデータを作成することができます。
+
+## 管理ユーザーの作成
+
+まず、管理画面を使用するユーザーを作成する。  
+「createsuperuser」でuser名とアドレス(適当)、パスワードを設定して、サクッとつくります。
+
+```
+masao-3:ohankyblog konoe_mario$ python manage.py createsuperuser
+Username (leave blank to use 'konoe_mario'): admin
+Email address: admin@admin.jp
+Password: 
+Password (again): 
+Superuser created successfully.
+```
+
+## 管理画面をさわってみる
+
+ログインすると、以下の画面が表示されます。
+
+![f:id:konoemario:20170606223719p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170606/20170606223719.png "f:id:konoemario:20170606223719p:plain:w500")
+
+が、このままでは作成したPostモデルを触ることができません。
+
+編集できるようにするには、「admin.py」に以下の定義を追加する必要があります。
+
+**admin.py**
+
+```
+from django.contrib import admin
+
+# Register your models here.
+from .models import Post
+
+#admin管理画面でさわれるようにする。
+admin.site.register(Post)
+```
+
+定義を追加したあとに、管理者画面をリロードすると、以下のように作成したモデル（というよりアプリケーション？）が追加されます。
+
+![f:id:konoemario:20170606223721p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170606/20170606223721.png "f:id:konoemario:20170606223721p:plain:w500")
+
+追加されたPostをクリックすると、まだなんもない状態であることがわかります。
+
+そこから画面右上のADD POSTを押下します。
+
+![f:id:konoemario:20170606224614p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170606/20170606224614.png "f:id:konoemario:20170606224614p:plain:w500")
+
+そうすると、以下の画面のように、モデルに定義したフィールドを持つ入力画面が表示されるではありませんか！
+
+さっそくデータを適当に入力してみました。
+
+![f:id:konoemario:20170606224757p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170606/20170606224757.png "f:id:konoemario:20170606224757p:plain:w500")
+
+さらにさらに、合計4件ほど追加しました。  
+「Post object」なるものが4件ほどあるのがわかるかと思います。
+
+![f:id:konoemario:20170606224905p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170606/20170606224905.png "f:id:konoemario:20170606224905p:plain:w500")
+
+# 管理者画面で作成したデータをpythonでさわる
+
+さきほど管理者画面で作成したデータをviews.pyからさわります。
+
+さわるといっても、すごく簡単です。
+
+```
+from django.shortcuts import render
+from .models import Post
+
+# Create your views here.
+def home(request):
+
+    #Postオブジェクトを取得
+    posts = Post.objects.order_by('pub_date')
+
+    #home.htmlにはディクショナリ形式の引数を与えることでデータを渡すことができる！
+    return render(request, 'posts/home.html',{'posts':posts})
+```
+
+postモジュールをimportするだけです。  
+取得したモデルは、前回同様、ディクショナリ形式でrender関数に渡すだけで、html側で参照できます。
+
+home.html側はこんな感じです。
+
+**home.html**
+
+```
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Titletitle>
+head>
+<body>
+
+{% for post in posts.all %}
+    <h3> {{ post.title }}h3>
+    <p> {{ post.pub_date }}p>
+    <img src="{{ post.image.url }}"/>
+    <p> {{ post.body }} p>
+
+{% endfor %}
+body>
+html>
+```
+
+上記、定義を追加したあとに実際に「[http://localhost:8000/](http://localhost:8000/)」にアクセスすると、  
+管理者画面から追加した内容が表示されていることが確認できます。   
+※イメージが表示できてないのは個別で設定が必要。   
+ ![f:id:konoemario:20170608150639p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170608/20170608150639.png "f:id:konoemario:20170608150639p:plain:w500")
+
+# 一旦、ここまでをまとめ
+
+関係性をかんたんに書きました。
+
+![f:id:konoemario:20170608162649p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170608/20170608162649.png "f:id:konoemario:20170608162649p:plain:w500")
+
+長くなったので、次回に続くかもです。
+
+次回[Djangoを学ぶ(3):画像の表示 - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/06/10/211145)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/06/10/211145">tohutokonsome.hatenablog.com</a></cite>

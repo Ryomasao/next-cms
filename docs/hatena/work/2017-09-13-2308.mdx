@@ -1,0 +1,38 @@
+---
+title: 
+time: 2017-09-13 23:08
+---
+
+## 本題
+
+参考にさせていただいた記事  
+[How to run Visual Studio Code from Terminal on Mac OSX | Kevin Griffin | Developer, Trainer, Entrepreneur](https://kevgriffin.com/how-to-run-visual-studio-code-from-terminal-on-mac-osx/)
+
+**.bash\_profileの編集**
+
+```
+$ cd ~
+$ vim .bash_profile
+```
+
+**.bash\_profile**
+
+```
+#vscodeの起動
+ code () { VSCODE_CWD="$PWD" open -n -b "com.microsoft.VSCode" --
+ args $* ;}
+```
+
+**.bash\_profileの反映**
+
+```
+$ source .bash_profile
+```
+
+例えば、React.jsのサンプルコードを実行したいなって思った時に、
+
+```
+$ mkdir react
+$ cd react
+$ code .
+```

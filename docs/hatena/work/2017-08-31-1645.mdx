@@ -1,0 +1,87 @@
+---
+title: ラズパイ：ステアリングのためのサーボモータ制御(2)
+time: 2017-08-31 16:45
+---
+
+# 前回からの続き
+
+前回は、サーボモーターをPythonのWiringpiで動かすにあたって、pwmWrite関数の設定値を決めるまでの過程を記載しました。
+
+[ラズパイ：ステアリングのためのサーボモータ制御(1) - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/08/24/101259)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/08/24/101259">www.tohuandkonsome.site</a></cite>
+
+今回は、上記の値をもとに、サーボモーターを動かすコードを書いていきます。
+
+# コード
+
+##### NewServoMotorクラス
+
+まず、サーボモータを制御するクラス「NewServoMotor」を作成しました。
+
+<script src="https://gist.github.com/96e89a9473d616650fd4abaa3847f88d.js"> </script>
+
+[レゴカーコントローラーの抜粋](https://gist.github.com/96e89a9473d616650fd4abaa3847f88d)
+
+###### クラス変数
+
+制御に必要な情報をクラス変数として保持しておきます。
+
+具体的には、以下の値をMAX\_DUTY、MID\_DUTY、MIN\_DUTYとして定義しています。
+
+| サーボの仕様 | duty比 | pwmWriteに設定する値 |
+| --- | --- | --- |
+| -90度 | 2.5 | 26 |
+| 0度 | 7.25 | 74 |
+| 90度 | 12 | 123 |
+
+またサーボモータをどの程度、回転させるかという変数、ANGLE\_BENDもここで定義しています。
+
+ANGLE\_BENDでは角度を定義しますが、実際にpwmWrite関数に設定する際は、duty比をpwmWriteの仕様にマッピングした値とする必要があるため、ちょっとややこしいです。
+
+自分の頭の悪さを露呈するようで恥ずかしいのだけれども、計算過程を書いておきます。
+
+**-90度から90度にするためのpwmWriteに設定する値、つまり180度回転させるための値**
+
+```
+123 - 26 = 97
+```
+
+**これを、180度で割ってあげると、1度動かすのに必要な値が求められる。**
+
+```
+97 ÷ 180 = 0.538....
+```
+
+とはいえ、pwmWrite関数に渡す値はint型なので、最小値は1にする必要がある。なので、厳密に1度ずつ動かすことはできなさそう。
+
+今回は、10度ずつ曲げることを想定しているので、180ではなく、18で割った値をpwmWrite関数に設定することになる。
+
+```
+97 ÷ 18 = 5.38.. ≒ 5
+```
+
+###### コンストラクタ
+
+コンストラクタについては、前回記事の内容とあんまりかわっていない。
+
+コンストラクタでタイヤをまっすぐにするためのクラス変数をpwmWrite関数で設定している。
+
+また、今どれくらいタイヤがまがっているか、を保持するインスタンス変数「dutyState」にも値を設定している。
+
+###### minusRotation、plusRotationメソッド
+
+サーボモーターを制御するメソッド。
+
+メソッドが呼ばれるたびに、クラス変数で定義した、固定角度分の値をインスタンス変数「dutyState」にカウントアップ、カウントダウンしていき、pwmWrite関数を呼び出している。
+
+##### LegoCarControllerクラス
+
+最後に、さきほど作成したNewServoMotorクラスを実際に使っているクラスを参考までに記載します。
+
+<script src="https://gist.github.com/f847689a561f887d5169224066e0dc38.js"> </script>
+
+[レゴカーコントローラーの抜粋(コントローラー)](https://gist.github.com/f847689a561f887d5169224066e0dc38)
+
+また全体については、Githubで管理しています。  
+(README.md書くっていって書いてなかった。。。)
+
+[Ryomasao/legocar](https://github.com/Ryomasao/legocar)<cite class="hatena-citation"><a href="https://github.com/Ryomasao/legocar">github.com</a></cite>

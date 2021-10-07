@@ -1,0 +1,67 @@
+---
+title: LaravelでPKがIDじゃないときのfactory
+time: 2018-07-04 17:03
+---
+
+Laravelで、PKがidじゃないテーブルをつくったときに、factoryの挙動がちょっと違ったのでメモ。
+
+こんな感じのモデルがあって、PKがデフォルトと異なるので、プロパティに`user_id`を書いてあげる。  
+  
+**PKがidではなくuser\_idなUserモデル**
+
+```
+class User extends Model
+{
+    protected $primaryKey = 'user_id';
+
+    protected $fillable = ['user_id];
+
+}
+```
+
+この状態で、テスト用のファクトリーを定義してあげて、
+
+```
+//ユーザー情報
+$factory->define(App\User::class, function (Faker $faker) {
+
+    return [
+        'user_id' => $faker->randomNumber(13),
+        'name' => $faker->name
+    ];
+});
+```
+
+factoryを実行すると、
+
+**facotryを実行**
+
+```
+>> factory('App\User')->create();
+=> App\User {#979
+     user_id: 0,
+     name: "Dr. Zane Stroman",
+     updated_at: "2018-07-04 16:52:37",
+     created_at: "2018-07-04 16:52:37",
+   }
+```
+
+あら`user_id`が0になってる。
+
+どうやら、デフォルトのPKのidはauto\_incrementになってるので、その機能をオフにしてあげなきゃいけないみたい。
+
+```
+class User extends Model
+{
+    protected $primaryKey = 'user_id';
+
+    protected $fillable = ['user_id'];
+
+    //追記
+    public $incrementing = false;
+}
+```
+
+これで、無事作成できた。
+
+このへんのことを考えると、PKを全部idにしちゃったほうがフレームワークの機能的には使いやすいのかな。

@@ -1,0 +1,378 @@
+---
+title: RaspBerry Pi Zeroの初期設定メモ 
+time: 2017-04-29 22:37
+---
+
+## ラズパイZero買ってきた
+
+こちらのラジコンをつくる上で、軽量化が避けて通れなそうなので、ラズパイZeroを秋葉原で買ってきました。　　  
+[RaspBerryPiでラジコンをつくる(5) - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/04/23/122526)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/04/23/122526">tohutokonsome.hatenablog.com</a></cite>
+
+5ドルで購入することができる、というラズパイZeroですが、発売されたばかりのせいか、単品売りしているお店は見当たらず、諸々のセット価格で3000円程度かかりました。
+
+今現在(2017年3月末)のお店事情なので、もう単品の取り扱いは開始しているかもしれません。
+
+この辺のネットショップで買ってみたい気もします。  
+[https://raspberry-pi.ksyic.com/news/page/nwp.id/46](https://raspberry-pi.ksyic.com/news/page/nwp.id/46)
+
+とはいえ、無線LANとBlueToothを内蔵したラズパイZero(W)もそろそろ出回るみたいです。  
+なのでそっちが出たら、Zeroを買っちゃおうかと思います。
+
+- [ラズパイZero買ってきた](#%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4Zero%E8%B2%B7%E3%81%A3%E3%81%A6%E3%81%8D%E3%81%9F)
+  - [セット内容](#%E3%82%BB%E3%83%83%E3%83%88%E5%86%85%E5%AE%B9)
+  - [ピンヘッダーの装着](#%E3%83%94%E3%83%B3%E3%83%98%E3%83%83%E3%83%80%E3%83%BC%E3%81%AE%E8%A3%85%E7%9D%80)
+    - [はんだづけをした](#%E3%81%AF%E3%82%93%E3%81%A0%E3%81%A5%E3%81%91%E3%82%92%E3%81%97%E3%81%9F)
+  - [microSDにOSを書き込み](#microSD%E3%81%ABOS%E3%82%92%E6%9B%B8%E3%81%8D%E8%BE%BC%E3%81%BF)
+  - [ラズパイZeroを起動](#%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4Zero%E3%82%92%E8%B5%B7%E5%8B%95)
+    - [SSHで繋がるように設定する。](#SSH%E3%81%A7%E7%B9%8B%E3%81%8C%E3%82%8B%E3%82%88%E3%81%86%E3%81%AB%E8%A8%AD%E5%AE%9A%E3%81%99%E3%82%8B)
+      - [ifconfigでネットワークの状態を確認する](#ifconfig%E3%81%A7%E3%83%8D%E3%83%83%E3%83%88%E3%83%AF%E3%83%BC%E3%82%AF%E3%81%AE%E7%8A%B6%E6%85%8B%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%99%E3%82%8B)
+      - [wifiドングルをラズパイZeroに挿す](#wifi%E3%83%89%E3%83%B3%E3%82%B0%E3%83%AB%E3%82%92%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4Zero%E3%81%AB%E6%8C%BF%E3%81%99)
+        - [lsusb](#lsusb)
+        - [lfconfig](#lfconfig)
+        - [iwconfig](#iwconfig)
+        - [iwlist](#iwlist)
+      - [無線LANの設定を行う](#%E7%84%A1%E7%B7%9ALAN%E3%81%AE%E8%A8%AD%E5%AE%9A%E3%82%92%E8%A1%8C%E3%81%86)
+        - [/etc/network/interfaceの設定](#etcnetworkinterface%E3%81%AE%E8%A8%AD%E5%AE%9A)
+        - [/etc/wpa\_supplicant/wpa\_supplicant.confの設定](#etcwpa_supplicantwpa_supplicantconf%E3%81%AE%E8%A8%AD%E5%AE%9A)
+  - [思ったこと](#%E6%80%9D%E3%81%A3%E3%81%9F%E3%81%93%E3%81%A8)
+  - [GPIO制御のWringPiを使うまで](#GPIO%E5%88%B6%E5%BE%A1%E3%81%AEWringPi%E3%82%92%E4%BD%BF%E3%81%86%E3%81%BE%E3%81%A7)
+  - [IPアドレスの固定](#IP%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9%E3%81%AE%E5%9B%BA%E5%AE%9A)
+
+### セット内容
+
+以下が、お店で買った際のセット内容です。
+
+![f:id:konoemario:20170429183859j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170429/20170429183859.jpg "f:id:konoemario:20170429183859j:plain:w300")
+
+- ラズパイZero本体
+- 電源
+- microSD(4GB)
+- マイクロUSBケーブル
+- ミニHDMI変換アダプタ
+- ピンヘッダー(写真だとすでに本体に装着済みです)
+
+写真にはないけれども、SSHで接続するためにも、 **wifiドングルは必須！**
+
+### ピンヘッダーの装着
+
+ラズパイZeroですが、GPIO見ての通りピンヘッダーが本体とばらばらになっていました。  
+なので、これをはんだづけしてくっつける必要があります。
+
+![f:id:konoemario:20170429182543j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170429/20170429182543.jpg "f:id:konoemario:20170429182543j:plain:w300")
+
+※作業後に気づいたのだけれども、はんだつげしなくてもいけたかもしれない。  
+GPIO Hammer Headerで検索すると、ピンヘッダーをとんかちで叩いてくっつける方法が紹介されています。  
+動画では、とんかちで叩く際に、ラズパイZero本体を固定する機器があるので、はんだづけしなくてもよい、ピンヘッダーセットなのか、固定さえできればピンヘッダーはなんでもいいのか、とかその辺がわかってないです。
+
+<iframe width="480" height="270" src="https://www.youtube.com/embed/ddLbUNlaZ3U?start=75&amp;feature=oembed" frameborder="0" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://www.youtube.com/watch?v=ddLbUNlaZ3U&amp;t=75s">www.youtube.com</a></cite>
+
+2017/8/29 追記 動画の内容は、はんだ付け不要の専用キットを使用しています！
+
+[GPIO Hammer Header - スイッチサイエンス](https://www.switch-science.com/catalog/3189/)<cite class="hatena-citation"><a href="https://www.switch-science.com/catalog/3189/">www.switch-science.com</a></cite>
+
+ラズパイZeroのはんだづけは結構細かい作業になるので、不安であればこちらの使用をおすすめします。
+
+#### はんだづけをした
+
+ステッピングモーターを動かしてみた際にモータードライバのはんだづけをした経験があるので、余裕だぜ！と思ったのですが、大苦戦しました。
+
+[RaspBerryPiでステッピングモーターを動かす - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/04/16/150728)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/04/16/150728">tohutokonsome.hatenablog.com</a></cite>
+
+以前、はんだづけをする際にブレッドボードに固定してやってみて、これって危ないのかな、なんて思ってたのですが、はんだづけするのは、そこまで間違っていないみたいでした。
+
+はんだづけ完了後の状態ですが、ものすごい下手くそです。  
+現時点で動作確認してないので、GPIOがそれぞれ無事なのかがかなり不安です。 ![f:id:konoemario:20170429185338j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170429/20170429185338.jpg "f:id:konoemario:20170429185338j:plain:w300")
+
+※参考動画  
+<iframe width="480" height="270" src="https://www.youtube.com/embed/8N18lIL3Uwk?feature=oembed" frameborder="0" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://www.youtube.com/watch?v=8N18lIL3Uwk">www.youtube.com</a></cite>
+
+### microSDにOSを書き込み
+
+ラズパイ3のときは、NOOBSを使って、GUI版の「RASPBIAN JESSIE WITH PIXEL」をインストールしました。
+
+![f:id:konoemario:20170429190738p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170429/20170429190738.png "f:id:konoemario:20170429190738p:plain:w300")
+
+今回は、CUI版の一番最軽量の「RASPBIAN JESSIE LITE」を使います。 microSDが4GBで、imgファイルは1.3GBでした。
+
+[Download Raspbian for Raspberry Pi](https://www.raspberrypi.org/downloads/raspbian/)
+
+ラズパイ3のときは、Windows環境でカードリーダーでmicroUSBを認識した後にimgファイルをドロップして完了！みたいな操作をした記憶があるのですが、今回はMac環境でイメージファイルを作成しました。
+
+Terminalを起動して、コマンドでimgを書き込むとそれっぽい満足感を得られるのですが、一歩間違えるとOSやらなんやら消しかねないぞ！自信ないならこれをつかっとけ！という公式アドバイスに従って「Etcher」といツールを使用しました。
+
+[Etcher by resin.io](https://etcher.io/)<cite class="hatena-citation"><a href="https://etcher.io/">etcher.io</a></cite>
+
+### ラズパイZeroを起動
+
+このへんは、ラズパイ3のときにすごく感動したのですが、二度目ともなると、大したこともないです。   
+ HDMIをモニターに挿すことでコンソール画面が起動します。
+
+が、sshの設定にものすごく時間が買ったので、ラズパイZero(W)購入の際に苦労しないようにメモをしておきます。
+
+#### SSHで繋がるように設定する。
+
+「ラズパイ ssh」で検索すると参考記事がたくさんでてくるので、簡単そうだったのですが
+
+- キーボードとwifiドングルを同時に挿せない
+- ラズパイ3にもwifiドングルが必須だという勘違い
+
+の二重苦によってかなり苦労しました。
+
+##### ifconfigでネットワークの状態を確認する
+
+ifconfigでネットワークインタフェースの状態を確認する。
+
+・ifconfgのコマンド   
+[ifconfig 〜（IP）ネットワーク環境の確認／設定を行う：ネットワークコマンドの使い方 - ＠IT](http://www.atmarkit.co.jp/ait/articles/0109/29/news004.html)
+
+ネットワークインタフェース(以降、NIC)は、コンピューターがネットワークに接続するために必要なもの。
+
+無線LANを利用する場合も、それに対応したNICが必要になる。
+
+最近のPCでは、有線のNICはもちろんのこと、無線のNICも内蔵している。  
+（ **ラズパイ3も無線のNICは内蔵しているのだよ！** )
+
+まず、ラズパイZeroを起動して、ローカライゼーションの設定を行った後、ifconfigを打ってみる。
+
+```
+pi@raspberrypi:~ $ ifconfig
+
+lo Link encap:Local Loopback
+          inet addr:127.0.0.1 Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING MTU:65536 Metric:1
+          RX packets:256 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:256 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1
+          RX bytes:20736 (20.2 KiB) TX bytes:20736 (20.2 KiB)
+
+usb0 Link encap:Ethernet HWaddr 消した
+          inet6 addr: 消した Scope:Link
+          UP BROADCAST MULTICAST MTU:1500 Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B) TX bytes:0 (0.0 B)
+
+※MACアドレスっぽいものや、なんとなくまずそうなものは消してます。
+```
+
+以下二つのみが存在していることが確認できる。
+
+- lo
+
+- usb0
+
+loは必ず存在しているみたい。
+
+> 　loは「ローカルループバック」と呼ばれる特別な仮想インターフェイスだ。ホスト自身を示しており、OSのプロトコルスタックが必ず提供することになっている。従って、まったくNICを設置していない場合でも、このloだけは存在する。そうした初期状態であっても、仮想的にネットワークのテストなどに使えるように用意されているのだ。また、対応するIPアドレスは必ず127.0.0.1が割り当てられる。当然、このIPアドレスを用いて外部と通信することはできない。
+
+以下より抜粋  
+[ifconfig 〜（IP）ネットワーク環境の確認／設定を行う：ネットワークコマンドの使い方 - ＠IT](http://www.atmarkit.co.jp/ait/articles/0109/29/news004.html)
+
+usb0は今の段階ではよくわからないので飛ばす。   
+usbテザリングで使えるみたい。  
+[ex1.RaspberryPiでAndroidスマホのUSBテザリングを利用する（＋ルーター化） - RaspberryPiで各種サーバー作り！](http://kassyjp.ninja-web.net/ras/jessie/tethering.htm)<cite class="hatena-citation"><a href="http://kassyjp.ninja-web.net/ras/jessie/tethering.htm">kassyjp.ninja-web.net</a></cite>
+
+##### wifiドングルをラズパイZeroに挿す
+
+使えるUSBポートはひとつしかないので、wifiドングルとキーボードの両方を同時の使用することができません。
+
+なので、キーボードを外すことになってしまいます。
+
+仕方がないので、以下のようなシェルスクリプトを書いて実行した後に キーボードを外して、wifiドングルを挿しました。
+
+<script src="https://gist.github.com/c58c215674b0c2e8e11f1c27a6c6d2b0.js"> </script>
+
+[gistc58c215674b0c2e8e11f1c27a6c6d2b0](https://gist.github.com/c58c215674b0c2e8e11f1c27a6c6d2b0)
+
+それぞれの結果を抜粋するとこんな感じでした。
+
+###### lsusb
+
+```
+Bus 001 Device 005: ID 0411:01ee BUFFALO INC. (formerly MelCo., Inc.) WLI-UC-GNM2 Wireless LAN Adapter [Ralink RT3070]
+
+（確認点）
+・wifiドングルが認識されていること。
+```
+
+###### lfconfig
+
+```
+lo Link encap:Local Loopback
+          inet addr:127.0.0.1 Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING MTU:65536 Metric:1
+          RX packets:256 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:256 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1
+          RX bytes:20736 (20.2 KiB) TX bytes:20736 (20.2 KiB)
+
+usb0 Link encap:Ethernet HWaddr 消した
+          inet6 addr: 消した Scope:Link
+          UP BROADCAST MULTICAST MTU:1500 Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B) TX bytes:0 (0.0 B)
+
+wlan0 Link encap:Ethernet HWaddr 消した
+          UP BROADCAST MULTICAST MTU:1500 Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B) TX bytes:0 (0.0 B)
+
+(確認点)
+・wifiドングルを挿すことで新たなインタフェースが増えていること
+   (大抵はwlan〜みたい)
+```
+
+###### iwconfig
+
+突然でてきた「iwconfig」 ifconfigがNIC全体に対して、iwconfigは無線LANの専門みたい。  
+無線LANのESSIDとかの設定が確認できる。
+
+[Linuxコマンド集 - 【 iwconfig 】 無線LANインタフェースの参照・設定：ITpro](http://itpro.nikkeibp.co.jp/article/COLUMN/20060227/230803/?rt=nocnt)
+
+```
+wlan0 IEEE 802.11bgn ESSID:off/any
+          Mode:Managed Access Point: Not-Associated Tx-Power=20 dBm
+          Retry short limit:7 RTS thr:off Fragment thr:off
+          Power Management:off
+
+(確認点)
+・見れることぐらい
+    ESSIDやパスの設定をしてないので、繋がっていない状態
+```
+
+###### iwlist
+
+これは、無線LANのアクセスポイントを探すことができるコマンド。
+
+sudo権限で実行しないと、そんなコマンドねえよっていわれるので注意。
+
+```
+$ sudo iwlist wlan0 scanning|grep ESSID
+```
+
+[ネットワーク管理の基本Tips：端末からアクセスポイントの情報を調べるには？ iwlistコマンド - ＠IT](http://www.atmarkit.co.jp/ait/articles/1506/16/news005.html)
+
+```
+ESSID:"これもなんとなく消したESSID1"
+                    ESSID:"これもなんとなく消したESSID2"
+                    ESSID:"これもなんとなく消したESSID3"
+                    ESSID:"これもなんとなく消したESSID4"
+
+(確認点)
+・自宅のwifiルーターのESSIDが検出できていること
+```
+
+このへんまで問題なければ、次の設定へ進む。
+
+##### 無線LANの設定を行う
+
+一旦、wifiドングルを外して、キーボードに差し替えて以下ファイルを編集する。
+
+- interface
+- wpa\_supplicant.conf
+
+###### /etc/network/interfaceの設定
+
+wifiドングル(NIC名:wlan0)用の設定を追加する必要がある。 記載ルールはDebianの資料にあるけれども理解しにくい。  
+[第5章 ネットワークの設定](https://www.debian.org/doc/manuals/debian-reference/ch05.ja.html#_the_basic_syntax_of_etc_network_interfaces)
+
+また、IPをDHCP経由ではなく固定する場合の書き方は後で調べる。
+
+```
+# interfaces(5) file used by ifup(8) and ifdown(8)
+
+# Please note that this file is written to be used with dhcpcd
+# For static IP, consult /etc/dhcpcd.conf and 'man dhcpcd.conf'
+
+# Include files from /etc/network/interfaces.d:
+source-directory /etc/network/interfaces.d
+
+auto lo
+iface lo inet loopback
+iface eth0 inet manual
+
+#ここから追加 wlan0用の設定
+
+#ラズパイ起動時に自動でwlan0を起動
+auto wlan0
+#ホットプラグ(USBを電源いれっぱで抜き差し)を検知して起動
+allow-hotplug wlan0
+#dhcpでIPの設定を行う。固定にする場合はstatic？dhcpcd.confに書くの？
+iface wlan0 inet dhcp
+
+#wifiのSSID等の設定は、こっちに書く
+wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+```
+
+###### /etc/wpa\_supplicant/wpa\_supplicant.confの設定
+
+以下のコマンドで、wpa\_supplicant.confの設定を行う。
+
+```
+sudo sh -c "sudo wpa_passphrase SSIDの名前 パスワード >> /etc/wpa_supplicant/wpa_supplicant.conf"
+```
+
+そこからルーターの設定に応じて、kye\_mgmt以降の設定を行います。  
+このへんは既にwifiで接続していたラズパイ3の設定をそのまま書くことにしました。
+
+```
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=JP
+
+network={
+        ssid="rs500m-d6afa0-1"
+        #psk="暗号化前のpass"
+        psk=暗号化後のpass
+        #以下を追加
+        key_mgmt=WPA-PSK
+        proto=WPA2
+        pairwise=CCMP
+        group=CCMP
+        priority=2
+}
+```
+
+ここまで来たら、設定が完了です。  
+なんとなく再起動して、設定前に実行したシェルスクリプトを実行して、wifiドングルを挿します。
+
+ifconfigの実行結果のinet addr のあたりにIPアドレスが振られていれば成功です。
+
+```
+wlan0 Link encap:Ethernet HWaddr 消した
+          inet addr:192.168.1.6 Bcast:192.168.1.255 Mask:255.255.255.0
+          inet6 addr: 消した Scope:Link
+          inet6 addr: 消した Scope:Global
+          UP BROADCAST RUNNING MULTICAST MTU:1500 Metric:1
+          RX packets:8645 errors:0 dropped:12 overruns:0 frame:0
+          TX packets:3175 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:870992 (850.5 KiB) TX bytes:503769 (491.9 KiB)
+```
+
+### 思ったこと
+
+USBハブを購入したほうがよい。
+
+※設定完了後、買いました。
+
+### GPIO制御のWringPiを使うまで
+
+以下を追記しました。
+
+[ラズパイZeroでWringPiが使えるまでメモ - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/04/30/163148)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/04/30/163148">tohutokonsome.hatenablog.com</a></cite>
+
+### IPアドレスの固定
+
+アドホック接続の中で、行いました。
+
+[ラズパイをアドホック接続で使用する - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/05/05/202821)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/05/05/202821">www.tohuandkonsome.site</a></cite>
+
+----- COMMENT: AUTHOR: konoemario IP: 106.171.80.148 DATE: 08/29/2017 16:36:34 コメントありがとうございます！ 気になったので購入しちゃいました！ ----- COMMENT: AUTHOR: きぃたん IP: 1.33.219.136 DATE: 08/28/2017 15:57:57 Solderless headerは専用のピンですよ https://shop.pimoroni.com/products/gpio-hammer-header

@@ -1,0 +1,114 @@
+---
+title: RaspberryPiでドローンの自律飛行を目指す
+time: 2017-09-18 22:43
+---
+
+- [新たな夢](#%E6%96%B0%E3%81%9F%E3%81%AA%E5%A4%A2)
+- [購入したドローン](#%E8%B3%BC%E5%85%A5%E3%81%97%E3%81%9F%E3%83%89%E3%83%AD%E3%83%BC%E3%83%B3)
+  - [ドローンを開封してみる](#%E3%83%89%E3%83%AD%E3%83%BC%E3%83%B3%E3%82%92%E9%96%8B%E5%B0%81%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+  - [飛ばしてみる](#%E9%A3%9B%E3%81%B0%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+
+# 新たな夢
+
+RaspBerryPiでラジコンを動かせるようになったとき、次に目指すべきものは何か、そんなこと考えてふと空を見た。
+
+[RaspBerryPiでラジコンをつくる(13):コントロール画面が完成した - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/08/09/095603)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/08/09/095603">www.tohuandkonsome.site</a></cite>
+
+空だ。
+
+空を飛ぼう。
+
+そして我々は、ラズパイはきっと空を飛ぶと確信していた。
+
+というのは、全部嘘なんだけれども、ドローンがおもしろそうなので、ドローンを触ってみたいと思います。
+
+ちなみに、「ラズパイ　ドローン」で検索すると、既にラズパイを使って自律飛行を目指した記事があったりします。
+
+[Raspberry Pi Zero で自律飛行ドローンを作るぞ（第１回：浮上まで） - Qiita](http://qiita.com/shigeru-yokochi/items/0a0a4f06cd8dec553159)<cite class="hatena-citation"><a href="http://qiita.com/shigeru-yokochi/items/0a0a4f06cd8dec553159">qiita.com</a></cite>
+
+とても興味深い内容で、想像以上にいばらの道な予感がしています。
+
+私も自律飛行を目指していこうと思うのですが、ラジコン以上に先が見えていません。
+
+が、ここからやっていこうみたいな道筋はあるので、少しずつ進めていきたいと思います。
+
+# 購入したドローン
+
+とりあえず、ドローンを触ってみようと思ったので、適当に購入することにしました。
+
+ドローンの価格帯は3000円ぐらいから青天井と多岐に渡るのですが、とりあえず安定して飛ばせそうということに重点をおいた結果、以下を購入しました。
+
+[https://www.amazon.co.jp/gp/product/B00V7XYAXM/ref=oh\_aui\_detailpage\_o01\_s00?ie=UTF8&psc=1](https://www.amazon.co.jp/gp/product/B00V7XYAXM/ref=oh_aui_detailpage_o01_s00?ie=UTF8&psc=1)
+
+[![Holy Stone ドローンカメラ付き 気圧センサーによる高度維持 720P HDカメラ マルチコプター 2.4GHz 4CH 6軸ジャイロ クアッドコプター バッテリー2個付き 日本語説明書付き 国内認証済み RTF F181C](https://images-fe.ssl-images-amazon.com/images/I/41%2Bo8tZ%2BOgL._SL160_.jpg "Holy Stone ドローンカメラ付き 気圧センサーによる高度維持 720P HDカメラ マルチコプター 2.4GHz 4CH 6軸ジャイロ クアッドコプター バッテリー2個付き 日本語説明書付き 国内認証済み RTF F181C")](http://www.amazon.co.jp/exec/obidos/ASIN/B00V7XYAXM/hatena-blog-22/)
+
+[Holy Stone ドローンカメラ付き 気圧センサーによる高度維持 720P HDカメラ マルチコプター 2.4GHz 4CH 6軸ジャイロ クアッドコプター バッテリー2個付き 日本語説明書付き 国内認証済み RTF F181C](http://www.amazon.co.jp/exec/obidos/ASIN/B00V7XYAXM/hatena-blog-22/)
+
+- 出版社/メーカー: Holy Stone
+- メディア: おもちゃ＆ホビー
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B00V7XYAXM/hatena-blog-22)
+
+こちらは購入していませんが、レゴのドローンとかもあったりして気になりますね。  
+(安定して飛ばないみたいですが)  
+[LEGO、空を飛ぶ。自作LEGOをドローン化するキットが販売開始。15分で完成、壊れてもいい設計 - Engadget Japanese](http://japanese.engadget.com/2016/09/27/lego-15/)<cite class="hatena-citation"><a href="http://japanese.engadget.com/2016/09/27/lego-15/">japanese.engadget.com</a></cite>
+
+### ドローンを開封してみる
+
+ドローンが家に届いたので、さっそくセットアップをしていきたいと思います。
+
+こんな感じのパッケージに入っておりました。
+
+![f:id:konoemario:20170918215245j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170918/20170918215245.jpg "f:id:konoemario:20170918215245j:plain:w500")
+
+中を開けてみると、こんな感じです。  
+大きさがわかるようにiPhone6を並べています。
+
+1万円以下のドローンは手のひらサイズのものが多かったりするのですが、結構大きいです。
+
+![f:id:konoemario:20170918215250j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170918/20170918215250.jpg "f:id:konoemario:20170918215250j:plain:w500")
+
+こちらがドローンを操作するコントローラーです。  
+単三電池4本(別売り)を入れてあげます。  
+ ![f:id:konoemario:20170918215254j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170918/20170918215254.jpg "f:id:konoemario:20170918215254j:plain:w500")
+
+バッテリーと予備バッテリーがついていて、一回の充電に100分ほどかかります。  
+肝心の一回の充電でどれくらい飛べるかがわからない。  
+外で10分ほど遊んだ感じ、まだ動けそうでした。
+
+<figure class="figure-image figure-image-fotolife"><div class="images-row mceNonEditable">
+<span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170918/20170918215300.jpg" alt="f:id:konoemario:20170918215300j:plain:w300" title="f:id:konoemario:20170918215300j:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170918/20170918215307.jpg" alt="f:id:konoemario:20170918215307j:plain:w300" title="f:id:konoemario:20170918215307j:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span>
+</div>
+<figcaption>バッテリー</figcaption></figure>
+
+充電が終えたらそのまま、飛べるかとおもいきた、プロペラのカパーと、着陸時のスタンドをつける必要があります。  
+といっても、付属の部品で15分もあれば作業が完了します。
+
+<figure class="figure-image figure-image-fotolife"><div class="images-row mceNonEditable">
+<span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170918/20170918215313.jpg" alt="f:id:konoemario:20170918215313j:plain:w300" title="f:id:konoemario:20170918215313j:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170918/20170918215319.jpg" alt="f:id:konoemario:20170918215319j:plain:w300" title="f:id:konoemario:20170918215319j:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span>
+</div>
+<figcaption>カバーとラダーをつける</figcaption></figure>
+
+とうことで、こちらが完成したドローンになります。  
+充電も終え、コントローラとリンクしている状態になります。
+
+コントローラーの命令を、ドローンがどのように受け取っているかが、今後の鍵になるような気がしています。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170918/20170918215332.jpg" alt="f:id:konoemario:20170918215332j:plain:w500" title="f:id:konoemario:20170918215332j:plain:w500" class="hatena-fotolife" style="width:500px" itemprop="image"></span><figcaption>完成したドローン</figcaption></figure>
+
+### 飛ばしてみる
+
+さっそく近所の公園で飛ばしてみました。
+
+当初は、木や草むらにぶつけまくっていたのですが、10分ほどで簡単な操作なら問題なく行えるようになりました。
+
+木とかにぶつけても壊れたりしなかったので安心しました。
+
+![f:id:konoemario:20170918223838p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170918/20170918223838.png "f:id:konoemario:20170918223838p:plain:w300")
+
+そして、このドローン、microSDを挿すことで、動画だったり、写真を取ることができるみたいなのです。
+
+せっかくなので、撮ればよかったのですが、手元に空いているmicroSDがなかったのえ、今回は撮りませんでした。
+
+とはいえ、このドローン、値段の割にはかなり遊べそうです。
+
+そして、このドローンを元に自律飛行を目指していきたいと思います！

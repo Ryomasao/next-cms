@@ -1,0 +1,369 @@
+---
+title: component
+time: 2018-02-07 20:01
+---
+
+```
+//ドラッグドロップでドロップしたファイル
+const dropitem = require('./dropItem');
+
+/**
+ * ドラッグ&ドロップ,またはファイル選択で選択したファイルを保持するコンポーネント
+ * 複数ファイルのドラッグ & ドロップが可能
+ * ドラッグ & ドロップしたデータは、子コンポーネントであるdropitemにfileを渡すことで、各種情報(ファイル名、サイズ等)を表示している。
+ *
+ * 親コンポートでの使用方法は以下を想定している。
+ *
+ * ex:親コンポートかの定義
+ *          
+ *
+ * ドラッグドロップしたファイルを親コンポートから使用する場合、残念ながらref属性を用いて直接参照するようにしてほしい。
+ *
+ * ex:親コンポートからドラッグドロップしたファイルを参照
+ * this.$refs.multidrop.files
+ *
+ * また、ドラッグドロップしたファイルを親コンポートのdataにバインドさせる場合、以下のように@sync-fileイベントを定義して
+ * syncFileメソッド内で設定してほしい。
+ * this.$refs.mulutidrop.filesは、ファイルをドロップしない限り作成されないので、初期値としてバインドしてもうまくいかない。
+ *
+ * ex:ドロップしたファイルを親コンポートのdataにバインド
+ *          
+ *
+ * methods:{
+ * //子コンポーネントのドロップファイルと同期をとる
+ * syncFile:function(){
+ * this.imgs = this.$refs.multidrop.files:
+ * }
+ * }
+ */
+module.exports = Vue.extend({
+   props:{
+       //ファイル選択、ドロップで受け入れるファイルの拡張子 extension=".png,.jpg"　等複数の拡張子を設定できる
+       extension:String|Array
+   },
+   computed:{
+       /**
+        * method内では拡張子にピリオドが不要なので除去した状態にする。
+        * ※template内のinputタグ内ではピリオドが必要になる。
+        */
+       getExtension(){
+           let array = this.extension.split(',');
+           return array.map(value => {
+               //ピリオドの除去
+               value = value.replace(new RegExp('\\.', 'g'), '');
+               //スペースの除去
+               value.trim();
+               return value;
+            });
+       }
+   },
+   template:`
+               <div class="drop">
+                 <div class="drop__area" v-on:dragleave.prevent v-on:dragover.prevent v-on:drop.prevent="onDropFile">
+                    <!--ファイル選択前の表示-->
+                    <div v-if="!fileExists()">
+                        <div class="drop__control">
+                            <img class="drop__img" src="/img/upload.png">
+                            <p>ここにドラッグ&ドロップ、または</p>
+                            <label class="drop__select">ファイルを選択
+                              <input class="drop__input--none" type="file" name="file" v-bind:accept="extension" v-on:change="onDropFile" multiple="multiple">
+                            </label>
+                        </div>
+                    </div>
+                    <!--ファイル選択後の表示-->
+                    <div v-if="fileExists()">
+                        <label class="drop__add">さらにファイルを追加
+                            <input class="drop__input--none" type="file" name="file" v-bind:accept="extension" v-on:change="onDropFile" multiple="multiple">
+                        </label>
+                        <dropitem v-for="(file, index) in files" key="index"
+                                                                 :index="index"
+                                                                 :file="file.file"
+                                                                 v-on:remove="removeItem">
+                        </dropitem>
+                    </div>
+                 </div>
+               </div>
+   `,
+   methods:{
+       /**
+        * ファイルをドロップ、またはinputコントロールからファイル選択をした際に発生する
+        * イベントから呼ばれるメソッド
+        * 選択されたファイルはFileオブジェクトとして、dataに設定する。
+        */
+       onDropFile:function(event){
+
+        let fileList = event.dataTransfer ?
+        event.dataTransfer.files:
+        event.target.files;
+
+        for(let i = 0; i < fileList.length ; i++){
+            //拡張子のチェックを行い、チェックが通ったものだけをfilesに格納する
+            if(this.validateExtension(fileList[i].name, this.getExtension)){
+                //要素に追加する
+                this.files.push( {file:fileList[i]} );
+            }
+        }
+
+        this.$emit('sync-files', this.files);
+       },
+       /**
+        * プロパティに設定されたextensionをもとに拡張子のチェックを行う。
+        */
+       validateExtension:function(fileName, extensions){
+           //ファイル名から拡張子を取得
+           fileExtension = fileName.split('.').pop()
+
+           for(let i in extensions){
+                //拡張子が引数で指定したものと異なる場合、falseを返す
+                if( fileExtension === extensions[i]) return true;
+           }
+
+           return false;
+       },
+       /**
+        * indexに指定されたfilesの要素を削除する。
+        * 子コンポーネントである、dropItemからデータを削除するイベントが発生した場合に呼ばれる。
+        */
+       removeItem:function(index){
+            this.files.splice(index, 1);
+            this.$emit('sync-files', this.files);
+       },
+       /**
+        * filesにデータが存在するかをチェックする。
+        * multiDropコンポーネントでデータの有無によって表示を変更するため、この処理を使用している。
+        */
+       fileExists:function(){
+            if(this.files.length > 0){
+                return true;
+            }
+
+            return false;
+       }
+   },
+   data: function(){
+       return {
+           files:[],
+       }
+   },
+   components:{
+       //ドロップしたアイテムを表示するコンポーネント
+       dropitem:dropitem
+   },
+})
+
+````
+```
+
+//FileAPIのreadAsDataURLをPromsieでラッパーした関数 const ReadFileAsUrl = require('./readFileAsUrl');
+
+/_\* \* ドロップしたファイルの情報を表示するコンポーネント_ / module.exports = Vue.extend({ props:{ index:Number, file:File, }, template:`
+               <div class="drop-item">
+                    <img class="drop-item__img" :src="url" width="30" height="30" alt="failed"></img>
+                    <div class="drop-item__fileinfo">
+                        <label class="drop-item__fileName">{{ fileName }}</label>
+                        <div class="drop-item__detail">
+                            <label class="drop-item__size">{{ sizeKB }}</label>
+                            <label class="drop-item__type">{{ type }}</label>
+                        </div>
+                    </div>
+                    <img class="drop-item__close" src="/img/close.png" width="10" height="10" v-on:click="$emit('remove', index)"></img>
+               </div>
+  `, computed:{ //ファイル名 fileName:function(){ if(this.file.name.length \> 30){ return this.file.name.slice(0, 30) + '...'; }
+
+```
+return this.file.name;
+   },
+   //ファイルのサイズ
+   sizeKB:function(){
+       if(this.file.size === 0) return '0 KB'
+
+       return Math.ceil(this.file.size / 1024) + ' KB';
+   },
+   //ファイルのMIMEタイプ
+   type:function(){
+       return this.file.type;
+   },
+```
+
+}, data: function(){ return { //base64 エンコーディングされた data: URL の文字列 url:'' } }, mounted:function(){ /_\* \* ファイルからdata:URLの文字列を生成する \* urlについてもcomputedに定義したかったが、FileReaderが非同期であるため \* mountされたタイミングで処理を行うようにしている。 \* \* 非同期の処理もcomputedで書ける方法があれば、平仄を合わせるという観点でそちらに記載したい。_ / ReadFileAsUrl(this.file) .then((url) =\>{ this.url = url; }) } });
+
+```
+
+```
+
+/ _\* FileReadをPromiseでラップしただけのクラス \* @param {} file_ / module.exports = function(url){ return new Promise(function(resolve, reject){
+
+```
+axios.get(url,{responseType:'blob'})
+    .then((res)=>{
+      let type = res.headers['content-type'];
+      let lastModified = res.headers['last-modified'];
+      let property = {
+        type: type,
+        lastModified:lastModified
+      }
+
+      let file = new File([res.data],'あとで出す', property)
+
+      resolve(file);
+
+    })
+    .catch((error)=>{
+      reject(error)
+    })
+
+});
+```
+
+}
+
+```
+
+```
+
+/_\* \* チケット登録画面_ /
+
+'use strict';
+
+//Vueインスタンスのベース let coupon = require('../mixins/post'); //ドラッグ&ドロップコンポーネント let drop = require('../mixins/drop'); let multidrop = require('../mixins/multiDrop'); //更新する際のコンポーネント const Edit = require('../mixins/edit'); //AJAXで取得したイメージからFileオブジェクトを生成する const createFile = require('../mixins/createFile'); //フォーム用のクラス const Form = require('../mixins/form');
+
+coupon('#createForm', {}, [{ data: { form: new Form({ //チケット名 couponName: '', //商品名 productName: '', //加盟店ID storeId: '', //進呈ポイント数 point: '', //有効期間開始日 ticketStart: '', //有効期間終了日 ticketEnd: '', //特集チケット recommend: '0', //上限枚数 upper: '0', //サムネイル画像 thumbnail: '', //カスタムターゲット customTarget: '', //商品画像 imgs: , //JANコード janCode: '', //チケット説明 description: '', //セグメント segment: , }), targetUrl: '/ticket', thumbnailUrl: '', imageUrl: , files: , }, computed:{ storeName:function(){ return this.form.storeId.split('\_')[1]; } }, methods: { /_\* \* クーポンの画像の設定を行う_ / setCoupon: function(file) {
+
+```
+if(file !== ''){
+    this.form.thumbnail = file;
+    //URL生成をする
+    this.thumbnailUrl = window.URL.createObjectURL(file);
+  }else{
+    //リセットの場合
+    this.form.thumbnail = '';
+    this.thumbnailUrl = '';
+  }
+},
+/**
+ * カスタムターゲットの設定を行う
+ */
+setCustomTarget: function(file) {
+  this.form.customTarget = file;
+},
+/**
+ * 商品画像の設定を行う
+ * 子コンポーネントのドロップファイルと同期をとる
+ */
+setProductImages: function(files) {
+  //ファイルを入れなおした際に配列のリセット
+  this.imageUrl = [];
+  this.form.imgs = [];
+
+  for (let i = 0; i < files.length; i++) {
+    this.imageUrl.push(window.URL.createObjectURL(files[i].file));
+    this.form.imgs.push(files[i].file);
+  }
+
+},
+/**
+ *登録ではなく編集に切り替えるメソッド
+ *更新用コンポーネントから呼ばれる
+ */
+toEditMode:function(data){
+
+    //JANコードは、JSON形式で格納されているものを、改行付きの文字列にする。
+    let jancode_json = JSON.parse(data.jan_code);
+    let jancode = '';
+
+    for(let i in jancode_json){
+        jancode += jancode_json[i] + '\n';
+    }
+
+    //セグメントIDは、JSON形式で格納されているものを、配列にする。
+    let segment_json = JSON.parse(data.segment_id);
+    let segment = [];
+    for(let i in segment_json){
+       segment.push(segment_json[i]);
+    }
+
+    //商品画像は、JSON形式で格納されているものを配列にする。
+    let imgs_json = JSON.parse(data.imgs);
+    let imgs = [];
+    let imgsUrl = [];
+
+    for(let i in imgs_json){
+
+      imgs.push(imgs_json[i]);
+      imgsUrl.push('//' + imgs_json[i]);
+
+      createFile(imgsUrl[i])
+      .then((file)=>{
+        this.$refs.multidrop.files.push({
+          file:file
+        });
+
+        this.imageUrl.push(imgsUrl[i]);
+      })
+      .catch((error)=>{
+        console.log(error);
+      })
+    }
+
+    //既に登済みのデータをformに設定する
+    let value = {
+      couponName: data.managed_name,
+      productName: data.name,
+      storeId: data.stores_id + '_' + data.store_name,
+      point: data.point,
+      ticketStart: data.start_date.substring(0, 10),
+      ticketEnd: data.expiration_date.substring(0, 10),
+      recommend: data.recommend_flg,
+      upper: data.upper_limit,
+      thumbnail: data.thumbnail,
+      customTarget: '',
+      imgs: imgs,
+      janCode: jancode,
+      description: data.description,
+      segment: segment
+    }
+
+    //フォームにデータをセット
+    this.form.setRegistredValue(value);
+
+    let thumbnailUrl = '//' + data.thumbnail;
+    this.thumbnailUrl = thumbnailUrl;
+
+    //子コンポーネントにセット
+    this.$refs.drop.url = thumbnailUrl;
+    this.$refs.drop.file = data.thumbnail;
+
+    //submit時のリクエストタイプ、リクエスト先を変更する
+    this.requestType = 'put';
+    this.targetUrl = '/ticket/'+data.id;
+}
+```
+
+}, components: { dropfile: drop, multidropfile: multidrop, //更新用コンポーネント Edit } }]);
+
+```
+
+```
+
+.drop-item{ display: flex; border-bottom:1px solid #efefef; padding:2px; align-items: center;
+
+```
+//ファイルの情報
+&__fileinfo{
+    margin-left: 10px;
+    width: 70%;
+}    
+
+//size type等の詳細
+&__detail{
+    font-size:10px
+}
+
+//削除ボタン
+&__close{
+    margin-left: auto;
+    margin-right: 10px;
+}
+```
+
+}

@@ -1,0 +1,563 @@
+---
+title: そろそろVue.jsでもテストコードを書いていこう
+time: 2018-11-08 17:52
+---
+
+Vue.jsでわりといろいろつくっている今日このごろ。  
+そこそこ使ってるのに、未だにEsLintもいれてないし、テストコードも書いてないという状況に危機感を覚えた。  
+特にテストコード書いてないのはまずい気がする。ブラウザで毎回確認するのも時間かかるしね。
+
+10カ月ほど前に、以下のLaracastのVueTestingをさっと見たんだけれども、あんまり生かせてない。 しかも、 Laracastの有料講座を見るために毎月1000円ぐらい払ってる気がする。  
+全然有効に使えてなくて悔しいので、今一度学びなおしてみる。
+
+といっても下記の動画は無料でみれる。
+
+[TDD Your First Vue Component From Scratch](https://laracasts.com/series/testing-vue/episodes/1)<cite class="hatena-citation"><a href="https://laracasts.com/series/testing-vue/episodes/1">laracasts.com</a></cite>
+
+エピソード1の内容はわずか11分なんだけれども、メモを（無駄に）取りながら書いたらやけに長くなった。  
+書いといてあれだけれども気になる方は、動画を見たほうが絶対いい。
+
+- [最低限のかんきょうづくり](#%E6%9C%80%E4%BD%8E%E9%99%90%E3%81%AE%E3%81%8B%E3%82%93%E3%81%8D%E3%82%87%E3%81%86%E3%81%A5%E3%81%8F%E3%82%8A)
+- [コードを書く](#%E3%82%B3%E3%83%BC%E3%83%89%E3%82%92%E6%9B%B8%E3%81%8F)
+- [テストが通るようにする①](#%E3%83%86%E3%82%B9%E3%83%88%E3%81%8C%E9%80%9A%E3%82%8B%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B)
+  - [補足 自分の中のVue.jsのコンポーネント](#%E8%A3%9C%E8%B6%B3-%E8%87%AA%E5%88%86%E3%81%AE%E4%B8%AD%E3%81%AEVuejs%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88)
+- [DOMのレンダリングの内容を検証する](#DOM%E3%81%AE%E3%83%AC%E3%83%B3%E3%83%80%E3%83%AA%E3%83%B3%E3%82%B0%E3%81%AE%E5%86%85%E5%AE%B9%E3%82%92%E6%A4%9C%E8%A8%BC%E3%81%99%E3%82%8B)
+- [イベントの結果を検証する](#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%81%AE%E7%B5%90%E6%9E%9C%E3%82%92%E6%A4%9C%E8%A8%BC%E3%81%99%E3%82%8B)
+- [補足](#%E8%A3%9C%E8%B6%B3)
+  - [単一ファイルコンポーネントをテストする](#%E5%8D%98%E4%B8%80%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%82%92%E3%83%86%E3%82%B9%E3%83%88%E3%81%99%E3%82%8B)
+  - [watchオプション](#watch%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3)
+
+作業の記録はGithubにあげています。
+
+[Ryomasao/testingvue](https://github.com/Ryomasao/testingvue)<cite class="hatena-citation"><a href="https://github.com/Ryomasao/testingvue">github.com</a></cite>
+
+## 最低限のかんきょうづくり
+
+講座に沿って、メモをしていくことにする。  
+講座では、VueCLI等は使ってなかったので、それに倣い、一からVueを導入する。
+
+**まずはvueの準備**
+
+```
+$ npm init -y
+$ npm install --save vue
+```
+
+次にテストツールを導入する。
+
+**テストツールの導入**
+
+```
+npm install --save-dev vue-test-utils
+```
+
+次に、Mocha + Webpackというテストランナーをインストールする。
+
+**テストランナーの導入**
+
+```
+$ npm install --save-dev @vue/test-utils mocha mocha-webpack
+```
+
+2018/11/08 現在、mocha-webpackはwebpack4に対応していないみたいで、後続の`npm run test`をしたときに、Webpackのコンパイルのみ行われて、テストが走らないという事象が起こります。 ですので、webpack4を使う場合は、以下のバージョンを使用する必要がありました。
+
+**違うバージョンを使用**
+
+```
+$ npm install mocha-webpack@next --save-dev
+```
+
+`vue-test-utils`だけで済むかと思ったんだけども、javascriptのコードを実行するのは`vue-test-utils`ではなくテストランナーと呼ばれるもので、いくつか種類があるとのこと。   
+`vue-test-utils`とテストランナーの役割分担がちょっとイメージできない。
+
+[テストランナを選ぶ | Vue Test Utils](https://vue-test-utils.vuejs.org/ja/guides/choosing-a-test-runner.html)<cite class="hatena-citation"><a href="https://vue-test-utils.vuejs.org/ja/guides/choosing-a-test-runner.html">vue-test-utils.vuejs.org</a></cite>
+
+[Mocha + webpack による単一ファイルコンポーネントのテスト | Vue Test Utils](https://vue-test-utils.vuejs.org/ja/guides/testing-single-file-components-with-mocha-webpack.html)<cite class="hatena-citation"><a href="https://vue-test-utils.vuejs.org/ja/guides/testing-single-file-components-with-mocha-webpack.html">vue-test-utils.vuejs.org</a></cite>
+
+テストランナーである、webpack + mochaはwebpackでコンパイルしてコンパイルしたものをmochaで実行するっぽいもの。
+
+講座に戻ります。
+
+`src/components`ディレクトリと、`test`ディレクトリを作って、空っぽのファイルをそれぞれおいておきます。
+
+**テスト対象とテストコードを作成する**
+
+```
+├── package-lock.json
+├── package.json
+├── src
+│ └── components
+│ └── Counter.js
+└── test
+    └── counter.spec.js
+```
+
+ええ！もうテストを叩くんですか！という勢いで、`npm run test` を実行します。
+
+**テストを実行**
+
+```
+$ npm run test
+> echo "Error: no test specified" && exit 1
+
+Error: no test specified
+```
+
+ですが、テストなんかねえよ！と怒られます。  
+`npm run test` は、`package.json`の`scripts: test`の箇所を実行していますね。
+
+こちらをみると、先ほどのエラーが記載されていることがわかります。  
+**package.json**
+
+```
+"scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+```
+
+ですので、こちらを変更していきます。
+
+**package.json**
+
+```
+"scripts": {
+     "test": "mocha-webpack --webpack-config webpack.config.js test/**/*.spec.js"
+  },
+```
+
+`mocha-webpack`はwebpackでコンパイルするので、wepackのconfigファイルを指定しています。  
+`test/**/*.spec.js` は実行するテストコードを指定しています。
+
+とりあえず空っぽの`webpack.config.js`をプロジェクトのルートディレクトリ配下につくっときます。
+
+**webpack.config.jsをつくる**
+
+```
+$ touch webpack.config.js
+```
+
+また、webpack4から、`mode'オプションの指定をしとかないとWarningがでてしまうので、`webpack.config.js`に記載しとくことにします。
+
+**webpack.config.js**
+
+```
+module.exports = {
+  mode: 'development'
+}
+```
+
+また、webpackが必要なのでこちらもインストールします。
+
+**webpackを入れる**
+
+```
+$ npm install --save-dev webpack
+```
+
+準備ができたら、再度実行します。
+
+**テストを実行**
+
+```
+$ npm run test
+ WEBPACK Compiled successfully in 159ms
+
+ MOCHA Testing...
+
+  0 passing (0ms)
+
+ MOCHA Tests completed successfully
+```
+
+テストコード自体が空っぽなので`0 pasing`といわれていますが、なんとなく動いたみたいです！
+
+## コードを書く
+
+先に講座ででてきたコード全体を記載することにします。
+
+**counter.spec.js**
+
+```
+import { mount } from 'vue-test-utils'
+import Counter from '../src/components/Counter.js'
+import expect from 'expect'
+
+describe('Counter', () => {
+
+  it ('default to a count of 0', () => {
+    let wrapper = mount(Counter)
+
+    expect(wrapper.vm.count).toBe(0)
+  })
+
+})
+```
+
+コードの細かい部分はさっぱりですが、`Counter`のプロパティっぽい`count`の値が0だったらOK！っていってるのはわかるかと思います。
+
+次に具体的な中身を見ていきたいと思います。  
+まず、気になるのは `let wrapper = mount(Counter)`の部分。   
+公式ガイドによれば、`mount`はVueコンポーネントをマウントしてラップしたものを返し、ラッパーのvmプロパティにアクセスすることでVueインスタンスにアクセスできるようなことが書いてある。  
+このへんの理解がいまいちわからないけれども、コンポーネント渡してあげればそれを作って返してくれるぐらいの理解でいいのかな。  
+今回だと、コンポーネントではなく、ただのモジュールでちょっと不思議だけれども進める。
+
+次に`expect`の部分。  
+これは、PHPUnitとかにもあったアサーションの部分。  
+メソッド名から何を期待しているのかはなんとなく想像ができると思う。  
+アサーションの部分も別のライブラリとのことで、講座では`expect`を導入していた。
+
+**expecのインストール**
+
+```
+$ npm install expect --save-dev
+```
+
+ちなみに、expectのgithubをみると、`jest`と呼ばれる別のライブラリに移行するような記載があったので、今後はそっちを使うほうがいいのかもしれない。  
+とりあえずは、講座の通り`expect`のままでいく。
+
+[mjackson/expect](https://github.com/mjackson/expect)<cite class="hatena-citation"><a href="https://github.com/mjackson/expect">github.com</a></cite>
+
+それ以外に、`describe`とか`it`とか気になるけど、これが`mocha`の関数みたい。   
+この辺については、書きながら学んでいくことにする。
+
+次に、コードは直接でていないけど必要なライブラリ達。
+
+`vue-template-compiler`は、Vueのテンプレートをプリコンパイルしてくれるもの。  
+Vue.jsってブラウザで描画するときにテンプレートをコンパイルしてrender関数に置き換えるものと、事前にWebpackとかでプリコンパルしてrender関数に置き換えるタイプがあるんだけれども、この`vue-template-compile`はプリコンパイルをしてくれるライブラリ。
+
+テストコードで単一コンポーネントとかをテストする際に、必須なのかな？あんまりよくわかってない。  
+今回もまだ`.vue`のファイルはないんだけれども、いれておく必要がある。
+
+**vue-template-compilerのインストール**
+
+```
+$ npm install --save-dev vue-template-compiler
+```
+
+最後に、仮想ブラウザ環境を提供するライブラリをいれる。
+
+**仮想ブラウザ環境のパッケージを導入**
+
+```
+$ npm install --save-dev jsdom jsdom-global
+```
+
+こちらは公式のガイドに書いてある通り、実際のブラウザ環境で書いたコードを動かすことはできるけれども、いろんなブラウザあるから複雑だから、仮想環境で実行したほうがいいよてきなことが書いてある。  
+ブラウザで動かさずにNode.jsで動かすとのこと。
+
+これをインストールしたら`JSDOM`のセットアップをしとく必要がある。  
+どこでするかというと、テストコードを実行する前のセットアップを行う機能があるみたいなのでこちらでやる。
+
+`setup.js`というファイルをプロジェクトルート配下に作成する。
+
+**setup.jsの作成**
+
+```
+touch setup.js
+```
+
+中身は、こんな感じ。 Node.jsで動かすのでES6のimportではなく、CommonJSのrequireで書く。  
+※この表現があってるか自信がない。
+
+**setup.js**
+
+```
+require('jsdom-global')()
+```
+
+最後に、`setup.js`をテストコード起動時に実行されるようにする。
+
+**package.json**
+
+```
+"scripts": {
+   "test": "mocha-webpack --webpack-config webpack.config.js --require test/setup.js test/**/*.spec.js"
+  },
+```
+
+いざ、実行！
+
+**実行**
+
+```
+$ npm run test
+ WEBPACK Compiled successfully in 864ms
+
+ MOCHA Testing...
+
+  Counter
+    1) default to a count of 0
+
+  0 passing (26ms)
+  1 failing
+
+  1) Counter
+       default to a count of 0:
+     Error: expect(received).toBe(expected) // Object.is equality
+```
+
+なんかエラーがでてびっくりしますが、内容をよく見ると、期待してた値と違うんじゃ！とちゃんとテストが動いていることが確認できました！
+
+## テストが通るようにする①
+
+`Counter.js`を修正します。 Vueインスタンスを作成するときのように`data関数'としてデータを持たせます。
+
+**Counter.js**
+
+```
+export default {
+  data () {
+    return {
+      count: 0
+    }
+  }
+}
+```
+
+この状態でテストを実行すると、テストが通ることが確認できます！
+
+**テストが通った！**
+
+```
+Counter
+    ✓ default to a count of 0
+
+  1 passing (57ms)
+
+ MOCHA Tests completed successfully
+```
+
+テストが通ったことで、ようやく、Counterコンポーネントのcountの値が最初は0であること、をテストしてたんだなぁと今更ながら気づきました。
+
+ちなみに、`Counter.js`の中で、なんで'data()'みたいなのをちょろっと書くだけでいいんだろうと不思議だったのですが、コンポーネントをtemplateオプションで作成してるって考えればよいのですかね。
+
+##### 補足 自分の中のVue.jsのコンポーネント
+
+- 単一ファイルコンポーネントとしてつくる(拡張子が.vueのやつ)
+- 以下のようなオブジェクトをつくるだけのやつ
+
+**こういうやつ**
+
+```
+{ 
+  template: `<div>hoge</div>`
+  data() {
+  }
+}
+```
+
+- 上記テンプレートはrender関数に置き換える必要があって、ブラウザ側でコンパイルしなきゃいけないので、render関数を直接使うやつ
+
+書いといてあれだけど、以下の記事がわかりやすい！
+
+[Vue2.x系のハマりどころ templateとコンパイラを完全解説するよ](https://aloerina01.github.io/blog/2017-03-08-1#vue%E3%83%86%E3%83%B3%E3%83%97%E3%83%AC%E3%83%BC%E3%83%88%E3%81%AE%E5%AE%9F%E8%A3%85%E6%96%B9%E6%B3%95)<cite class="hatena-citation"><a href="https://aloerina01.github.io/blog/2017-03-08-1#vue%E3%83%86%E3%83%B3%E3%83%97%E3%83%AC%E3%83%BC%E3%83%88%E3%81%AE%E5%AE%9F%E8%A3%85%E6%96%B9%E6%B3%95">aloerina01.github.io</a></cite>
+
+## DOMのレンダリングの内容を検証する
+
+本題に戻ります。
+
+さきほどは、Counterコンポーネントのcountの初期値が0であることを検証しました。 次にこういうこともできるんだよということで、Counterコンポーネントの内で描画される内容について検証します。
+
+テストコードは以下の通りです。
+
+**counter.spec.js:**
+
+```
+import { mount } from 'vue-test-utils'
+import Counter from '../src/components/Counter.js'
+import expect from 'expect'
+
+describe('Counter', () => {
+
+ let wrapper = mount(Counter)
+
+  it ('default to a count of 0', () => {
+    expect(wrapper.vm.count).toBe(0)
+  })
+  
+  // Counerコンポーネント内のクラス.countのDOMノードのHTMLは0っていう文字を含んでるよね！
+  it ('presents the current count', () => {
+    expect(wrapper.find('.count').html()).toContain(0)
+  })
+
+})
+```
+
+例のごとく、なんにがなんだかという状態だったので、先にテストが通るようにコードを修正します。
+
+**Counter.js**
+
+```
+export default {
+  template: `
+    <div>
+      <span class="count" v-text="count"></span>
+    </div>
+  `,
+  data () {
+    return {
+      count: 0
+    }
+  }
+}
+```
+
+`Counter.js`にテンプレートオプションを追加して、countの内容を描画するように修正しました。
+
+テストコードの`wrapper.find('.count').html()).toContain(0)`は、コメントにも書いてある通り、「Counerコンポーネント内のクラス.countのDOMノードのHTMLは0っていう文字を含んでるよね」ということをアサートしています。
+
+mountが返却する、wrapperですが、公式ガイドの通り、便利なメソッドがたくさんあります。  
+ここでは、`find()`で指定したクラス名を保持するDOMノードを取得して、`html()`でDOMノードを文字列化しているという流れですかね。  
+なんだかすごい！
+
+[Wrapper | Vue Test Utils](https://vue-test-utils.vuejs.org/ja/api/wrapper/#html)<cite class="hatena-citation"><a href="https://vue-test-utils.vuejs.org/ja/api/wrapper/#html">vue-test-utils.vuejs.org</a></cite>
+
+## イベントの結果を検証する
+
+DOMの内容を検証したら、次はイベントの内容を検証します。
+
+まずはテストコートになります。  
+`button`タグを持つDOMノードを取得して、そのDOMノードのイベント`click`を実行するという内容になります。  
+もう画面で何回もクリックしなくていいんだね！という感動があります。  
+ちなみにひっそりと、Counterコンポーネントのmountのタイミングをテスト実行時に1回だけ読み込むパターンから、状態が残っちゃうみたいなので各テストごとに読み込むように変更しています。   
+これも、いろんなイベントを呼びながら検証していくなら、一回だけ読むこんでおくってのもありですかね。  
+※これ以外にも`beforEach`なるものを使うと、テストステートメントごとに、初期設定を指定できるみたいなので、通常はこっちを使うのかも。
+
+**counter.spec.js**
+
+```
+import { mount } from 'vue-test-utils'
+import Counter from '../src/components/Counter.js'
+import expect from 'expect'
+
+describe('Counter', () => {
+
+  it ('default to a count of 0', () => {
+    let wrapper = mount(Counter)
+    expect(wrapper.vm.count).toBe(0)
+  })
+
+  it ('increments the count the button is clicked', () => {
+    let wrapper = mount(Counter)
+    // 最初は0だけれども
+    expect(wrapper.vm.count).toBe(0)
+
+    // ボタンをおすと
+    wrapper.find('button').trigger('click');
+
+    // 1になる
+    expect(wrapper.vm.count).toBe(1)
+  })
+
+  it ('presents the current count', () => {
+    // wrapperを各テストで使いまわすと、↑の状態が残ったままなので、mountしなおす。
+    let wrapper = mount(Counter)
+    expect(wrapper.find('.count').html()).toContain(0)
+  })
+
+})
+```
+
+肝心の`Counter.js`はこんな感じになりました。
+
+**Counter.js**
+
+```
+export default {
+  template: `
+    <div>
+      <span class="count" v-text="count"></span>
+      <button @click="count++">Increment</button>
+    </div>
+  `,
+  data () {
+    return {
+      count: 0
+    }
+  }
+}
+```
+
+これ以外にも本格的に使うには、mockの準備だったり、VueCliで運用するとどんな感じなんだろうと、気になる点がいっぱいあるので、引き続き学習していきます。
+
+## 補足
+
+### 単一ファイルコンポーネントをテストする
+
+テンプレートオプションでつくったコンポーネントをテストしてたけれども、実際は単一ファイルコンポーネントでやるケースがほとんど。
+
+動画のエピソード2を見れば解説しているんだけれども追記。
+
+まずは、単純に.vueの構文に置き換えます。
+
+**Counter.vue**
+
+```
+<template>
+<div>
+  <span class="count" v-text="count"></span>
+  <button @click="count++" class="increment">Increment</button>
+</div>
+</template>
+
+<script>
+export default {
+  data () {
+    return {
+      count: 0
+    }
+  }
+}
+</script>
+```
+
+次にwebpackに.vueのファイルをプリコンパイルしてね、という定義を書きます。
+
+**webpack.config.js**
+
+```
+const VueLoaderPlugin = require('vue-loader/lib/plugin')
+
+module.exports = {
+  mode: 'development',
+  module: {
+    rules: [
+      {
+        test: /\.vue$/,
+        use: 'vue-loader'
+      }
+    ]
+  },
+  plugins: [
+    // 動画で使っているvue-loaderより新しいvue-loaderはpluginの定義が必須みたい
+    new VueLoaderPlugin()
+  ]
+};
+```
+
+最後に`vue-loader`をインストールします。
+
+**vue-loaderのインストール**
+
+```
+$ npm install --save-dev vue-loader
+```
+
+これだけで、単一ファイルコンポーネントのテストができるようになります。
+
+### watchオプション
+
+これもエピソード3で紹介されているんだけれども、ものすごく感動した。
+
+**watch用のスクリプト追加**
+
+```
+"scripts": {
+    "test": "mocha-webpack --webpack-config webpack.config.js --require test/setup.js test/**/*.spec.js",
+    "watch": "mocha-webpack --webpack-config webpack.config.js --watch --require test/setup.js test/**/*.spec.js"
+  },
+```
+
+いや、単純にファイルの変更監視をしてくれて、変更がある度にテストランナーが走るみたいなやつなんだけれども、使ってみると、テスト駆動感が半端ない。
+
+ちょっとクラス名変えたいなあとか、メソッド名かえたいなってときも、変更後にちゃんと動くか確認したりするのが結構めんどうで、どうしようかななんで葛藤があるんだけれども、watchしてると、がんがんかえていこうって気持ちになる。

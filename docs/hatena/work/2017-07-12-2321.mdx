@@ -1,0 +1,66 @@
+---
+title: Flaskメモ
+time: 2017-07-12 23:21
+---
+
+## 参考
+
+[1. Webアプリケーションを作る準備 — study flask 1 ドキュメント](http://study-flask.readthedocs.io/ja/latest/01.html)
+
+## 環境作成
+
+/Users/konoe\_mario/PycharmProjects/testflask/handson
+
+```
+masao-3:handson konoe_mario$ pyenv versions
+  system
+  3.5.1
+  3.5.1/envs/raspberry_3.5.1
+* 3.5.2 (set by /Users/konoe_mario/.pyenv/version)
+  pypy3-2.4.0
+  raspberry_3.5.1
+```
+
+```
+(raspberry_3.5.1) masao-3:handson konoe_mario$ pip freeze
+keyboard==0.9.13
+py==1.4.34
+pygame==1.9.4.dev0
+pynput==1.3.2
+pyobjc-core==3.2.1
+pyobjc-framework-Cocoa==3.2.1
+pyobjc-framework-Quartz==3.2.1
+PySDL2==0.9.5
+six==1.10.0
+```
+
+作成といっても、ラズパイ用につくった環境があるので、それを使用することにする。
+
+```
+masao-3:handson konoe_mario$ pyenv global raspberry_3.5.1
+```
+
+インストール
+
+```
+(raspberry_3.5.1) masao-3:handson konoe_mario$ sudo pip install flask
+```
+
+```
+(raspberry_3.5.1) masao-3:handson konoe_mario$ pip freeze
+click==6.7
+Flask==0.12.2
+itsdangerous==0.24
+Jinja2==2.9.6
+keyboard==0.9.13
+MarkupSafe==1.0
+py==1.4.34
+pygame==1.9.4.dev0
+pynput==1.3.2
+pyobjc-core==3.2.1
+pyobjc-framework-Cocoa==3.2.1
+pyobjc-framework-Quartz==3.2.1
+PySDL2==0.9.5
+six==1.10.0
+Werkzeug==0.12.2
+```

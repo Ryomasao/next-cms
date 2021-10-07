@@ -1,0 +1,28 @@
+---
+title: OpenCVを入れる
+time: 2017-02-16 22:09
+---
+
+### AnacondaにOpenCVをインストールする
+
+PychamでOpenCVをインストールしようとしたら、以下エラーが発生した。 どうやら、python3.6とOpenCVのバージョン間の問題とのこと。
+
+![f:id:konoemario:20170216214338p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170216/20170216214338.png "f:id:konoemario:20170216214338p:plain:w300")
+
+![f:id:konoemario:20170216214343p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170216/20170216214343.png "f:id:konoemario:20170216214343p:plain:w300")
+
+condaを使うことで解決できた。
+
+[Condaの使い方メモ - Qiita](http://qiita.com/showsuzu/items/e2fddf22f725f4d2ab8c)<cite class="hatena-citation"><a href="http://qiita.com/showsuzu/items/e2fddf22f725f4d2ab8c">qiita.com</a></cite>
+
+python3.5であれば、OpenCVが使えそうなので、以下を実行
+
+`$ conda create -n py35 python=3.5 anaconda`
+
+PycharmのPreferences-\>Project:プロジェクトネーム-\>Project Interpreterから歯車のアイコンを選択し 「Add Local」でcondaで作成した環境を選択。 ※Annacondaのインストールディレクトリ配下のenvにあった。
+
+▼のMoreを選択すると、作成した環境がでてきた。
+
+![f:id:konoemario:20170216220438p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170216/20170216220438.png "f:id:konoemario:20170216220438p:plain:w300")
+
+以下のモジュールがインポートできた。`import numpy``import cv2`

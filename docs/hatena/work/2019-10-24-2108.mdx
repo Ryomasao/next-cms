@@ -1,0 +1,96 @@
+---
+title: useEffectでrace conditionとdebounceに対応する
+time: 2019-10-24 21:08
+---
+
+# useEffectでrace conditionとdebounceに対応する
+
+ReactのHooksに入門した。 useEffectのクリーンアップは再レンダー時に毎回行われるんだよ！という公式ドキュメントをみて、ほーんという感じだったけど`race condition`と`debounce`をhooksを使ってシンプルに対応するサンプルを見て、なんだか凄さを感じた。
+
+## やりたいこと
+
+以下のように、入力内容の変更がある度にAPIリクエストをして、結果を反映させるということをしてみたい。<figure class="figure-image figure-image-fotolife" title="やりたいこと"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20191024/20191024210614.gif" alt="f:id:konoemario:20191024210614g:plain" title="" class="hatena-fotolife" itemprop="image"></span><figcaption>やりたいこと</figcaption></figure>
+
+### やってみる
+
+これをuseEffectを使って書くと、以下のようになる。
+
+```
+const [name, setName] = useState("taro");
+  const [age, setAge] = useState(0)
+
+  // この副作用は、nameが変わる度に実行される
+  useEffect(() => {
+    // loading中にして
+    setLoading(true);
+
+    // apiを実行
+    getUserData(name).then(age => {
+        // 結果をステートに反映
+        setAge(age);
+        // loading終了
+        setLoading(false);
+      }
+    });
+  }, [name])
+```
+
+このコードにはいろいろ問題があるのだけど、最大の問題は最終的にレンダリングされるAPIの結果が、想定と異なる可能性がある点。 というのも、APIは呼び出した順に結果が返ってくるという保障もないので、最後に返ってきたAPIの結果が最後に呼び出したAPIの結果とは限らないから。
+
+これを解決するためには、入力途中に呼び出されたAPIの結果は無視する必要がある。
+
+この文章だけみると、やけに難しく感じるのだけど、あら不思議。 Hooksの公式ドキュメントの記載に則り、副作用のクリーンアップを利用すると簡単に対応できる。
+
+**新しい副作用を適用する前に、ひとつ前の副作用をクリーンアップします。**
+
+```
+const [name, setName] = useState("taro");
+  const [age, setAge] = useState(0)
+
+  // この副作用は、nameが変わる度に実行される
+  useEffect(() => {
+    let cancel = false
+
+    // loading中にして
+    setLoading(true);
+
+    // apiを実行
+    getUserData(name).then(age => {
+        if(!cancel) {
+          // 結果をステートに反映
+          setAge(age);
+          // loading終了
+          setLoading(false);
+        }
+      }
+
+    // 副作用のクリーンアップ
+    return () => {
+      // このcancelのスコープが、あああ！となった。
+      cancel = true
+    }
+    });
+  }, [name])
+```
+
+これを利用すると、debounce処理もさくっと実装できそう。
+
+```
+useEffect(() => {
+    setLoading(true);
+
+    const timeOutId = setTimeout(() => {
+      getUserData(name).then(age => {
+        setAge(age);
+        setLoading(false);
+      });
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeOutId);
+    };
+  }, [name]);
+```
+
+実際には、以下のようなuseDebounceのようなカスタムHookも作ると汎用的になる。  
+[https://github.com/xnimorz/use-debounce](https://github.com/xnimorz/use-debounce)

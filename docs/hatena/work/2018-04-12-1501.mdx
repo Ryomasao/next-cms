@@ -1,0 +1,356 @@
+---
+title: 既存イメージの管理
+time: 2018-04-12 15:01
+---
+
+# 
+
+## Node.jsを使用できるコンテナを用意できるようにする
+
+### Dockerfileをつくってみる
+
+**作業用ディレクトリを作成する**
+
+```
+mkdir node-test $$ cd note-test
+```
+
+**Dockerfileを用意する**
+
+```
+vim Dockerfile
+```
+
+**Dockerfile**
+
+```
+FROM alpine:latest
+```
+
+#### alpine
+
+#### イメージを作成する
+
+```
+$ docker build ./ -t tohu/node
+```
+
+**イメージの確認**
+
+```
+REPOSITORY TAG IMAGE ID CREATED SIZE
+tohu/node latest 3fd9065eaf02 3 months ago 4.15 MB
+```
+
+イメージができたら、早速コンテナを作成する。
+
+**dockerコンテナの作成と起動**
+
+```
+$ docker run -i -t tohu/node /bin/ash
+#
+```
+
+### 既存イメージに対してcommitしてみる
+
+**dockerコンテナの中でpyenvをインストールする**
+
+```
+root@d20116a1ce97:/# curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+```
+
+**編集したimageを保存する**
+
+```
+$ docker commit -m 'add pyenv' -a 'tohu' d20116a1ce97 tohu/mysintra:v2
+sha256:f79371329012f5c00a78944e7ce295dfccfc5aa1fba865b36952922317ed1d88
+```
+
+**作成したimageを実行する**
+
+```
+docker run -t -i tohu/mysintra:v2 /bin/bash
+root@16ada62cadde:/# ls -a
+. .bash_history .gem bin dev home lib64 mnt proc run srv tmp var
+.. .dockerenv .pyenv boot etc lib media opt root sbin sys usr
+```
+
+`.pyenv`がちゃんと残ってることがわかる！
+
+### Dockerfileを使う
+
+さて、さきほどつくったイメージを他の人に渡したい！って場合はどうしたらいいんだろう。
+
+調べてみると、`docker save`なるコマンドがあって、作ったイメージをファイルとして扱うことができるようになるみたい。
+
+ただ、公式チュートリアルをみると、
+
+> docker commit コマンドを使う方法は、イメージを簡単に拡張します。しかし、少々面倒なものであり、チーム内の開発プロセスでイメージを共有するのは簡単ではありません。この方法ではなく、新しいコマンド docker build を使い構築する方法や、イメージをスクラッチ（ゼロ）から作成する方法があります。
+> 
+> この構築コマンドを使うには Dockerfile を作成します。この中に Docker がどのようにしてイメージを構築するのか、命令セットを記述します。
+
+Dockerfileなるものを作成するとあるので、こちらを試してみる。
+
+前回のPythonのWebフレームワークであるFlaskが動くコンテナを作ろうと思ったのだけれども、やけに時間がかかってつらいなぁと思ってたら  
+こんな記事があった。
+
+[効率的に安全な Dockerfile を作るには - Qiita](https://qiita.com/pottava/items/452bf80e334bc1fee69a)<cite class="hatena-citation"><a href="https://qiita.com/pottava/items/452bf80e334bc1fee69a">qiita.com</a></cite>
+
+まずは、こまめにcommitしながら、作業をメモっておく。
+
+[Alpine Linux入門 -内部構造とapkでパッケージインストール編- · tehepero note(・ω\<) 2.0](https://blog.stormcat.io/post/entry/alpine-entry-apk/)
+
+```
+$ docker run -it alpine:3.7 /bin/sh
+```
+
+以下は、作業記録
+
+```
+# apk --update python
+# python -V
+Python 2.7.14
+```
+
+おお、Python2系になるのね。
+
+ということでやりなおし。
+
+```
+$ docker run -it alpine:3.7 /bin/sh
+# python -V
+/bin/sh: python: not found
+#
+```
+
+すごい気軽だ。。。
+
+```
+# apk update
+# apk add python3
+# python3 -V
+
+# pip3 install flask
+```
+
+**最初のDockerfile**
+
+```
+FROM alpine:3.7
+RUN apk update \
+    && apk add python3 \
+    && pip3 install flask
+```
+
+準備ができたら、Dockerfileをもとにイメージを作成してみる。  
+イメージの作成には`docker build`を使えばいいみたい。
+
+**dockerのbuild**
+
+```
+$ docker build . -t tohu/flask:v1
+```
+
+- `.`は今いるディレクトリにある`Dockerfile`をみてねってことかな
+- `-t` オプションはつけることで、作成したイメージのリポジトリ名と、タグをつけることができる。
+
+準備ができたら、コンテナを起動します。  
+例のごとく、``-i、`-t`オプションをつけて対話型作業してみることにするよ。  
+ちなみに、`-it`と一括で書くことができるみたい。
+
+**dockerを起動する**
+
+```
+$ docker run -it tohu/flask:v1 /bin/sh
+```
+
+無事、起動できましたかね！  
+とりあえず、pythonがインストールされているかと、Flaskモジュールがimportされているかを確認することにした。
+
+**動作確認**
+
+```
+# python3
+Python 3.6.3 (default, Nov 21 2017, 14:55:19)
+[GCC 6.4.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import flask;
+>>>
+```
+
+大丈夫そう。
+
+そうしたら、後は`app.py`を置いて、flaskを起動してあげればよさそう。
+
+なんだけれども、例のごとく
+
+どこにソースコード置けばいいんだろ
+
+となりました。  
+なにも考えずに、dockerコンテナ内に直接flaskアプリケーションを置いてみて、起動してみます。  
+一旦、コンテナを終了して、ポートを割り当てた上で、再度起動してみます。
+
+**dockerコンテナを対話型でかつポートを割り当てた状態で起動**
+
+```
+docker run -it -p 80:5000 tohu/flask:v1 /bin/sh
+```
+
+`/`直下にあれこれ置くのもどうなんだろうということで`/var/www/html/app`なるディレクトリを作成して  
+そこに`app.py`を置くことにします。
+
+**適当にディレクトリを作成してflaskアプリケーションを作成**
+
+```
+# mkdir /var/www/html/app -p
+# cd /var/www/html/app
+# vi app.py
+```
+
+`app.py`は今までと同じものをそのまま使っています。
+
+**app.py**
+
+```
+from flask import Flask
+app = Flask( __name__ )
+
+@app.route("/")
+def hello():
+    return "ohankyy"
+
+if __name__ == ' __main__':
+    app.run(host='0.0.0.0', port=5000)
+```
+
+そしたら、flaskを起動してみます。
+
+**適当にディレクトリを作成してflaskアプリケーションを作成**
+
+```
+# python3 app.py
+* Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+```
+
+この状態で「localhost:8000」にアクセスすると、無事以下の画面が表示されましたね。
+
+<figure class="figure-image figure-image-fotolife" title="コンテナに接続して直接起動したFlaskアプリケーション"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180323/20180323105450.png" alt="f:id:konoemario:20180323105450p:plain" title="f:id:konoemario:20180323105450p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>コンテナに接続して直接起動したFlaskアプリケーション</figcaption></figure>
+
+やってやりました！
+
+### 改善する
+
+とはいえ、このままだと
+
+- app.pyを編集したい場合、毎回コンテナを起動して、保存したければdocker commitをする必要がある
+- 毎回コンテナに対話型で接続して起動する必要がある。
+
+とかなり使いにくいです。
+
+これらをまとめてなんとかしていこうと思います。
+
+ということで、まずは先に改善した結果のDockerfileになります。
+
+**改善したDockerfile**
+
+```
+FROM alpine:3.7
+#flaskを起動するのに必要なパッケージ
+RUN apk update \
+    && apk add python3 \
+    && pip3 install flask
+
+#flaskアプリケーションを置く場所
+RUN mkdir /var/www/html/app -p
+
+#dockerを起動しているマシンのapp.pyをコンテナ内にコピーする
+COPY ./app.py /var/www/html/app
+
+#docker runをしたときにFlaskアプリケーション起動する
+CMD ["python3", "/var/www/html/app/app.py"]
+```
+
+まず、 `COPY`を用いてVagrtant上の仮想マシンに`app.py`を置いて、それをコンテナに渡すようにしてみます。   
+ついでに置く場所のディレクトリも、`RUN`を追加して作成するようにしてみました。
+
+最後に、`docker run`をしたときに実行される`CMD`にflaskを起動させるようにしてみました。
+
+ということで、早速ビルドして、実行してみます。
+
+**dockerのbuild**
+
+```
+$ docker build . -t tohu/flask:v2
+$ docker run -p 80:5000 tohu/flask:v2
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+```
+
+おお、いい感じに起動していることがわかります。
+
+### さらなる問題
+
+ところで、`ohankyy`ではなくって`Pinkyy'って表示したい場合、Vagrant上の`app.py'を修正するわけです。
+
+**app.py(Pinkyyに修正)**
+
+```
+from flask import Flask
+app = Flask( __name__ )
+
+@app.route("/")
+def hello():
+    return "Pinkyy"
+
+if __name__ == ' __main__':
+    app.run(host='0.0.0.0', port=5000)
+```
+
+修正したあとに、どれどれと、「[http://localhost:8000](http://localhost:8000)」にアクセスしても、相変わらず「ohankyy」のままです。  
+あら、っとコンテナを再起動しなきゃいけないのかしらと、再度立ち上げても結果はかわりません。
+
+というもの、Dockerfileに`COPY`を書きましたが、`docker build`したときにCOPYされているみたいなんですね。  
+ということは、`app.py'はイメージの中に含まれてしまっていて、変更を反映させたければ、再度ビルドする必要がありそうです。
+
+これだと、イメージサイズの分、ディスク容量を圧迫しますし、何より手間です。
+
+コンテナ起動時に、Vagrant上のファイルを読み込んでいただけないでしょうか。
+
+### マウント
+
+Vagrantがホストマシンとディレクトリを共有できるようにdockerもコンテナとホストマシン間でディレクトリを共有したりできるみたいです。
+
+参考にさせていただいた記事  
+[【Docker】Dockerでホストのディレクトリをマウントする - Qiita](https://qiita.com/Yarimizu14/items/52f4859027165a805630)<cite class="hatena-citation"><a href="https://qiita.com/Yarimizu14/items/52f4859027165a805630">qiita.com</a></cite>
+
+上記を参考に、試してみることにします。
+
+まずは、Dockerfileが置いてあるディレクトリに`src`ディレクトリを置き、今まで`COPY`していたファイルをsrc配下に移動しました。
+
+**マウントするディレクトリを作成する**
+
+```
+$ mkdir src
+$ mv app.py src
+```
+
+この状態で、マウントを試してみます。
+
+**srcディレクトリをマウントして起動する**
+
+```
+$ docker run -p 80:5000 -v /home/vagrant/docker-flask/src:/var/www/html/app tohu/flask:v2
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+```
+
+これで、一度ブラウザから内容を確認した後に、`app.py`を修正の上、再度アクセスしてみます。
+
+かわった！と思いきや変わってません。
+
+<figure class="figure-image figure-image-fotolife" title="かわったかな？"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180323/20180323105450.png" alt="f:id:konoemario:20180323105450p:plain" title="f:id:konoemario:20180323105450p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>かわったかな？</figcaption></figure>
+
+というのも、flaskが一度アクセスしたページをキャッシュしているかなんかで、変更されてません。  
+試しに、flaskを`ctrl + c`で落としてコンテナが落ちた後に、再度コンテナを起動してみます。
+
+今度はかわってることが確認できました！
+
+<figure class="figure-image figure-image-fotolife" title="かわった！"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180323/20180323132244.png" alt="f:id:konoemario:20180323132244p:plain" title="f:id:konoemario:20180323132244p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>かわった！</figcaption></figure>

@@ -1,0 +1,199 @@
+---
+title: CloudFunctionsを試す
+time: 2018-10-16 23:03
+---
+
+# 日記
+
+いろいろとつまみぐいをするような学習方法は螺旋階段のように、知識がついていって即効性はある反面、体系だった知識になりにくくって応用が利かないのがよくわかる。  
+どこかで一度立ち止まって、基礎を学んだほうがいいなーと思う今日この頃。
+
+# 本題
+
+サーバーレスの流れに乗っかって、画像とかデータとかをFirebaseのFireStogageだったりRealtimeDatabaseにデータをつっこんでたりしている。
+
+FireStorageにあげた画像のサイズがおもいのほかでかくって、もっと軽くして保存しておきたい。
+
+いろいろな方法がありそうなんだけれども、せっかくなのでCloudFunctionsをつかってみる。
+
+CloudFunctionsはNode.jsで書いたコードを実行してくれるサービスでAPIとして利用できる。  
+コードが実行されるタイミングは通常のAPIのようにHTTPリクエストがあったらレスポンスをするものだったり、FIrebaseのほかのサービスの何かの処理をトリガーにして動かしたりといろいろなことができるみたい。
+
+今回は、FIrbase Storageにpng画像をあげると、jepegに変換してくれるというサンプルを実行してみる。  
+肝心の画像の圧縮はまだできてなくってサンプルコードを動かしただけの内容。
+
+## 事前準備
+
+何をしたか描いておきたかったのに、時間が空きすぎて何したかあんま覚えていないけれども、こんなことをしたはず。
+
+- Google Cloud Platformのアカウントを用意しておく
+- プロジェクトをつくっておく
+- CloudFuntionsを有効しておく
+
+## サンプルコード
+
+firebaseのサンプルが以下のリポジトリにいっぱいある。  
+こちらの`convert-image`を試して見る。
+
+[firebase/functions-samples](https://github.com/firebase/functions-samples)<cite class="hatena-citation"><a href="https://github.com/firebase/functions-samples">github.com</a></cite>
+
+**サンプルプロジェクトをclone**
+
+```
+$ mkdir 任意のディレクトリ/firebase
+$ cd 任意のディレクトリ/firebase
+$ git clone https://github.com/firebase/functions-samples.git
+```
+
+CloudFunctionsで動かすコードをデプロイするにはfirebaseのCLIツールである`firebase-tools`が必要みたいなのでインストールする。
+
+**firebase cliの導入**
+
+```
+$ npm install -g firebase-tools
+```
+
+インストールしたら、サンプルコードのディレクトリに移動。
+
+**convert-imageを試してみる**
+
+```
+$ cd functions-samples/convert-images/
+```
+
+中身は、こんな感じ。
+
+**ディレクトリ構成**
+
+```
+$ tree -L 2
+.
+├── README.md
+├── firebase.json
+└── functions
+    ├── index.js
+    ├── package-lock.json
+    └── package.json
+```
+
+firebase.jsonが気になったけれども、中身を見ると`{}`だけが記載されており空っぽ。  
+READMEの通り、上記ディレクトリで`firebase deploy`を実行してみる。
+
+**デプロイ**
+
+```
+$ firebase deploy
+
+Error: Command requires authentication, please run firebase login
+```
+
+ログインしてとのことなので、まずはログインする。
+
+**firebaseにログイン**
+
+```
+$ firebase login
+
+Visit this URL on any device to log in:
+https://accounts.google.com/o/oauth2/auth?client_id=省略
+Waiting for authentication...
+
+✔ Success! Logged in as xxxxxxxxxxx
+```
+
+Google認証画面がブラウザで表示され、ぽちぽちしたことでログインできた。
+
+deployするにあたっては、`npm install`でpakage.jsonに書かれているパッケージたちをインストールしておく必要があるみたい。  
+必要なものはCloud Funcution側で依存解決するのかなと思ってたので意外。
+
+**firebaseにログイン**
+
+```
+$ npm install
+```
+
+パッケージをインストールしたら、再度デプロイしてみる。
+
+**firebaseにログイン**
+
+```
+$ firebase deploy
+$ firebase deploy
+
+=== Deploying to 'osake...プロジェクト名'...
+
+i deploying functions
+i functions: ensuring necessary APIs are enabled...
+✔ functions: all necessary APIs are enabled
+i functions: preparing functions directory for uploading...
+i functions: packaged functions (53.05 KB) for uploading
+✔ functions: functions folder uploaded successfully
+i functions: creating Node.js 8 function imageToJPG(us-central1)...
+✔ functions[imageToJPG(us-central1)]: Successful create operation. 
+
+✔ Deploy complete!
+```
+
+なんだかデプロイできたみたい。
+
+過去にブラウザからぽちっと3つほどfirebaseのプロジェクトを作ってたんだけど、そのうちの一つにデプロイされたみたい。  
+デフォルトのプロジェクトみたいな設定をした記憶がちょっとないんだけれども、どうなっているんだろう。
+
+おそらくは、firebase-cliをつかって、`firebase init`みたいなコマンドをたたくことで、そのディレクトリに紐づくプロジェクトとかを設定するんだと思う。 （その結果firebase.jsonが吐かれるんだとも)
+
+**※参考 プロジェクト一覧**
+
+```
+$ firebase list
+┌───────────┬───────────────────────┬─────────────┐
+│ Name │ Project ID / Instance │ Permissions │
+├───────────┼───────────────────────┼─────────────┤
+│ scrape │ scrape-xxxxx │ Owner │
+├───────────┼───────────────────────┼─────────────┤
+│ osake │ osake-xxxxx │ Owner │
+├───────────┼───────────────────────┼─────────────┤
+│ nuxt-blog │ nuxt-blog-xxxxx │ Owner │
+└───────────┴───────────────────────┴─────────────┘
+```
+
+さっそく、ブラウザでコンソールにログインして、対象のプロジェクトのFunctionsをみてみるとなんかできていることが確認できた。
+
+<figure class="figure-image figure-image-fotolife" title="Cloud Functionsの画面"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20181015/20181015232348.png" alt="f:id:konoemario:20181015232348p:plain" title="f:id:konoemario:20181015232348p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Cloud Functionsの画面</figcaption></figure>
+
+さっそく、該当のプロジェクトのStorageにpng画像をあげてみた。  
+うまくいけば、jpegに変換されるはず。
+
+<figure class="figure-image figure-image-fotolife" title="CloudStorageにアップロード"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20181015/20181015235954.png" alt="f:id:konoemario:20181015235954p:plain" title="f:id:konoemario:20181015235954p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>CloudStorageにアップロード</figcaption></figure>
+
+どれくらいかかるのかなーとしばらく(5ふんぐらい)待つもjpeg画像ができる気配がない。(ブラウザのリロードを忘れずに。)
+
+Functionsでログを確認すると、`admin is not defined`というエラーメッセージを吐いていた。
+
+<figure class="figure-image figure-image-fotolife" title="CloudFunctionsでエラー"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20181016/20181016000409.png" alt="f:id:konoemario:20181016000409p:plain" title="f:id:konoemario:20181016000409p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>CloudFunctionsでエラー</figcaption></figure>
+
+[公式のチュートリアル](https://firebase.google.com/docs/functions/get-started?hl=ja)を参考に、以下のコードを追加して、再度デプロイすることに。
+
+**index.js**
+
+```
+'use strict';
+
+const functions = require('firebase-functions');
+
+// 追加
+const admin = require('firebase-admin');
+admin.initializeApp();
+// ここまで
+
+const mkdirp = require('mkdirp-promise');
+const spawn = require('child-process-promise').spawn;
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
+```
+
+デプロイ後に再度画像をあげなおすと、無事、jpeg画像が生成されていることが確認できた。すごい。
+
+![f:id:konoemario:20181016225645p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20181016/20181016225645.png "f:id:konoemario:20181016225645p:plain")
+
+次は圧縮していく。

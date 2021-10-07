@@ -1,0 +1,302 @@
+---
+title: 3連休だしDocker環境でNuxt.jsをさわってみよう
+time: 2018-09-15 16:56
+---
+
+久々の更新。
+
+最近、Nuxt.jsとFirebaseで遊んでます。  
+さくさくつくれるからたのしい。
+
+なのでNuxt.jsの記事を書くことにした。
+
+- [Nuxt.jsを準備する](#Nuxtjs%E3%82%92%E6%BA%96%E5%82%99%E3%81%99%E3%82%8B)
+- [Dockerを準備する](#Docker%E3%82%92%E6%BA%96%E5%82%99%E3%81%99%E3%82%8B)
+  - [Dockerfile](#Dockerfile)
+  - [docker-compose.yml](#docker-composeyml)
+- [起動する](#%E8%B5%B7%E5%8B%95%E3%81%99%E3%82%8B)
+
+## Nuxt.jsを準備する
+
+さっそく、環境をつくっていきます。  
+適当な場所にディレクトリを作成します。
+
+お酒の画像をあげるサービスをつくってみようと思うので、ディレクトリ名は`osake`にします！
+
+**任意の場所にディレクトリを作成**
+
+```
+$ mkdir osake
+$ cd osake
+```
+
+次に、Nuxt.jsで作成するアプリケーションのディレクトリを作成していきます。 適当に`nuxt`とつけときました。
+
+**任意の場所にディレクトリを作成**
+
+```
+$ mkdir nuxt
+$ cd nuxt
+```
+
+ここに、Nuxt.jsを起動するコンテナの`Dockerfile`を置いておきます。 `Dockerfile`はあとで編集するので、とりあえず次に進みます。
+
+**Dockerfileを作成**
+
+```
+$ touch Dockerfile
+```
+
+続いて、Nuxt.jsをプロジェクトを作成します。  
+プロジェクトの作成方法はいろいろな方法があるみたいです。
+
+[Nuxt.js はじめました。プロジェクト作成で 5 つの方法を試した。](https://qiita.com/high-u/items/1d2e91e97495ac90d10c#4nuxt-communitycreate-nuxt-app-%E7%B7%A8)
+
+自分のホスト環境(自分のPC)にNode.jsをインストールしていて、npmやyarnなどのパッケージ管理ツールをいれているのであれば、vue-cliかcreate-nuxt-app等を使ってつくるのが手っ取り早いかと思います。
+
+ですが、せっかくDockerをつかうので、自分のホスト環境にはNode.js等はなるべくいれないで、コンテナ内で完結するようにしてみます。
+
+そこで今回は、vue-cliで引っ張ってくるスターターテンプレートをgitで直接もってきて、それをもとにプロジェクトを作成することにします。
+
+さきほど作成した`nuxt`ディレクトリ配下で`git clone`し、`src`ディレクトリに格納します。
+
+**スターターテンプレートをもってくる**
+
+```
+$git clone https://github.com/nuxt-community/starter-template src
+```
+
+スターターテンプレートのリポジトリをもってきたら、すこし作業が必要です。  
+リポジトリ内の`template`配下のファイルを作成した`src`配下にもってきます。
+
+このへんの作業を毎回やるのは面倒なので、githubに作業後の状態をあげています。  
+この段落の最後に貼ってます。
+
+**ほしいものだけの状態にする**
+
+```
+$cd src
+# いらないファイルを消す
+$rm LICENSE README.md meta.js 
+# リポジトリは別で作成するので、もともとのものは削除
+$rm -r .git
+# template配下の内容をsrc直下にする
+$mv template/* ./
+# 隠しファイルも忘れずに
+$mv template/.??* ./
+# ファイルの移動が終わったのでtempalteはいらない
+$rm -r template/
+```
+
+また、package.jsonの`name`、`description`、`author`を適宜修正しておきます。
+
+**package.jsonを修正しておく**
+
+```
+{
+  "name": "osake",
+  "version": "1.0.0",
+  "description": "My Nuxt.js Project",
+  "author": "tohu",
+```
+
+これで準備が整いました。
+
+以下は、スターターテンプレートの内容を修正した後の状態になります。
+
+**修正済みの内容**
+
+```
+$ git clone https://github.com/Ryomasao/nuxt-starter-template src
+```
+
+## Dockerを準備する
+
+次に、Nuxt.jsを動かすための環境をDockerでつくっていきます。  
+自分のホスト環境にDockerとdocker-composeを用意しておく必要があります。
+
+### Dockerfile
+
+最初に用意した`oskae`配下のディレクトリに用意した`Dockerfile`を以下のように編集します。
+
+**Dockerfile**
+
+```
+FROM node:9.11-alpine
+
+RUN apk --update add shadow &&\
+    rm -rf /var/cache/apk/* &&\
+    useradd --user-group --create-home app
+ENV HOME=/home/app
+
+COPY ./src/package.json $HOME/nuxt/
+RUN chown -R app:app $HOME/*
+ENV HOST 0.0.0.0
+USER app
+WORKDIR $HOME/nuxt
+RUN npm install --no-cache
+```
+
+やっていることを、上から簡単に見ていきます。
+
+ベースとなるOSですが、非常に軽い`Alpine`と呼ばれるOSイメージを使います。  
+下記は、`Alpine`にNode.jsのver9.11がインストールされた状態のイメージになります。
+
+**ベースイメージの選択**
+
+```
+FROM node:9.11-alpine
+```
+
+続いて、`shadow`と呼ばれるパッケージをインストールし、Nuxt.jsを実行するユーザー`app`をつくります。   
+`Alpine`は軽量なんですが、それだけに`useradd`とかのコマンドがデフォルトでないみたいなので、`shadow`をインストールしてます。
+
+**ユーザーの追加**
+
+```
+RUN apk --update add shadow &&\
+    rm -rf /var/cache/apk/* &&\
+    useradd --user-group --create-home app
+```
+
+テスト環境なのでrootユーザーで実行しても問題はなさそうですが、コンテナをフルで活用して本番環境でもがんがんつかっていくかもしれない未来のことを考えてユーザー作成を習慣化しておきます。
+
+そしたら環境変数HOMEに、appユーザーのホームディレクトリを指定し、ホスト環境のpackage.jsonをコンテナ内にコピーします。  
+ファイルの権限もappユーザーにしときます。
+
+**もろもろの準備**
+
+```
+ENV HOME=/home/app
+
+COPY ./src/package.json $HOME/nuxt/
+RUN chown -R app:app $HOME/*
+```
+
+最後に、Nuxt.jsを起動した際に、外部からの通信を受け入れるようにするために、「HOST」の設定を行い、appユーザーを使い、ホームディレクトリのnuxt配下で`npm install`しておしまいです！
+
+**もろもろの準備**
+
+```
+ENV HOST 0.0.0.0
+USER app
+WORKDIR $HOME/nuxt
+RUN npm install --no-cache
+```
+
+### docker-compose.yml
+
+`Dockerfile`の準備ができたら、docker-compose.ymlも用意します。   
+コンテナはひとつしかないので、docker-composeは使わなくてもいいような気がしますが、何かと便利で、こっちに慣れてしまったので、積極的に使っていきます。
+
+一番最初に作成した`oskae`ディレクトリ直下にdocker-compose.ymlを作成します。
+
+**docker-compose.ymlを作成**
+
+```
+$ touch dokcer-compose.yml
+```
+
+念のためですが、ディレクトリ構成はこんな感じになってます。  
+  
+**docker-compose.ymlを作成**
+
+```
+└── osake
+    ├── docker-compose.yml
+    └── nuxt
+        ├── Dockerfile
+        └── src
+```
+
+docker-compose.ymlを以下の内容に修正します。
+
+個別でみていく余力がなくなったので、内容をコメントに書いています。
+
+**docker-compose.yml**
+
+```
+version: '3'
+services:
+  nuxt:
+    # ./nuxt/Dockerfileをもとにnuxtコンテナを作成する
+    build: ./nuxt
+    # コンテナ起動時のコマンド
+    command: npm run dev 
+    # 特権モードを有効にしておく(いらないかも)
+    privileged: true
+    # コンテナ外部からport3000でアクセスできるようにする
+    ports:
+      - '3000:3000'
+    volumes:
+         # ホストOSとコンテナ内でNuxt.jsのソースコードを共有できるようする
+      - ./nuxt/src:/home/app/nuxt
+        # node_modulesはコンテナ内の内容で上書き
+      - /home/app/nuxt/node_modules
+```
+
+## 起動する
+
+長くなりましたが、もうそろそろ終わります。
+
+dokcer-compose.ymlが置いてあるディレクトリに移動して、以下のコマンドを叩きます。  
+そうすると、Dockerfileに記載されている内容で、イメージが作成されていきます。  
+Dockerfile内でnpm installを行なっているので、イメージにNuxt.jsに必要なパッケージもイメージに含まれることになります。
+
+**イメージの作成**
+
+```
+$ docker-compose build 
+
+Building nuxt
+Step 1/9 : FROM node:9.11-alpine
+ ---> a56170f59699
+Step 2/9 : RUN apk --update add shadow && rm -rf /var/cache/apk/* && useradd --user-group --create-home app
+ ---> Using cache
+ ---> a63d566ef7ae
+Step 3/9 : ENV HOME=/home/app
+ ---> Using cache
+ ---> 19fe73f63747
+Step 4/9 : COPY ./src/package.json $HOME/nuxt/
+ ---> 1b972d62d9cb
+Step 5/9 : RUN chown -R app:app $HOME/*
+ ---> Running in 2d8a1087b417
+Removing intermediate container 2d8a1087b417
+ ---> 51480aa38c2d
+Step 6/9 : ENV HOST 0.0.0.0
+ ---> Running in d74b0bd9c978
+Removing intermediate container d74b0bd9c978
+ ---> 68a8d499158d
+Step 7/9 : USER app
+ ---> Running in f33805224f35
+Removing intermediate container f33805224f35
+ ---> 2e45695157c5
+Step 8/9 : WORKDIR $HOME/nuxt
+ ---> Running in 764368a8fb0e
+Removing intermediate container 764368a8fb0e
+ ---> 352bf34020ce
+Step 9/9 : RUN npm install --no-cache
+```
+
+最後にコンテナを起動し、ログにOPENの内容が表示されたら、「[http://localhost:3000](http://localhost:3000)」にアクセスしてみましょう。
+
+**コンテナの作成 & 起動**
+
+```
+$ dokcer-compose up 
+
+Starting osake_nuxt_1 ... done
+Attaching to osake_nuxt_1
+nuxt_1 | 
+# 省略 
+nuxt_1 | DONE Compiled successfully in -6867ms06:54:01
+nuxt_1 | 
+nuxt_1 | 
+nuxt_1 | OPEN http://localhost:3000
+```
+
+こんな感じの内容が見ることができたら無事完了です！
+
+<figure class="figure-image figure-image-fotolife" title="起動した"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180915/20180915164411.png" alt="f:id:konoemario:20180915164411p:plain" title="f:id:konoemario:20180915164411p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>起動した</figcaption></figure>
+
+Nuxt.js本体にまったく触れることができませんでしたが、次回さわっていこうと思います。

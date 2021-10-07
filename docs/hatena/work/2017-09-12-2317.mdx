@@ -1,0 +1,83 @@
+---
+title: 
+time: 2017-09-12 23:17
+---
+
+[RaspBerry Pi Zeroの初期設定メモ - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/04/29/223718)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/04/29/223718">www.tohuandkonsome.site</a></cite>
+
+### GPIO Hammer Headerを使う
+
+![f:id:konoemario:20170912220106j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170912/20170912220106.jpg "f:id:konoemario:20170912220106j:plain:w500")
+
+#### イメージを取得する
+
+おもむろに、公式サイトにアクセスして、最軽量の「RASPBIAN STRETCH LITE」をダウンロードします。  
+[Download Raspbian for Raspberry Pi](https://www.raspberrypi.org/downloads/raspbian/)<cite class="hatena-citation"><a href="https://www.raspberrypi.org/downloads/raspbian/">www.raspberrypi.org</a></cite>
+
+#### イメージを書き込み
+
+例のごとく、「Etcher」というアプリケーションでイメージを書き込みます。  
+ ![f:id:konoemario:20170912215242p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170912/20170912215242.png "f:id:konoemario:20170912215242p:plain:w500")
+
+### MicroSDを挿す
+
+### いざ起動
+
+USBハブと、wifiドングルと、HDMIケーブルと、キーボードをつなげて、最後に電源ケーブルを挿すと、起動。
+
+キーボードが認識してくれれば、普通に入力できる。  
+初回のユーザーはpi、でログインパスワードはraspberryでログインできる。
+
+### キーボードレイアウトを変更する。
+
+以下のコマンドでラズパイのコンフィグ画面を開く。
+
+```
+$ sudo raspi-config
+```
+
+キーボードレイアウトを自分の環境に変更しておこう。  
+そのままで問題なければいいんだけれども、パイプ「|」とか打てなくて面倒だったりする。
+
+### sshで接続できるようにする
+
+```
+$ sudo raspi-config
+```
+
+### sshでパソコンから接続できるようにする
+
+#### 事前の確認
+
+**ネットワークカードであるwifiドングルが認識していること**
+
+```
+$ lsusb
+Bus 001 Device 004: ID 0411:01ee BUFFALO INC. (formerly MelCo., Inc.) WLI-UC-GNM2 Wireless LAN Adapter [Ralink RT3070]
+Bus 001 Device 005: ID 05ac:0251 Apple, Inc. 
+Bus 001 Device 003: ID 05ac:1006 Apple, Inc. Hub in Aluminum Keyboard
+Bus 001 Device 002: ID 05e3:0608 Genesys Logic, Inc. Hub
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+```
+
+Wireless Lan Adapter〜みたいなのがあるからOK！
+
+**同じくwifiドングルのデバイス名があること**
+
+```
+pi@raspberrypi:~ $ ifconfig
+wlan0 Link encap:Ethernet HWaddr 消した
+          UP BROADCAST MULTICAST MTU:1500 Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B) TX bytes:0 (0.0 B)
+```
+
+wlan0っていうのがDebian系の無線のデバイス名みたい！ あればOK！
+
+#### IPの固定
+
+#### interfaceの設定
+
+#### wpa-conの設定

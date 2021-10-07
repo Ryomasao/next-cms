@@ -1,0 +1,252 @@
+---
+title: Laravelで始めるTDD開発 (3):スタイルを整える
+time: 2017-11-29 22:43
+---
+
+# 前回
+
+[Laravelで始めるTDD開発(2) - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/11/27/222921)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/11/27/222921">www.tohuandkonsome.site</a></cite>
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171127/20171127221851.png" alt="f:id:konoemario:20171127221851p:plain" title="f:id:konoemario:20171127221851p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Threadの一覧</figcaption></figure>前回は、適当にったテストデータのThreadの一覧が、こんな感じで見えたところまでやりました。
+
+今回は、テストコードというところからは全く関係がなくなってしまうのですが、画面の見た目を整えていきたいと思います。
+
+- [前回](#%E5%89%8D%E5%9B%9E)
+  - [index.blade.phpを綺麗にする](#indexbladephp%E3%82%92%E7%B6%BA%E9%BA%97%E3%81%AB%E3%81%99%E3%82%8B)
+  - [scss(css)を書く](#scsscss%E3%82%92%E6%9B%B8%E3%81%8F)
+    - [ディレクトリ構成](#%E3%83%87%E3%82%A3%E3%83%AC%E3%82%AF%E3%83%88%E3%83%AA%E6%A7%8B%E6%88%90)
+    - [scssをcssにコンパイルする](#scss%E3%82%92css%E3%81%AB%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%99%E3%82%8B)
+  - [ここまでのソース](#%E3%81%93%E3%81%93%E3%81%BE%E3%81%A7%E3%81%AE%E3%82%BD%E3%83%BC%E3%82%B9)
+
+## index.blade.phpを綺麗にする
+
+bladeテンプレートの機能を使って、ヘッダ、コンテンツ、フッターぐらいは分けて、それぞれ再利用が効くようにしておきます。
+
+**views配下のディレクトリ構成**
+
+```
+.
+├── components
+│ ├── footer.blade.php
+│ └── header.blade.php
+├── layouts
+│ └── app.blade.php
+├── thread
+│ └── index.blade.php
+```
+
+ヘッダーはこんな感じにしました。  
+Googleの日本語フォントを使用してみようと思います。
+
+また後ほど編集するスタイルシート`app.css`を読み込んでおきます。
+
+**header.blade.php**
+
+```
+<html lang="{{ app()->getLocale() }}">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>{{ config('app.name', 'Laravel') }}title>
+
+    
+    <link href="https://fonts.googleapis.com/earlyaccess/sawarabigothic.css" rel="stylesheet" />
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+head>
+```
+
+フッターに関しても、どこかで使うかもしれないjavascirptを読み込んで置きます。
+
+**footer.blade.php**
+
+```
+<script src="{{ asset('js/app.js') }}">script>
+```
+
+上記header、footerをまとめてレイアウトに含んでおきます。  
+こちらは、今回作成するWebサイトは基本的にこちらのレイアウトを継承して作成します。
+
+**app.blade.php**
+
+```
+@include('../components/header')
+<body>
+    @yield('content')
+    @include('../components/footer')
+body>
+html>
+```
+
+そして、こちらが今回さわるスレッド一覧ページです。  
+こんな感じにしてみました。
+
+**index.blade.php**
+
+```
+@extends('layouts.app')
+@section('content')
+<div class="container">
+    <h1>This is Thread!h1>
+    <div class="threads">
+        @foreach($threads as $thread)
+        <div class="thread">
+            <h1> {{ $thread->title }} h1>
+            <p> {{ $thread->body }} p>
+        div>
+        @endforeach
+    div>
+div>
+@endsection
+```
+
+## scss(css)を書く
+
+さて、見た目を整えていくにはスタイルシートを書いていくのですが、せっかくなのでscssで書いていきます。
+
+scssをコンパイルするとcssになります。 (ひどい説明)
+
+[プログラマーから見た、SCSSの正しい(かもしれない)使いかた - Qiita](https://qiita.com/sasuraisan/items/9a9dfb281cfdf5a12bd3)<cite class="hatena-citation"><a href="https://qiita.com/sasuraisan/items/9a9dfb281cfdf5a12bd3">qiita.com</a></cite>
+
+pugとhtmlみたいな関係ですね！
+
+きっと、cssが抱えている不便さだっり、問題を解消するためのものだろうと思うのですが、保守を考えてcssを書いたり、複数人で書いたりしたことがないので、いまいちcssの課題みたいなのが見えていないです。
+
+とはいえ、HTMLとCSSっがすごい苦手なのは間違いないので、良いと評判のものは積極的に使っていきたいと思います。
+
+### ディレクトリ構成
+
+とりあえず以下のような構成でファイルを作成してみました。
+
+**/resources/assets/sass配下**
+
+```
+├── app.scss
+└── components
+    ├── _thread.scss
+    └── _variables.scss
+```
+
+`app.scss`やら`_variables.scss`やらはデフォルトで用意されているので、既存のコードをまっさらにして、`variable_scss`はcomponentsディレクトリ配下に移動しています。
+
+`_thread.scss`は新規で作成したファイルですね。
+
+まずは、`_thread.scss`を以下ように書いてみます。
+
+**\_thread.scss**
+
+```
+//threadの一覧をwrapするクラス
+.threads{
+    display: flex;
+    flex-wrap: wrap;
+}
+
+//threadそのもの
+.thread{
+    margin: 10px;
+    background: $mainColor;
+    color:$subColor;
+    width: 300px;
+    height: 350px;
+}
+```
+
+せっかくsassを使っているので、サイトのカラーは変数としてまとめて置いておきます。
+
+**\_variables.scss**
+
+```
+//色
+$mainColor: #4517FB;
+$subColor: #C7FE01;
+```
+
+app.scssは上記を束ねるファイルとして以下のように書きます。
+
+**app.scss**
+
+```
+//色
+//npm install normalize.css　でインストールしたものを読み込む
+@import "~normalize.css";
+//共通で使える変数はここに書く
+@import "components/variables";
+//Threadページはここに書く
+@import "components/thread";
+
+body{
+    font-family: "Sawarabi Gothic";
+}
+```
+
+`@import "~normalize.css"`はnode.jsのパッケージマネージャ「npm」で normalize.cssをインストールしておくと、@importで読み込めるみたい。  
+でも、チルダ(~)の意味とかがいまいちわからないんだなぁ。
+
+### scssをcssにコンパイルする
+
+さきほど、scssをコンパイルするとcssになると記載しました。  
+ということはコンパイラが必要になります。
+
+えー、めんどくさいと思ったあなた。大丈夫です。Laravelに標準で用意されています。
+
+プロジェクトのルートディレクトリでnpmのコマンドを叩きましょう。
+
+**コンパイラのインストール**
+
+```
+$ sudo npm install
+```
+
+ルートディレクト配下にある`package.json'に書かれているjavascirptの便利なパッケージたちが、'node\_modules'配下にインストールされていきます。  
+scssをコンパイルするためのコンパイラもその中に入ってます。
+
+ちょっと蛇足ですが、「scss　コンパイル」とかで検索するといろいろでてくるかと思います。
+
+scssをコンパイルするだけであれば以下のようにシンプルなコマンドで使えるパッケージがあったりもします。
+
+**コンパイルするイメージ**
+
+```
+//hoge.scss がhoge.cssになるかんじ
+$ saas hoge.scss
+```
+
+一方、Laravelが用意しているものは、laravel-mixと呼ばれるものが用意されています。
+
+以下は、app.scssをコンパイルするための`webpack.mix.js`になるます。
+
+**webpack.mix.js**
+
+```
+let mix = require('laravel-mix');
+
+//app.scssをpublic/css配下にapp.cssとして出力するよ  
+mix.sass('resources/assets/sass/app.scss', 'public/css');
+```
+
+こんな感じに`webpack.mix.js`を書いたら、以下のコマンドでコンパイルします。
+
+**コンパイル**
+
+```
+npm run dev
+```
+
+こうすることで、app.cssが生成されたかと思います。
+
+とりあえず画面はこんな感じになりました。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171129/20171129223620.png" alt="f:id:konoemario:20171129223620p:plain" title="f:id:konoemario:20171129223620p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>/threadにアクセスした場合</figcaption></figure>
+
+今回はTDDとはまったく関係のない話でしたが、正直なところなにがなんだかわからないよ！という感想を持ちますね。
+
+次回に続きます。
+
+## ここまでのソース
+
+[Ryomasao/forum](https://github.com/Ryomasao/forum/tree/tdd3)<cite class="hatena-citation"><a href="https://github.com/Ryomasao/forum/tree/tdd3">github.com</a></cite>

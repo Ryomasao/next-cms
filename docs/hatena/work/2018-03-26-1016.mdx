@@ -1,0 +1,291 @@
+---
+title: Dockerをさわってみる（２）：シンプルなWebアプリケーションを実行する
+time: 2018-03-26 10:16
+---
+
+# 前回からの続き
+
+[Dockerをさわってみる（１）：HelloWorld - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2018/03/21/193730)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2018/03/21/193730">www.tohuandkonsome.site</a></cite>
+
+引き続き、公式チュートリアルを進めていきたいと思います。
+
+- [前回からの続き](#%E5%89%8D%E5%9B%9E%E3%81%8B%E3%82%89%E3%81%AE%E7%B6%9A%E3%81%8D)
+  - [dockerでシンプルなWebアプリケーションを実行する](#docker%E3%81%A7%E3%82%B7%E3%83%B3%E3%83%97%E3%83%AB%E3%81%AAWeb%E3%82%A2%E3%83%97%E3%83%AA%E3%82%B1%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%99%E3%82%8B)
+    - [起きたこと](#%E8%B5%B7%E3%81%8D%E3%81%9F%E3%81%93%E3%81%A8)
+    - [横道にそれてFlaskを使う環境を用意してみる](#%E6%A8%AA%E9%81%93%E3%81%AB%E3%81%9D%E3%82%8C%E3%81%A6Flask%E3%82%92%E4%BD%BF%E3%81%86%E7%92%B0%E5%A2%83%E3%82%92%E7%94%A8%E6%84%8F%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+    - [道に戻り、dockerのイメージをつくってみる](#%E9%81%93%E3%81%AB%E6%88%BB%E3%82%8Adocker%E3%81%AE%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E3%82%92%E3%81%A4%E3%81%8F%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B)
+
+## dockerでシンプルなWebアプリケーションを実行する
+
+早速、Webアプリケーションを実行するdockerのコンテナを起動してみようと思います。
+
+公式のコマンドに従い、以下を実行します。
+
+**dockerでWebアプリケーションを実行する**
+
+```
+docker run -d -p 80:5000 training/webapp python app.py
+Unable to find image 'training/webapp:latest' locally
+latest: Pulling from training/webapp
+e190868d63f8: Pull complete
+909cd34c6fd7: Pull complete
+0b9bfabab7c1: Pull complete
+a3ed95caeb02: Pull complete
+10bbbc0fc0ff: Pull complete
+fca59b508e9f: Pull complete
+e7ae2541b15b: Pull complete
+9dd97ef58ce9: Pull complete
+a4c1b0cb7af7: Pull complete
+Digest: sha256:06e9c1983bd6d5db5fba376ccd63bfa529e8d02f23d5079b8f74a616308fb11d
+Status: Downloaded newer image for training/webapp:latest
+66d7c357bfa77920af4bd5c7fbc3082c70885afcdd6a2d01ed1122cb8028782e
+```
+
+実行した後に`http://localhost`にアクセスしてみると、「Hello World」がブラウザの表示されることが確認できます。
+
+<figure class="figure-image figure-image-fotolife" title="localhost:8000"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180322/20180322123752.png" alt="f:id:konoemario:20180322123752p:plain" title="f:id:konoemario:20180322123752p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>localhost:8000</figcaption></figure>
+
+さて、何が起こったのでしょう。
+
+### 起きたこと
+
+まず、`training/webapp`です。  
+ログをみると、そんなもんローカルにないから、リモートからとってくるぜ(pull)みたいな感じのことが書かれています。
+
+どっからとってくるかというのは、「docker hub」というdockerのイメージ？を扱っているサイトです。
+
+試しにdocker hubのアカウントを作って、`training/webapp`を検索してみました。
+
+[https://hub.docker.com/r/training/webapp/](https://hub.docker.com/r/training/webapp/)
+
+それっぽいやつが見つかりましたね。こちらをとってきているみたいです。
+
+これをとってきたあとに、`python app.py`を実行してます。  
+`python app.py`ですが、Pythonの軽量Webフレームワークである「Flask」を起動しているコマンドです。
+
+※「Flask」そのものは、以前使ったことがあるんだよ！   
+[RaspBerryPiでラジコンをつくる(11)：socket.ioをFlaskで実装する - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/07/20/230249)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/07/20/230249#Flask%E3%81%A8%E3%81%AF">www.tohuandkonsome.site</a></cite>
+
+このFlaskがポート5000番代で待ち受けていて、そこにリクエストを投げると、HelloWorldのレスポンスを返している感じですかね！
+
+<figure class="figure-image figure-image-fotolife" title="localhost:8000にアクセスしたときの流れ"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180322/20180322143631.png" alt="f:id:konoemario:20180322143631p:plain" title="f:id:konoemario:20180322143631p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>localhost:8000にアクセスしたときの流れ</figcaption></figure>
+
+この状態を、dockerを使わずにVagrantで起動している仮想マシン上で実現しようとすると
+
+- pythonのインストール
+- Flaskのインストール
+- Flaskのプロジェクト作成
+- Hello Wolrdをレスポンスで返すよう修正
+- Webアプリケーションの起動
+
+あたりの作業が必要になります。
+
+せっかくなんでやってみますかね！
+
+### 横道にそれてFlaskを使う環境を用意してみる
+
+<figure class="figure-image figure-image-fotolife" title="横道にそれる豚"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180322/20180322144751.png" alt="f:id:konoemario:20180322144751p:plain" title="f:id:konoemario:20180322144751p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>横道にそれる豚</figcaption></figure>
+
+何はともあれ、Pythonが必要になります。 Vagrantで起動している仮想マシン(Amazon Linux)には既にPythonの2系が入っていました。   
+**pythonのバージョンの確認**
+
+```
+$ python -V
+Python 2.7.12
+```
+
+が、せっかくなんでpyhon3系を導入しようと思います。
+
+そして、python3系ど導入するにあたっては、pythonのバージョン管理を行うことができる`pyenv`を使ってpython3を導入したいと思います。  
+（どんどん横道に逸れていくね！)
+
+インストールにあたって参考にさせていただいた記事。
+
+[Pyenvの使い方 - Qiita](https://qiita.com/mogom625/items/b1b673f530a05ec6b423)  
+[Amazon LinuxでPython3系を使う - Qiita](https://qiita.com/michimani/items/fc64dcbe721d91579ccb)
+
+なんだかよくわかりませんが、必要なライブラリは突っ込んでおきます！
+
+**pyenvに必要なライブラリをインストールする**
+
+```
+$ sudo yum install gcc gcc-c++ make git openssl-devel bzip2-devel zlib-devel readline-devel sqlite-devel
+```
+
+次にpyenvを導入します。
+
+**pyenvをインストールする**
+
+```
+curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+WARNING: seems you still have not added 'pyenv' to the load path.
+
+# Load pyenv automatically by adding
+# the following to ~/.bash_profile:
+
+export PATH="/home/vagrant/.pyenv/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+```
+
+`.bash_profile`にパスを通してね！って言われるので、言う通りにします。
+
+**.bash\_profileに追記する**
+
+```
+export PATH="/home/vagrant/.pyenv/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
+export PATH
+```
+
+そしたら変更を反映させます。
+
+**環境変数を反映させる**
+
+```
+$ source ~/.bash_profile
+```
+
+ここまできたら、pyenvを実行してみます。
+
+**pyenvの動作確認**
+
+```
+$ pyenv -v
+pyenv 1.2.2
+```
+
+ヒーハー！  
+大丈夫そうです。
+
+続いて、Python3系をインストールします。  
+`pyenv install <version>`で指定したVersionをインストールすることができます。   
+これはちょっと時間がかかりました。
+
+**Python3.6.1をインストールする**
+
+```
+$ pyenv install 3.6.1
+```
+
+最後に、使用するバージョンを指定します。
+
+**Python3.6.1を使用するようにする**
+
+```
+$ pyenv global 3.6.1
+```
+
+確認の意味を込めて、pythonのバージョンを確認します。
+
+**確認**
+
+```
+$ python -V
+Python 2.7.12
+```
+
+ありがとう！  
+ってかわってない！みたいなことがありました。
+
+ぐぐってみますと、`pyenv rehash`なるコマンドを叩けばいいとのこと。
+
+**なんだかわからないけれども**
+
+```
+$ pyenv rehash
+$ python -V
+Python 3.6.1
+```
+
+無事、変更されました。
+
+次に、Flaskを準備してみます。  
+こちらも公式チュートリアルに則って、先にコードから書いちゃいます。
+
+[Welcome | Flask (A Python Microframework)](http://flask.pocoo.org/)
+
+**作業ディレクトリとapp.pyを作成**
+
+```
+$ mkdir flask
+$ cd flask
+$ vim app.py
+```
+
+唯一のPythonファイル`app.py`は公式そのまんまです。  
+**app.py**
+
+```
+from flask import Flask
+app = Flask( __name__ )
+
+@app.route("/")
+def hello():
+    return "Hello World!"
+
+if __name__ == ' __main__':
+    app.run(host='0.0.0.0')
+```
+
+中身は、`/`にリクエストすると、`Hello World`をレスポンスとして返す、ってことがなんとなくわかるかと思います。
+
+次に、Flaskをインストールします。  
+インストールにはpythonのパッケージ管理を行う`pip`を使います。Python3系なら？デフォルトで入ってるみたいです。
+
+**Flaskをインストール**
+
+```
+$ pip install Flask
+```
+
+さくっとインストールしたら、起動してみましょう。
+
+**Flaskを起動する**
+
+```
+$ python app.py
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+```
+
+こんな感じで、Webアプリケーションが立ち上がることが確認できるかと思います。
+
+さっそくアクセスしてみたいのですが、Vagrantで起動している仮想マシンのポート5000番を開ける必要があります。
+
+**Vagrantfileに一行追加する**
+
+```
+config.vm.network "forwarded_port", guest: 5000, host: 5000
+```
+
+**Vagrantの再起動**
+
+```
+$ vagrant reload
+```
+
+再度、`vagrant ssh`なりして仮想マシンに接続後、Flaskを立ち上げて、  
+「[http://localhost:5000](http://localhost:5000)」にアクセスすると 、以下が表示されます！
+
+<figure class="figure-image figure-image-fotolife" title="http://localhost:5000にアクセス"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180322/20180322142035.png" alt="f:id:konoemario:20180322142035p:plain" title="f:id:konoemario:20180322142035p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption><a href="http://localhost:5000">http://localhost:5000</a>にアクセス</figcaption></figure>
+
+### 道に戻り、dockerのイメージをつくってみる
+
+さて、dockerを調べてたのになぁみたいな状態になっちゃったのでもとに戻ります。
+
+一から、Flaskを使用する環境を使うと結構面倒なのですが、dockerの用意されているイメージを使うと、一瞬で環境をつくることができました。
+
+また、仮想マシンに直接pythonをインストールする際、pythonのバージョン管理ができるようにpyenvを導入したりもしました。   
+これは、ひとつのサーバー上にバージョンが異なるアPythonプリケーションが動くようにという意図があります。  
+(とはいえひとつのサーバーに異なるバージョンのpythonアプリケーションが動いているっていうのはあんまり考えにくいかもしれませんが)
+
+dockerであれば、pyenvを利用しなくともdockerで作成したコンテナ上に直接pythonをインストールしてもまったく問題なさそうです。  
+異なるバージョンのであれば、コンテナそのものを分けるってイメージですかね。
+
+とはいえ、既存の`training/webapp`について、`Hello Wolrd`ではなく`Ohanky!`を返すようにするにはどうしたらいいのかとか、さっぱりわかりません。
+
+なので、既存イメージを利用するだけではなく、イメージを作成する、ということをしていこうと思います。
+
+[Dockerをさわってみる（3）：ちょっと振り返り - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2018/04/12/205328)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2018/04/12/205328">www.tohuandkonsome.site</a></cite>

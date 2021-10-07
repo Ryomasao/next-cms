@@ -1,0 +1,274 @@
+---
+title: ラズパイにNode.js + NginxでWebサービスを公開するまで
+time: 2018-02-24 20:47
+---
+
+## ユーザーを追加する
+
+参考にさせていただいた記事  
+[実は簡単！Linuxユーザの作成方法と追加方法](https://eng-entrance.com/linux-user-add)
+
+[RaspberryPiをRaspbianで使う場合の初期設定メモ（ユーザ追加） - Qiita](https://qiita.com/R-STYLE/items/b481ba2d695ddf8bcee4)
+
+[node.jsアプリをLinuxサーバーで公開してみよう | TIPS | BOEL Inc. ボエル](https://boel.jp/tips/vol63_nodejs2.html)
+
+```
+$ su -
+```
+
+```
+$ useradd -m tohu
+```
+
+-mオプションはホームディレクトリを作ってくれる
+
+```
+$ groupadd app
+```
+
+```
+$ usermod -aG app pi
+```
+
+変更するユーザー自身はログアウトしないと反映されないので注意。
+
+```
+$ chgrp -R app html
+```
+
+```
+$ ls -l
+total 4
+drwxr-xr-x 3 root app 4096 Feb 24 12:41 html
+```
+
+```
+pi@raspberrypi:/var/www$ sudo chmod 775 html
+pi@raspberrypi:/var/www$ ls -l
+total 4
+drwxrwxr-x 3 root app 4096 Feb 24 12:41 html
+```
+
+## Node.js
+
+### Node.jsのバージョンを管理するnodebrewをインストール
+
+**nodebrewのインストール**
+
+```
+$ curl -L git.io/nodebrew | perl - setup
+
+========================================
+Add path:
+
+export PATH=$HOME/.nodebrew/current/bin:$PATH
+========================================
+```
+
+パスを追加してねといわれるので、`.bash_profile`にパスを追加する。
+
+**.bash\_profile**
+
+```
+$ vi .bash_profile
+
+export PATH=$HOME/.nodebrew/current/bin:$PATH
+```
+
+環境変数を再度読み込む。
+
+**環境変数読み込み**
+
+```
+$ source ~/.bash_profile
+```
+
+`nodebrew`を叩いて、バージョンやらなんやらでてきてるのでできたっぽい。  
+**確認**
+
+```
+$ nodebrew
+
+nodebrew 0.9.8
+```
+
+### Node.jsをインストールする
+
+**インストールできるバージョンの一覧を確認**
+
+```
+$ nodebrew ls-remote
+```
+
+現在(2018/2/24)のCurrentは公式によると、`v9.6.1`だったのでこれにする。
+
+[Node.js](https://nodejs.org/en/blog/)
+
+**Nodeをインストール**
+
+```
+$ nodebrew install-binary v9.6.1
+```
+
+`binary`をつけるとコンパイル済み？の状態をとってくるので、速攻でインストールが終わる。
+
+**バージョン選択と確認**
+
+```
+$ nodebrew use v9.6.1
+use v9.6.1
+
+$ node -v
+v9.6.1
+```
+
+Node.jsはこれでいけた。
+
+Node.jsのパッケージ管理ツールの`npm'もインストールしょうと思ったら、Node.jsに含まれていたので、そのまま使えた。
+
+**npmの確認**
+
+```
+npm -v
+5.6.0
+```
+
+## Express
+
+## アプリケーションを置くディレクトリを作成
+
+```
+sudo mkdir /var/www/html/app -p
+```
+
+所有者、およびグループを変更する
+
+```
+chown -R user:group file
+```
+
+```
+$ npm init
+```
+
+```
+$ npm install express-generator --save
+```
+
+```
+$ ./node_modules/.bin/express --view=pug --css=sass app
+
+   create : app
+   create : app/package.json
+   create : app/app.js
+   create : app/public
+   create : app/routes
+   create : app/routes/index.js
+   create : app/routes/users.js
+   create : app/views
+   create : app/views/index.pug
+   create : app/views/layout.pug
+   create : app/views/error.pug
+   create : app/bin
+   create : app/bin/www
+   create : app/public/javascripts
+   create : app/public/images
+   create : app/public/stylesheets
+   create : app/public/stylesheets/style.sass
+
+   install dependencies:
+     $ cd app && npm install
+
+   run the app:
+     $ DEBUG=app:* npm start
+```
+
+```
+$ cd app && npm install
+```
+
+expressのインストールが結構長い
+
+### お試しで起動
+
+```
+$ npm run start
+
+> app@0.0.0 start /var/www/html/app/app
+> node ./bin/www
+```
+
+「http://ラズパイのIP:3000」でアクセスすると参照できる。
+
+### foreverのインストール
+
+```
+$ npm install forever -g
+```
+
+```
+$ forever start bin/www
+```
+
+これで再度3000ポートにアクセスして起動することを確認する。
+
+### nginx のインストール
+
+debian系で確認しよう
+
+```
+
+```
+
+```
+$ nginx -v
+nginx version: nginx/1.12.1
+```
+
+```
+sudo service nginx start
+```
+
+80ポートにアクセスして、nginxのWelcomeページが表示されることを確認する。
+
+[さくらのVPSにnginxとNode.jsの環境を構築したメモ - Qiita](https://qiita.com/azk0305/items/1b11689516169e04041a)
+
+### nginx経由でexpressを起動する
+
+```
+$ cd /etc/nginx
+```
+
+nginx.confが設定ファイル。nginx.confの中には個別設定ファイル、conf.dを読むようになってる。
+
+```
+$ cd conf.d
+```
+
+```
+$ ls
+virtual.conf
+```
+
+`default.conf`を参考にとあるんだけれども、virtual.confしかない。 とりあえず`virutal.conf`をコピーしてつくろう。`virutal.conf`自体はコメントアウトされてる。
+
+```
+sudo cp virtual.conf express.conf
+```
+
+```
+upstream backend{
+        server localhost:3000;
+}
+
+server {
+    listen 80;
+    server_name ec2-13-231-108-7.ap-northeast-1.compute.amazonaws.com;
+
+    location / {
+        #root html;
+        #index index.html index.htm;
+        proxy_pass http://backend;
+    }
+}
+```

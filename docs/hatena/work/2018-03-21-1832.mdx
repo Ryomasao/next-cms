@@ -1,0 +1,30 @@
+---
+title: dockerメモ
+time: 2018-03-21 18:32
+---
+
+#### 
+
+[https://github.com/KeitaMoromizato/docker-sample-1](https://github.com/KeitaMoromizato/docker-sample-1)
+
+## docker compose
+
+dockerのコンテナ同士を連携させるのは、結構大変みたい。 ところがcomposeを使うと楽になるという機能。
+
+[https://qiita.com/y\_hokkey/items/d51e69c6ff4015e85fce](https://qiita.com/y_hokkey/items/d51e69c6ff4015e85fce)
+
+インストールした。[Install Docker Compose | Docker Documentation](https://docs.docker.com/compose/install/#prerequisites)
+
+インストールを、vagrantユーザーでやったせいか、docker-composeのパスがsudoだと通らない。 sudoなしでできるようにdockerグループを追加した。
+
+[Dockerコマンドをsudoなしで実行する方法 - Qiita](https://qiita.com/DQNEO/items/da5df074c48b012152ee)
+
+### docker-sample2
+
+localhost:8080 にアクセスすると表示されるとのことだけれども、vagrant上にdockerがのっかってるので、vagrantfileにportforwardの設定を追加する。
+
+dokcer-compose down で落とせる
+
+一回、Laravelでやったほうがわかりやすいかもしれないので。
+
+[Dockerでlaravel環境構築(php-fpm,nginx,mysql,redis) - Qiita](https://qiita.com/meidaimae/items/1b5902e2e520ece34b9a)

@@ -1,0 +1,129 @@
+---
+title: RaspBerryPiでラジコンをつくる(9)：軽量化問題を解消するためのたったひとつの冴えたやり方
+time: 2017-06-20 10:38
+---
+
+久々のラジコン記事です。  
+Djangoやら転職活動やらで書けてなかったのですが、ちょこちょこやってはいたので、成果を書きます！
+
+# 前回のつづき
+
+[RaspBerryPiでラジコンをつくる(8)：コントローラをつくる - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/05/16/215317)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/05/16/215317">tohutokonsome.hatenablog.com</a></cite>
+
+とりあえずですが、当初の目標は達成できました！
+
+> その過去の代償を払うためには私自身がラジコンを作る必要があるのではないのでしょうか。 そして完成したラジコンは今は亡き、お婆ちゃんに捧げます。
+> 
+> <cite><a href="http://tohutokonsome.hatenablog.com/entry/2017/02/26/005009">ラズパイ（RaspberyyPi3)を買ってきた - 豆腐とコンソメ</a></cite>
+
+3ヶ月前の記事を見返したのですが、目標であるラジコンをつくる、という部分は改善点はあるものの、以下のとおりのものができました。
+
+![f:id:konoemario:20170619215609g:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619215609.gif "f:id:konoemario:20170619215609g:plain")
+
+これだけでもかなり嬉しいのですが、いざやってみると、カメラをつけたいとか、音楽も鳴らしたいとかいろいろでてきてしまうわけです。
+
+しかし、ラジコンに最低限必要な部品を載せるだけで、以下の通りいっぱいいっぱいなのです。
+
+![f:id:konoemario:20170619215744j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619215744.jpg "f:id:konoemario:20170619215744j:plain:w500")
+
+軽量化にしても、ラズパイZeroをつかったり、バッテリーを小さなものを買ったりとしていて、自身のできる範囲ではこれ以上はないように思えます。
+
+ではどうするか。
+
+車を大きくすればいいじゃないか。
+
+![f:id:konoemario:20170619220133j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619220133.jpg "f:id:konoemario:20170619220133j:plain:w500")
+
+ということで「レゴ (LEGO) テクニック メルセデス・ベンツ アロクス 」を買ってきました。
+
+レゴショップで購入したのですが、子供たちが小さなパッケージを、ご両親にねだっている隣で、特大のパッケージを買うのはなんとも言えない優越感を覚えました。「これが大人ってやつだよ」というのを見せつけちゃいましたね。 ただ、奥さんから「お前、来月から無職じゃねえかよ！」といろいろと罵倒されましたが、「結婚指輪はいらないので、レゴブロックを買ってください！と懇願することで、奥さんに買っていただけることになりました。
+
+# 組み立て
+
+勢いで買ってきたものの、こいつの大きさは半端ないです。 わかりにくい比較で、申し訳ないのですが前回のラジコンカーの箱と比べるとこんな感じです。
+
+![f:id:konoemario:20170619222512j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619222512.jpg "f:id:konoemario:20170619222512j:plain:w500")
+
+そして部品はこんな感じで、  
+ ![f:id:konoemario:20170619222721j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619222721.jpg "f:id:konoemario:20170619222721j:plain:w500")
+
+説明書もPCゲームの「Age of Empires II 」を買ったとき並の分厚さです。
+
+![f:id:konoemario:20170619222702j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619222702.jpg "f:id:konoemario:20170619222702j:plain:w500")
+
+これの組み立てなのですが、平日の仕事終わりに2時間組み立てては片付け、週末は集中というサイクルでやっていったのですが15時間くらいはかかった気がします。
+
+以降は、完全に個人の思い出なのですが、日々の成長の様子になります。
+
+![f:id:konoemario:20170619223234j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619223234.jpg "f:id:konoemario:20170619223234j:plain:w500") ![f:id:konoemario:20170619223246j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619223246.jpg "f:id:konoemario:20170619223246j:plain:w500") ![f:id:konoemario:20170619223327j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619223327.jpg "f:id:konoemario:20170619223327j:plain:w500") ![f:id:konoemario:20170619223422j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619223422.jpg "f:id:konoemario:20170619223422j:plain:w500") ![f:id:konoemario:20170619223516j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619223516.jpg "f:id:konoemario:20170619223516j:plain:w500") ![f:id:konoemario:20170619223609j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619223609.jpg "f:id:konoemario:20170619223609j:plain:w500") ![f:id:konoemario:20170619223737j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619223737.jpg "f:id:konoemario:20170619223737j:plain:w500")
+
+７日目にしてようやく完成しましたが、前回のラジコンカーと比べるとかなり大きいです。
+
+# 解体する
+
+完成してビールを飲みながら１時間程度堪能したら、ある程度、解体しました。
+
+![f:id:konoemario:20170619224126j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619224126.jpg "f:id:konoemario:20170619224126j:plain:w500")
+
+前回も前々回も、作り終わったら解体する、ということを経験してきたのですが、今回はかなりつらい作業になりました。
+
+なんで解体するの？っていう点ですが、このダンプカーは、走る、曲がるという機能について考慮はされているのですが、デフォルトの状態では、走ったり曲がったりはしません。  
+標準のモーターの機能では、ダンプカーの荷台を持ち上げる、ショベルカー部分を動かす等になります。
+
+興味のある方は、以下の動画が参考になるかと思います。
+
+<iframe width="480" height="270" src="https://www.youtube.com/embed/ot8_nzBAXm8?feature=oembed" frameborder="0" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://youtu.be/ot8_nzBAXm8">youtu.be</a></cite>
+
+ある程度バラし終わったら、前回のラジコンカーと同様に、モーターやらサーボモーターやらをつけていきます。
+
+![f:id:konoemario:20170619225917j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619225917.jpg "f:id:konoemario:20170619225917j:plain:w500")
+
+以前はMモーターの中身を開けて、ジャンパー線をつけていたのですが、今回はモーターの付属のケーブルを切って、中の線にジャンパー線をつなぐというアプローチをとってみました。
+
+XLモーターだけで3000円くらいするので、結構ドキドキしながら以下のように切っちゃいます。
+
+![f:id:konoemario:20170619225936j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619225936.jpg "f:id:konoemario:20170619225936j:plain:w500")
+
+電池ボックスと同じ要領で、以下のように、2本目と3本目を剥きます。
+
+![f:id:konoemario:20170619230042j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619230042.jpg "f:id:konoemario:20170619230042j:plain:w500")
+
+モータードライバー経由で動くことを確認をしました。 ※電池ボックスも前回使用したものを使ってます。
+
+![f:id:konoemario:20170619230011j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619230011.jpg "f:id:konoemario:20170619230011j:plain:w500")
+
+最後にジャンパー線をくっつけてモーター完成です。
+
+![f:id:konoemario:20170619230045j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619230045.jpg "f:id:konoemario:20170619230045j:plain:w500")
+
+# とりあえず完成
+
+いろいろと雑ですが、こんな感じで動くものができました！ ![f:id:konoemario:20170619231211j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619231211.jpg "f:id:konoemario:20170619231211j:plain:w500")
+
+荷台の部品たちはかなり適当に詰め込んでいますが、ラズパイzeroや小型ブレッドボード等一切気にしない状態でも、問題なく収納できます。
+
+![f:id:konoemario:20170619231215j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619231215.jpg "f:id:konoemario:20170619231215j:plain:w500")
+
+また、地味にカメラも購入したので適当につけました。  
+本当は、真ん中のシャベルカー部分だった回転する箇所に取り付けたいのですが、カメラモジュールのケーブルが短くって、いまのところつけられません。今度長いケーブルを買う予定です。
+
+![f:id:konoemario:20170619231218j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619231218.jpg "f:id:konoemario:20170619231218j:plain:w500")
+
+また、曲がるためのサーボモーターも適当につけました。  
+ちょっとマイクロサーボだと車体が重いせいかタイヤの動きがよくないです。  
+もう一ランク上のサーボモーターを購入してみようかと思います。  
+ ![f:id:konoemario:20170619231312j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619231312.jpg "f:id:konoemario:20170619231312j:plain:w500")
+
+# 動かす
+
+動かすとこんな感じです！
+
+<iframe width="480" height="270" src="https://www.youtube.com/embed/xefm29k8NFY?feature=oembed" frameborder="0" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://youtu.be/xefm29k8NFY">youtu.be</a></cite>
+
+コントローラのUI部分と、ラジコンの見た目等、いろいろ改善点はありますが、ここまでこれてよかったです！
+
+が、記事を見返して思ったのですが、このときと発想がかわっていないことに自分で驚きました。
+
+![f:id:konoemario:20170311000933j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170311/20170311000933.jpg "f:id:konoemario:20170311000933j:plain:w500")
+
+以上。

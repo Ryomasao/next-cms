@@ -1,0 +1,30 @@
+---
+title: watch-poll
+time: 2018-06-20 18:40
+---
+
+[Development - Vagrant](https://webpack.js.org/guides/development-vagrant/)
+
+```
+const path = require('path');
+
+const publidDir = path.join(__dirname, '/public');
+
+module.exports = {
+  entry: [
+    './src/index.js',
+  ],
+  output: {
+    path: publidDir,
+    publicPath: '/',
+    filename: 'bundle.js',
+  },
+```
+
+- bundle.jsのエントリーポイントがindex.js
+
+- eslintを動かすために結局Windowsのホストマシンにeslintをいれた。
+
+- sassのwepackの設定をいれたらコンパイルエラー
+
+[[Webpack4 アップデートエラー] Error: Chunk.entrypoints: Use Chunks.groupsIterable and filter by instanceof Entrypoint instead | koukiTips](http://koukitips.net/post1967/)<cite class="hatena-citation"><a href="http://koukitips.net/post1967/">koukitips.net</a></cite>

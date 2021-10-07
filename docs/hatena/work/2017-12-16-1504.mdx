@@ -1,0 +1,447 @@
+---
+title: Vue.jsでつくるオブジェクト指向フォーム(2)
+time: 2017-12-16 15:04
+---
+
+# 前回の続き
+
+[Vue.jsでつくるオブジェクト指向フォーム(1) - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/12/13/205504)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/12/13/205504">www.tohuandkonsome.site</a></cite>
+
+さて投げやりになってしまった前回だけど、気をとりなおしていくよ！
+
+前回は、
+
+**Vue.jsのフォーム入力バインディング(v-model)を利用してaxiosでサーバーにpostする**
+
+ところまでやりました。
+
+javascriptはこんな感じでしたね。
+
+**app.js**
+
+```
+const app = new Vue({
+    el: '.simple-form',
+    data:{
+        title:'',
+        body:'',
+    },
+    methods:{
+        //Formのsubmitイベントが発生したとき
+        onSubmit:function(){
+            //$dataは上記のdataのことだよ！  
+            axios.post('/thread', this.$data)
+            //HTTPリクエストが成功したとき
+            .then(response => console.log(response.data))
+            //HTTPリクエエストが失敗した時
+            .catch(error => console.log(error.response));
+        },
+    }
+});
+```
+
+それでは、この次に、エラーが発生したときにフォームのコントロールにエラーがでるようにしてあげましょう。
+
+- [前回の続き](#%E5%89%8D%E5%9B%9E%E3%81%AE%E7%B6%9A%E3%81%8D)
+  - [フォームコントロールにエラーを表示する](#%E3%83%95%E3%82%A9%E3%83%BC%E3%83%A0%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AD%E3%83%BC%E3%83%AB%E3%81%AB%E3%82%A8%E3%83%A9%E3%83%BC%E3%82%92%E8%A1%A8%E7%A4%BA%E3%81%99%E3%82%8B)
+    - [エラーを格納するクラスErrorsをつくろう](#%E3%82%A8%E3%83%A9%E3%83%BC%E3%82%92%E6%A0%BC%E7%B4%8D%E3%81%99%E3%82%8B%E3%82%AF%E3%83%A9%E3%82%B9Errors%E3%82%92%E3%81%A4%E3%81%8F%E3%82%8D%E3%81%86)
+    - [テキストボックスに値を入力したらエラーを消すようにする](#%E3%83%86%E3%82%AD%E3%82%B9%E3%83%88%E3%83%9C%E3%83%83%E3%82%AF%E3%82%B9%E3%81%AB%E5%80%A4%E3%82%92%E5%85%A5%E5%8A%9B%E3%81%97%E3%81%9F%E3%82%89%E3%82%A8%E3%83%A9%E3%83%BC%E3%82%92%E6%B6%88%E3%81%99%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B)
+- [フォームクラスをつくろう](#%E3%83%95%E3%82%A9%E3%83%BC%E3%83%A0%E3%82%AF%E3%83%A9%E3%82%B9%E3%82%92%E3%81%A4%E3%81%8F%E3%82%8D%E3%81%86)
+  - [フォームクラスに合わせていろいろと修正する](#%E3%83%95%E3%82%A9%E3%83%BC%E3%83%A0%E3%82%AF%E3%83%A9%E3%82%B9%E3%81%AB%E5%90%88%E3%82%8F%E3%81%9B%E3%81%A6%E3%81%84%E3%82%8D%E3%81%84%E3%82%8D%E3%81%A8%E4%BF%AE%E6%AD%A3%E3%81%99%E3%82%8B)
+  - [フォームクラスに機能を移管する](#%E3%83%95%E3%82%A9%E3%83%BC%E3%83%A0%E3%82%AF%E3%83%A9%E3%82%B9%E3%81%AB%E6%A9%9F%E8%83%BD%E3%82%92%E7%A7%BB%E7%AE%A1%E3%81%99%E3%82%8B)
+
+### フォームコントロールにエラーを表示する
+
+##### エラーを格納するクラスErrorsをつくろう
+
+さて、エラーのチェックですが、ベーシックに`body`と`title`の必須チェックを行います。  
+また、チェックはサーバ側で行います。
+
+Laravelでバリデーションチェックをすると、以下のようなレスポンスを返してくれます。
+
+**Laravelがバリデーションエラーで返してくれるレスポンス**
+
+```
+{
+    "errors": {
+        "body": [
+            "本文が未入力だよ"
+        ], 
+        "title": [
+            "タイトルが未入力だよ"
+        ]
+    }, 
+    "message": "The given data was invalid."
+}
+```
+
+なので、このレスポンスを格納するErrorsクラスをつくってみましょう。
+
+javascriptでもクラスをつくれるんだなぁという語弊のある感想はさておき、以下のようなerrorsプロパティをもつクラスをつくってあげます。
+
+また、エラーを設定するセッター的なメソッド`record`も用意しています。
+
+**app.js(抜粋)**
+
+```
+class Errors{
+   constructor() {
+    //エラー情報を管理するプロパティ
+    this.errors = {}
+   }
+
+   //エラーを設定するメソッド
+   record(errors){
+        this.errors = errors
+   }
+}
+```
+
+クラスなのでerrors.jsをつくって管理すべきな気もしますが、面倒なのでここではapp.jsにそのまま書いちゃいます。
+
+一方のVueインスタンスでは以下のようにErrorクラスをインスタンス化しておいてdataに用意しておきます。
+
+**app.js(抜粋)**
+
+```
+const app = new Vue({
+    el: '.simple-form',
+    data:{
+        title:'',
+        body:'',
+        //Errorクラスをつくっておく
+        errors: new Errors()
+    },
+```
+
+そうしたら、エラーが発生したときにErrorインスタンスにさきほどのレスポンスをつっこむようにしてあげましょう。
+
+**app.js(抜粋)**
+
+```
+methods:{
+        //Formのsubmitイベントが発生したとき
+        onSubmit:function(){
+            axios.post('/thread', this.$data)
+            //HTTPリクエストが成功したとき
+            .then(response => console.log(response.data))
+            //HTTPリクエエストが失敗した時
+            .catch(error => {
+                //エラーを設定する
+                this.errors.record(error.response.data.errors);
+            });
+```
+
+axiosのレスポンスデータの取得の仕方は、`errors.response.data`ですが、ここではさらにその配下のネストである、`errors.response.data.errors`のほうが何かと都合がいいので、こうしています。
+
+さて、エラーが設定できたので、これをhtml側から参照できるようにしてあげましょう。
+
+**create\_ajxa.blade.php(抜粋)**
+
+```
+<form class="simple-form" action="/thread" method="post" v-on:submit.prevent="onSubmit">
+        {{csrf_field()}}
+       <div class="simple-form__group">
+            <label class="simple-form__title" for="title">タイトルlabel> 
+            
+            <input class="simple-form__input" type="text" name="title" v-model="title">
+            //エラーの情報を表示する
+            <p class="simple-form__error" v-if="errors.has('title')" v-text="errors.get('title')">p>
+```
+
+上記のように、`errros.get()'でエラーメッセージを取得してあげます。  
+また、表示する際の条件として`errors.has()`も追加しています。
+
+実装の方は以下の通りです。
+
+**app.js(抜粋)**
+
+```
+/**
+ * エラー情報を管理するクラスだよ！
+ */
+class Errors{
+   constructor() {
+    //エラー情報を管理するプロパティ
+    console.log("im created")
+    this.errors = {}
+   }
+
+   /**
+    * @param {*} errors :axiosのerror.response.data、つまりエラー時のレスポンスのbodyが入るんだよ
+    */
+   record(errors){
+        this.errors = errors
+   }
+
+   /**
+    * レスポンスデータのbody部分のエラーメッセージを返すよ
+    *
+    * @param {string} field コントロールの名前
+    * @returns {string}
+    */
+   get(field){
+        if(this.errors[field]){
+            return this.errors[field][0];
+        }
+   }
+
+   /**
+    * 
+    * @param {string} field コントロールの名前
+    * @returns {boolean}
+    */
+   has(field){
+      return this.errors.hasOwnProperty(field)
+   }
+```
+
+`get`メソッドですが、jsonを取得する際に、this.errors[filed]とするのか、this.errors.fieldどっちが正しいのかと混乱しました。
+
+結論としては、オブジェクトのプロパティにアクセスする場合であればどっちでもいいみたいです。 とはいえ、上記のようにプロパティ名が変数になっている場合、配列のようにthis.errors[field]としないとだめみたいですが。
+
+参考にさせていただいた記事  
+[JavaScriptのオブジェクトのキーに変数の値を使うTips - Qiita](https://qiita.com/masarufuruya/items/d29a567d0ca4bbfb00cb)
+
+もう一方の`has`メソッドですが、こちらも大事な役割も担っています。  
+`hasOwnProperty`はすべてのオブジェクトが持っているメソッドで、オブジェクト内に引数で指定されたプロパティが存在するかをチェックする機能をもっています。
+
+当初、axiosから設定するエラーデータを、`errors.response.data`としていて、Errorクラス内部で`this.errors.errros.hasOwnProperty`とやっていました。
+
+しかし、これだと、 エラーが発生していない場合、this.errors.errorsは存在しておらず、`hasOwnProperty`なんてないよ！と怒られてしまいます。
+
+あたりまえのことですが、いろいろはまってしまいました。
+
+ここまできたら、試しにエラーが表示されるか試してみます。  
+何も入力されていない状態で、postをすると、以下のようにエラーが表示されました。
+
+![f:id:konoemario:20171216135133p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171216/20171216135133.png "f:id:konoemario:20171216135133p:plain")
+
+いい感じです。
+
+##### テキストボックスに値を入力したらエラーを消すようにする
+
+エラーを表示することができたので、今度はエラーを消していきます。
+
+消すタイミングは、タイトルの通りテキストボックスに値が入力されたら消していきたいと思います。
+
+イメージとしては、以下のようにコントロールにキー入力されたらというイベントを`@keydown`で捉えてあげます。  
+そして実行するメソッドは`errors.clear()`になります。
+
+**create\_ajxa.blade.php(抜粋)**
+
+```
+<div class="simple-form__group">
+            <label class="simple-form__title" for="title">タイトルlabel> 
+            
+            <input class="simple-form__input" type="text" name="title" v-model="title" @keydown="errors.clear('title')">
+       div>
+```
+
+Errorsクラスはシンプルに`delete`演算子を使って、プロパティを削除してしまいます。
+
+**app.js(抜粋)**
+
+```
+class Errors{
+//省略
+   /**
+    * filedで指定されたプロパティを削除する
+    * @param {string} field 
+    */
+   clear(field){
+    delete this.errors[field];
+   }
+
+}
+```
+
+これだけでも、やりたいことは実現できました。
+
+ですが、以下のようにフォームの@keydownイベントして書いてあげると、コントロールごとに記載しなくてもいいのでさらにシンプルになります。
+
+**create\_ajxa.blade.php(抜粋)**
+
+```
+<!--Submitのデフォルトイベントをキャンセルして、VueインスタンスのonSubmitメソッドを呼ぶ-->
+    <form class="simple-form" action="/thread" method="post" v-on:submit.prevent="onSubmit" @keydown="errors.clear($event.target.name)">
+```
+
+### フォームクラスをつくろう
+
+ここまでの内容で、以下のことができるようになりました。
+
+- ブラウザで入力した値をaxiosでサーバーにpostする
+- サーバから返却されたエラーメッセージをコントロールにひも付けて表示する
+- コントロールに入力すことでエラーメッセージを消す
+
+とはいえ、現時点で気になる点があります。
+
+Vueインスタンスの、データを送信する部分ですが`this.$data`を送っています。  
+`$data`には`title`、`body`以外にもerrorsも含まれてしまっていてちょっと気持ちが悪いです。
+
+**app.js(抜粋)**
+
+```
+data:{
+        title:'',
+        body:'',
+        errors: new Errors()
+    },
+    methods:{
+        //Formのsubmitイベントが発生したとき
+        onSubmit:function(){
+            axios.post('/thread', this.$data)
+```
+
+なので、ここらでタイトル通りのフォームクラスを作っていきたいと思います。
+
+**app.js(抜粋)**
+
+```
+/**
+ * フォームクラスだよ！
+ */
+class Form{
+   constructor(data) {
+
+    //フォームのデータ 
+    this.originalData = data;
+
+    //エラー情報を管理するプロパティ
+    this.errors = new Errors();
+   }
+
+}
+```
+
+`Form`クラスには`erros`プロパティとフォーム内のコントロール要素とバインディングされるデータ`originagData`プロパティを持ちます。
+
+Vueインスタンス側では、こんな感じにしてあげます。
+
+**app.js(抜粋)**
+
+```
+const app = new Vue({
+    el: '.simple-form',
+    data:{
+        form: new Form({
+            title:'',
+            body:'',
+        })
+    },
+```
+
+こうすることで、VueインスタンスがFormクラスをもっていて、Formの中には`title`や`body`というコントロールがあってというなんとなくオブジェクト指向っぽくなってきた気がしませんか！（頭が悪い)
+
+この方針で、コードを修正していきたいと思います。
+
+#### フォームクラスに合わせていろいろと修正する
+
+フォームクラスを作った弊害として、html側ではデータをバインディングする際に以下のように`v-model="form.originalData.title"`としてあげなければいけません。
+
+**create\_ajxa.blade.php(抜粋)**
+
+```
+<div class="simple-form__group">
+            <label class="simple-form__title" for="title">タイトルlabel> 
+            
+            <input class="simple-form__input" type="text" name="title" v-model="form.originalData.title">
+       div>
+```
+
+ですが、さすがのLaracastさんです。  
+以下のようにすることで、Formクラスのプロパティとして扱えるようになります。
+
+**app.js(抜粋)**
+
+```
+class Form{
+   constructor(data) {
+
+    //フォームのデータ 
+    this.originalData = data;
+
+    //dataの各要素をFormクラスのプロパティとして登録する
+    for(let field in this.originalData){
+        this[field] = this.originalData[field];
+    }
+```
+
+これで、以下のように`form.title`という形でアクセスできるようになりました。   
+**create\_ajxa.blade.php(抜粋)**
+
+```
+<div class="simple-form__group">
+            <label class="simple-form__title" for="title">タイトルlabel> 
+            
+            <input class="simple-form__input" type="text" name="title" v-model="form.title">
+       div>
+```
+
+また、formに書いたエラーをクリアする処理も、Errorsクラスはフォームクラスのプロパティになったので、以下のように修正します。
+
+**create\_ajxa.blade.php(抜粋)**
+
+```
+<form class="simple-form" action="/thread" method="post" v-on:submit.prevent="onSubmit" @keydown="form.errors.clear($event.target.name)">
+```
+
+エラーを表示する部分も同様に修正しておきます。
+
+**create\_ajxa.blade.php(抜粋)**
+
+```
+<div class="simple-form__group">
+            <p class="simple-form__error" v-if="form.errors.has('title')" v-text="form.errors.get('title')">p> 
+       div>
+```
+
+#### フォームクラスに機能を移管する
+
+次に、フォームの内容を送信する機能もフォームクラスに移しちゃいましょう！
+
+下記のように、`submit`メソッドを追加してあげます。  
+**app.js(抜粋)**
+
+```
+class Form{
+//省略
+   /**
+    * Formのデータをサーバーに送信するよ！
+    */
+   submit(){
+        //プロパティの値を再設定する
+        for(let field in this.originalData){
+            this.originalData[field] = this[field];
+        }
+
+        axios.post('/thread', this.originalData)
+        //HTTPリクエストが成功したとき
+        .then(response => this.onSuccess(response.data))
+        //HTTPリクエエストが失敗した時
+        .catch(error => this.onFail(error.response.data.errors));
+   }
+
+   /**
+    * フォームデータの送信が成功した場合
+    */
+   onSuccess(response){
+        console.log(response);
+   }
+
+   /**
+    * フォームデータの送信が失敗した場合
+    */
+   onFail(error){
+        this.errors.record(error);
+   }
+
+}
+```
+
+基本的に、Vueインスタンスに書いてあった処理をまるっともってくるだけです。  
+axiosで送信するデータの`originalData`はコントロールにバインディングされていないので、keyだけあって、値は空っぽです。  
+なので送信する前に、データバインディングしてあるフォームクラスのプロパティの値を設定してあげています。
+
+そろそろ長くなってきたので次回に回します！

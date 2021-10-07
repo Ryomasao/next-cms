@@ -1,0 +1,340 @@
+---
+title: RaspBerryPiでラジコンをつくる(10)：ブラウザから操作する
+time: 2017-07-19 09:24
+---
+
+以前、Terminal経由でCUI操作によるラジコンのコントローラーを作りました。
+
+[RaspBerryPiでラジコンをつくる(8)：コントローラをつくる - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/05/16/215317)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/05/16/215317">tohutokonsome.hatenablog.com</a></cite>
+
+[RaspBerryPiでラジコンをつくる(9)：軽量化問題を解消するためのたったひとつの冴えたやり方 - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/06/20/103846)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/06/20/103846">tohutokonsome.hatenablog.com</a></cite>
+
+動いているところ  
+<iframe width="480" height="270" src="https://www.youtube.com/embed/xefm29k8NFY?feature=oembed" frameborder="0" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://www.youtube.com/watch?v=xefm29k8NFY&amp;feature=youtu.be">www.youtube.com</a></cite>
+
+今回は、ブラウザごしに操作できるようにしていきたいと思います。
+
+構成ですが、以下を予定しています。  
+ ![f:id:konoemario:20170719083402j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170719/20170719083402.jpg "f:id:konoemario:20170719083402j:plain:w500")
+
+ブラウザからのキー入力情報をもとに、ラジコンを操作するのですが、socket.ioを使って実現します。  
+socket.ioを調べると、node.jsの例がいっぱいでてくるので、それをベースでいろいろと試していました。
+
+ただ、肝心のラズパイを操作する部分を今までPythonで実装してきたので、それはそのまま使いたい気持ちがありsocket.ioの部分はPythonで実装することにしました。  
+Pythonでのsocket.ioはPythonの簡易WebフレームワークであるFlaskで使えるみたいなので、こちらを使用することにします。
+
+ブラウザ側のsocket.ioですが、これもPython用のものがあるのですが、せっかくnode.jsを使ってきたので、こっちはnode.jsベースで実装します。
+
+なのでラズパイにはnode.jsとFlaskと二つWebサーバを立てることになります。  
+最終的には外部のネットワークから操作したいのですが、この決断がどんな影響がでるのか、なんともいえません。
+
+PythonのWebフレームワークとしてDjangoをやってきたのですが、ここにきてFlaskを使用することになりちょっと悲しいです。  
+とはいえ、Djangoでもsocket.ioが使用できないわけでもなさそうなので、どこかでできればなぁと思ってます。
+
+この記事は何回かに分けて書きます。
+
+今回は、とりあえずnode.jsのみでキー入力部分の確認を行います。
+
+- [node.jsをラズパイにインストールする](#nodejs%E3%82%92%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4%E3%81%AB%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E3%81%99%E3%82%8B)
+- [コントロールする画面を作成する](#%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AD%E3%83%BC%E3%83%AB%E3%81%99%E3%82%8B%E7%94%BB%E9%9D%A2%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B)
+- [socketを実装する。](#socket%E3%82%92%E5%AE%9F%E8%A3%85%E3%81%99%E3%82%8B)
+
+## node.jsをラズパイにインストールする
+
+まずは、ラズパイにnode.jsをインストールします。  
+Rasbianにはデフォルトでnode.jsが入っているみたいですが、バージョンが古いので新しくします。
+
+こちらの記事を参考に、インストールを行いました。
+
+[第三回 Raspberry Pi 3に最新のNode.jsをインストールする - Qiita](http://qiita.com/setouchi/items/437e4b62e4210871496f)
+
+```
+pi@raspberrypi:~ $ sudo apt-get install -y nodejs npm
+```
+
+バージョンを確認。おお、かなり古いっぽい。 ※apt-getするまえにやればよかった。もともとラズパイに入ってるバージョンとのこと。
+
+```
+pi@raspberrypi:~ $ node -v
+v0.10.29
+pi@raspberrypi:~ $ npm -v
+1.4.21
+```
+
+```
+pi@raspberrypi:~ $ sudo npm cache clean
+pi@raspberrypi:~ $ sudo npm install n -g
+pi@raspberrypi:~ $ sudo n stable
+```
+
+バージョンを確認したところ、まだ古い。
+
+```
+pi@raspberrypi:~ $ node -v
+v0.10.29
+```
+
+とりあえす再起動したら新しくなりました。  
+Macの検証環境よりバージョン上がってるけれども、これで進めることにした。  
+何気に、npmのバージョンもあがってた。
+
+```
+pi@raspberrypi:~ $ node -v
+v8.0.0
+pi@raspberrypi:~ $ npm -v
+5.0.0
+```
+
+## コントロールする画面を作成する
+
+とりあえず、node.jsだけを使ってブラウザでキー入力した情報をリアルタイムでサーバーに連携する機能を作成します。
+
+![f:id:konoemario:20170719085247j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170719/20170719085247.jpg "f:id:konoemario:20170719085247j:plain:w500")
+
+node.jsの基本的な部分は、以下の記事で試しました。  
+[Node.jsを使って、簡単なWebアプリケーションをつくる(1) - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/07/04/221335)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/07/04/221335">tohutokonsome.hatenablog.com</a></cite>
+
+なにはともあれ、node.jsのプロジェクトの作成していきます。
+
+```
+(raspberry_3.5.1) masao-3:legoCarController konoe_mario$ npm init
+name: (legoCarController) nodeapp
+version: (1.0.0) 
+description: legoCarController
+entry point: (index.js) server.js
+test command: 
+git repository: 
+keywords: 
+author: tohu
+license: (ISC) 
+About to write to /Users/konoe_mario/WebstormProjects/legoCarController/package.json:
+
+{
+  "name": "nodeapp",
+  "version": "1.0.0",
+  "description": "legoCarController",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "tohu",
+  "license": "ISC"
+}
+```
+
+続いて、エントリーポイントとなるserver.jsを作成します。  
+「http://ラズパイのIP:6677/controller」にアクセスすると、controllr.htmlを返すだけのものになります。
+
+**server.js**
+
+```
+var http = require("http");
+var server = http.createServer();
+
+//urlディスパッチャに使う
+var url = require("url");
+
+//htmlファイルの読み込み
+var fs = require("fs");
+
+//socket.ioで使う
+var io = require("socket.io")(server);
+
+server.on("request",function(req, res){
+  console.log("request");
+
+  var incomingUrl = url.parse(req.url);
+
+  if(incomingUrl.pathname === "/controller"){
+
+        fs.readFile("./client/controller.html","utf-8",(err,data)=> {
+
+            if (err) {
+                res.writeHead(404, {'Content-Type': 'text/html'});
+                res.write('');
+                res.end("<h1&gt Not Found </h1&gt");
+            }else{
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.write(data);
+                res.end();
+            }
+        });
+
+  }else{
+      res.writeHead(404,{'Content-Type':'text/html'});
+      res.write('');
+      res.end("<h1&gt Not Found </h1&gt");
+  }
+
+});
+
+server.listen(6677);
+```
+
+続いて、「controller.html」はほぼ空っぽですが、こんな感じにしました。
+
+**controller.html**
+
+```
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>レゴカーコントローラーtitle>
+head>
+<body>
+    <h1>おはんきーh1>
+body>
+html>
+```
+
+そうしたら、実際に「http://ラズパイのIP:6677/controller」にブラウザでアクセスして表示されることを確認します。
+
+![f:id:konoemario:20170718110003p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170718/20170718110003.png "f:id:konoemario:20170718110003p:plain:w500")
+
+controller以外のところにアクセスするとNot Foundとなりますね。
+
+![f:id:konoemario:20170718110007p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170718/20170718110007.png "f:id:konoemario:20170718110007p:plain:w500")
+
+## socketを実装する。
+
+次にserver.jsのsocket.ioを実装します。
+
+その前に、socket.ioのモジュールをインストールしておきます。
+
+```
+(raspberry_3.5.1) masao-3:legoCarController konoe_mario$ npm install socket.io
+```
+
+インストールしたら、server.jsに以下のコードを追加します。   
+追加する場所に注意が必要です。自分は嵌まりました。
+
+[Node.js のsocket.ioでCan't set headers after they are sent - Qiita](http://qiita.com/tohu_masao/items/d46d0f9615b49d145632)
+
+**server.js(抜粋)**
+
+```
+//socket.ioで使う、server.on("request",function)より後がよい
+var io = require("socket.io")(server);
+
+//socket確認用のコード
+io.sockets.on("connection",function (socket) {
+    console.log("socket connection");
+
+    socket.on("sendMessage",function (data) {
+        socket.emit('test',data);
+    });
+
+});
+```
+
+次にcontroller.htmlにも、キー入力情報を受け取る機能と、socket.ioを実装します。
+
+**controller.html**
+
+```
+<html lang="ja">
+<head>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js">script>
+    <script src="/socket.io/socket.io.js">script>
+    <script>
+          javascript-の処理を書く->
+    
+    "UTF-8">
+    レゴカーコントローラー
+
+    おはんきー
+    "controller">
+```
+
+jqueryとsocket.ioの読み込みを追加しました。 ついでに、キー入力結果を表示するようの「
+
+」も追加しています。
+
+その後に、肝心のjavascirptの処理を追加しています。
+
+**controller.html(javascirpt部分を抜粋)**
+
+```
+var socket = io.connect();
+
+        $(function() {
+            socket.on('connect', function () {
+            });
+
+            socket.on('test',function(data){
+                render(data)
+            });
+
+       });
+
+        function render(data) {
+            $("#controller").text(data);
+        }
+
+        //キーが押された場合のイベント
+        document.onkeydown = function(e){
+            isSendMessage(e.keyCode,"keydown");
+        };
+
+        //キーが離された場合のイベント
+        document.onkeyup = function(e){
+            isSendMessage(e.keyCode,"keyup");
+        };
+
+        //Windowが非アクティブになったら、エンジンが止まるように決め打ちで送信する。
+        window.onblur = function () {
+            isSendMessage(87,"keyup");
+        };
+
+        //socket通信をするかどうか制御する関数
+        function isSendMessage(key_code,keykind){
+
+            switch(key_code){
+                //W
+                case 87:
+                    if(keykind === "keydown"){
+                        sendMessage("forward");
+                    }else{
+                        sendMessage("break");
+                    };
+                    break;
+                //S
+                case 83:
+                    if(keykind === "keydown"){
+                        sendMessage("back");
+                    }else{
+                        sendMessage("break");
+                    };
+                    break;
+                //D
+                case 68:
+                    sendMessage("right");
+                    break;
+                //A
+                case 65:
+                    sendMessage("left");
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        //socket通信
+        function sendMessage(message) {
+            socket.emit("sendMessage",message);
+        }
+```
+
+再度、「http://ラズパイのIP:6677/controller」にアクセスすると、以下のようになるかと思います。
+
+![f:id:konoemario:20170719090704p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170719/20170719090704.png "f:id:konoemario:20170719090704p:plain:w500")
+
+W、A、S、Dを押下すると、それに紐付いた動作名がブラウザに表示されます。
+
+ちなみに、javascrptのキー入力のイベントに関しては、以下のサイトを参考にさせていただきました。  
+[JavaScriptプログラミング講座【キーボード操作について】](http://hakuhin.jp/js/key_board.html)
+
+処理の順番としては、以下のようなイメージです。  
+ ![f:id:konoemario:20170719080945j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170719/20170719080945.jpg "f:id:konoemario:20170719080945j:plain:w500")
+
+次回は、socket.ioのサーバ側をFlaskに置き換えていきます。

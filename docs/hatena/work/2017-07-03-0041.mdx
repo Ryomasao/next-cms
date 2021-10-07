@@ -1,0 +1,151 @@
+---
+title: Node.jsの非同期処理について、いまいち理解できていない
+time: 2017-07-03 00:41
+---
+
+# 日記
+
+退職のため、連日送別会を開催いただき、ブログをさぼっていました。   
+転職活動はあいかわらず、お祈りの嵐で、目の前が真っ暗なのですが元気に生きています。
+
+何も書かないとまずい！ということで解決していない問題を一旦記載します。
+
+# Node.jsの非同期処理についていまいち理解できていない
+
+本題です。  
+ラズパイのラジコンについて、今はターミナルからコマンドで操作しているのですが、将来的にスマホからも操作できることを想定して、ブラウザから操作できないかな、と考え始めました。  
+socket通信やらなんやら調べていると、「Node.js」に行き着いたので、Udemyの入門編(無料)を初めて見ました。
+
+[初心者向けNode.js基礎講座 - Udemy](https://www.udemy.com/nodejs-y/learn/v4/overview)<cite class="hatena-citation"><a href="https://www.udemy.com/nodejs-y/learn/v4/overview">www.udemy.com</a></cite>
+
+ちょっと話はそれますが、映像よりも本のほうが自分のペースで進められるし、見返せるから圧倒的に本のほうが好きでした。  
+ですが、実際の作業風景を見ると、IDEの使い方だったり、そもそもパソコンのショートカットの機能だったり、本筋とは違うことかもしれませんが、いろいろと為になることが多いです。  
+反面、見返すのが面倒なので、ちょっと時間があいたりすると厳しいのですが、そこはブログに学習記事をアップすることでカバーすることができそうです。
+
+話を元に戻します。
+
+前述の入門編を進めていて、非同期の部分の話が前半にあるのですが、いまいち理解できませんでした。
+
+ちょっと処理を変えていますが、以下の時間がかかる処理を想定した、関数たちを３つ用意します。  
+関数の中の「writeFIle(‘ファイル名’,‘書き込み回数’)」は、「ファイル名」に指定したファイルに「書き込み回数」分、書き込み処理を行う自分で書いた関数です。
+
+**関数たち**
+
+```
+//重い処理1
+var func_one = function(callback){
+    console.log("func_one start");
+
+    writeFile("./1.json",1000);
+
+    if(callback){
+        callback();
+    }
+    console.log("func_one end");
+};
+
+//重い処理2
+var func_two = function(callback){
+    console.log("function_two start");
+
+    writeFile("./2.json",1000);
+
+    if(callback){
+        callback();
+    }
+    console.log("function_two end");
+};
+//重い処理3
+var func_three = function(callback){
+    console.log("function three start");
+
+    writeFile("./3.json",1000);
+
+    if(callback){
+        callback();
+    }
+    console.log("function three end");
+};
+```
+
+次に、上記関数を呼ぶ、処理は以下の通りです。
+
+**メイン処理**
+
+```
+var startTime = new Date().getTime();
+
+func_one();
+func_two();
+func_three();
+
+var endTime = new Date().getTime();
+
+console.log("処理時間 = " + (endTime - startTime));
+```
+
+こちらの処理結果は、特になんの疑問もなく、func\_oneから順に処理を行っていくので結果は以下の通りです。
+
+```
+func_one start
+func_one end
+function_two start
+function_two end
+function three start
+function three end
+処理時間 = 92
+```
+
+次に、メイン処理を以下のように非同期というやり方で書いてみる。
+
+```
+var startTime = new Date().getTime();
+
+//いわゆるcallback地獄
+func_one(function() {
+    func_two(function(){
+        func_three();
+        });
+});
+
+var endTime = new Date().getTime();
+
+console.log("処理時間 = " + (endTime - startTime));
+```
+
+結果は以下の通り。  
+といっても、特に不思議なことなく、予想した結果になっている。
+
+```
+func_one start
+function_two start
+function three start
+function three end
+function_two end
+func_one end
+処理時間 = 91
+```
+
+いまいちわかってないのが、callbackを使うことで非同期を実現する、というところ。  
+上記の処理は非同期ではなく、普通の同期処理のような気がしています。
+
+というのも、function\_threeが終わってから、funciton\_twoの関数に戻って、そこからfunction\_oneに戻ってるので。
+
+非同期処理というと、以下の関数で言えば、writeFileという適当な自作関数の結果を待たずして、callback関数を呼び出すイメージでした。
+
+```
+var func_two = function(callback){
+    console.log("function_two start");
+
+    writeFile("./2.json",10);
+
+    if(callback){
+        callback();
+    }
+    console.log("function_two end");
+};
+```
+
+しかし、funciton\_oneの結果を待たずして、callbackであるfunction\_twoを呼び出しているという意味では、非同期が実現できるているのでしょうか。
+
+何かいろいろと勘違いをしている気がします。

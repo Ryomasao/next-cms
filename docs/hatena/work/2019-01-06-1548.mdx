@@ -1,0 +1,94 @@
+---
+title: 年始だしReactを学ぶ(3)
+time: 2019-01-06 15:48
+---
+
+### SECTION11 復習がてらyoutubeっぽいサイトをつくる
+
+タイトルにテストってあったからテストコードを書くのかと思ったら違った。  
+youtubeAPIを使って遊ぶ内容。
+
+### SECTION12 Reudx
+
+ついに来た。Redux。  
+コードペンを使ってReduxのみを学ぶ。
+
+一部しか写経してないけど、Codepenをはっとく。
+
+[https://codepen.io/tohu/pen/bOvryp](https://codepen.io/tohu/pen/bOvryp)
+
+ざっくりとしたメモは以下の通り。
+
+とりあえず以下の登場人物がいる。
+
+Reduxパッケージから必要なオブジェクトをもらう。
+
+```
+const { createStore, combineReducers } = Redux
+```
+
+`combineReducers`関数で作成したreducerを渡す。
+
+```
+const ourDepartment = combineReducers({
+  policies: policies
+})
+```
+
+reducerってなんぞって感じなんだけど、stateに対する操作と覚えておけばいいのかしら。Vuexだとmutationがそれにあたるのかな？  
+Vuexではstateを直接定義してたけど、Reduxだとreducerの第一引数の値がstateっぽく見える。
+
+```
+// reducer
+const policies = (listOfPolicies = [], action) => {
+ if(action.type === 'CREATE_POLICY') {
+  return [...listOfPolicies, action.payload.name] 
+ }
+ return listOfPolicies 
+}
+```
+
+話を戻して、作成したreducersをcombineしたら、storeをつくる。  
+storeはcombineReducerによってできたオブジェクトをもとに作成される。
+
+```
+const store = createStore(ourDepartment)
+```
+
+こんなかんじで、ステートの状態を取得できる
+
+```
+console.log(store.getState())
+```
+
+ステートを更新するときは、dispatchでアクションを発行する。
+
+```
+store.dispatch(action)
+```
+
+アクションは、アクションクリエイターなる関数ごしにつくるみたい。
+
+```
+// action creator
+const createPolicy = (name, amount) => {
+  //action
+  return {
+    type: 'CREATE_POLICY',
+    payload: {
+      name : name,
+      amount : amount
+    }
+  }
+}
+
+const action = createPolicy('ayane', 200)
+```
+
+適当にかいてみたけど、あんまわかってない。
+
+### SECTION13 React-Redux
+
+SECTION12でさわったReduxをReactで使うためにはreact-reduxを使う必要がある。
+
+なんで？みたいなのはさておき、書き方だけ覚える。

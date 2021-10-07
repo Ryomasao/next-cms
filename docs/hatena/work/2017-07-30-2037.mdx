@@ -1,0 +1,410 @@
+---
+title: Node.js + express + jade + Bootstrapに触れてみる
+time: 2017-07-30 20:37
+---
+
+前回は、ラズパイのコントローラ用の画面をBootstrapを使ってざっくりとつくりました。
+
+[RaspBerryPiでラジコンをつくる(12):もう少しブラウザから操作する - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/07/28/193512)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/07/28/193512">tohutokonsome.hatenablog.com</a></cite>
+
+今回はその画面をnode.js + expressにのせるにあたってjadeというものが出てきたので、そちらを最初に触れたいと思います。
+
+expressを使用するにあたって、テンプレートエンジンという単語がでてきます。  
+テンプレートエンジンという単語そのものの意味は置いておいて、私の理解としては動的コンテツを提供する際に、pythonのDjangoだったり、PHPだったりHTML内にスクリプトを埋め込んで、サーバー側が解釈したHTMLをクライアントに返す、そのサーバー側が解釈する際のミドルウェア？を指していると思ってます。
+
+Djangoで言うと以下のようなやつ。
+
+```
+<h3> {{ post.title }}h3>
+```
+
+expressでもテンプレートエンジンをいくつか選べるのですが、その中でもjadeというものを今回使ってみたいと思います。
+
+ただ、jadeはhtml内に埋め込むお作法どうのこうの以上に、その記法そのものもhtmlとは異なっています。
+
+とはいえ、その目的は生産性をあげるためのものなので、覚えてしまえばきっと楽になるはずです。
+
+- [スケルトン作成](#%E3%82%B9%E3%82%B1%E3%83%AB%E3%83%88%E3%83%B3%E4%BD%9C%E6%88%90)
+- [とりあえずさわってみる](#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9A%E3%81%95%E3%82%8F%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B)
+  - [expressから渡したオブジェクトの値を参照する](#express%E3%81%8B%E3%82%89%E6%B8%A1%E3%81%97%E3%81%9F%E3%82%AA%E3%83%96%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%81%AE%E5%80%A4%E3%82%92%E5%8F%82%E7%85%A7%E3%81%99%E3%82%8B)
+    - [コレクション要素を表示する](#%E3%82%B3%E3%83%AC%E3%82%AF%E3%82%B7%E3%83%A7%E3%83%B3%E8%A6%81%E7%B4%A0%E3%82%92%E8%A1%A8%E7%A4%BA%E3%81%99%E3%82%8B)
+  - [include](#include)
+  - [extends](#extends)
+- [Bootstrapを準備する](#Bootstrap%E3%82%92%E6%BA%96%E5%82%99%E3%81%99%E3%82%8B)
+  - [ファイル作成](#%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E4%BD%9C%E6%88%90)
+
+## スケルトン作成
+
+なにはともあれ、expressのスケルトンを作成します。  
+[前回](http://tohutokonsome.hatenablog.com/entry/2017/07/21/153646)もやったので大丈夫です。
+
+```
+$ mkdir legocar_express
+$ cd legocar_express
+$ express
+$.
+├── app.js
+├── bin
+├── node_modules
+├── package.json
+├── public
+├── routes
+└── views
+```
+
+expressに必要なパッケージインストールします。
+
+```
+$ npm install
+```
+
+## とりあえずさわってみる
+
+素敵なチュートリアルがあるので、これに沿ってやった。  
+[Jade について。 · GitHub](https://gist.github.com/japboy/5402844)
+
+とりあえず、練習用にviews配下に以下のファイルを新規で作成した。
+
+**practicejade.jade**
+
+```
+doctype html
+html
+  head
+    meta(charset='UTF-8')
+    title 最高にクールなホームページ
+    link(rel='stylesheet', href='./css/app.css')
+  body
+    h1 最高にクールなホームページ
+    p 最高にクールなホームページへようこそ。
+    script(src='./js/app.js', charset='UTF-8')
+```
+
+表示するために、既存のindex.jsを修正する。
+
+**index.js**
+
+```
+var express = require('express');
+var router = express.Router();
+
+/* GET home page. */
+router.get('/', function(req, res, next) {
+  res.render('index', { title: 'Express' });
+});
+
+/*jade練習用のページ */
+router.get('/practicejade', function(req, res, next) {
+  res.render('practicejade');
+});
+
+module.exports = router;
+```
+
+これで、「[http://localhost:3000/practicejade](http://localhost:3000/practicejade)」にアクセスすると、以下のページが表示される。
+
+これをもとにチュートリアルを行う。
+
+ちなみに、スケルトン作成時に特に指定したわけではないけれども、テンプレートエンジンはjadeになっていたので、こちらに関しては特に変更はしていない。
+
+**app.js(抜粋)**
+
+```
+app.set('view engine', 'jade');
+```
+
+### expressから渡したオブジェクトの値を参照する
+
+jadeの基本的な構文については、チュートリアルに詳しく書かれているので、ここでは詰まったりした部分について記載していく。
+
+まずは、表題の通り、html側で動的に値を表示したい場合とかの一例について。
+
+index.jsファイルの中で定義したオブジェクト「pakage」をrender関数の引数として渡している。
+
+**index.js**
+
+```
+/*jade練習用のオブジェクト */
+var package = {
+  title: '最高にクールなホームページ',
+  description: '最高にクールなホームページです。見ないと損です。',
+  keywords: [
+    '最高',
+    'クール',
+    '世界一',
+    '天才'
+  ],
+  robots: [
+    'INDEX',
+    'FOLLOW',
+    'NOODP',
+    'NOYDIR',
+    'NOARCHIVE'
+  ]
+};
+
+/*jade練習用のページ */
+router.get('/practicejade', function(req, res, next) {
+  res.render('practicejade',{package:package});
+});
+```
+
+jade側では、渡されたpackageオブジェクトの値は下記のように参照することができるみたい。  
+いろいろな書き方があって混乱した。
+
+**practicejade.jade**
+
+```
+doctype html
+html
+  head
+    meta(charset='UTF-8')
+    title 最高にクールなホームページ
+    link(rel='stylesheet', href='./css/app.css')
+  body
+    h1 最高にクールなホームページ
+    p 最高にクールなホームページへようこそ。
+
+    h1 Expressから渡されたオブジェクトを参照する
+    //いろいろな書き方がある。どれがいいんだろう。
+    p #{package.title}
+    p= package.description
+    p!= package.keywords
+
+    script(src='./js/app.js', charset='UTF-8')
+```
+
+**ブラウザの表示**  
+ ![f:id:konoemario:20170730155847p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170730/20170730155847.png "f:id:konoemario:20170730155847p:plain:w500")
+
+#### コレクション要素を表示する
+
+表題があっているか少し怪しい。
+
+さきほどの例のように、要素をひとつずつ表示するのではなく、リスト形式のように並べたいときにforeach構文が使える。
+
+もちろん、for loopみたいなものをあるんだけれども、each構文で詰まったのであえてこちらを記載しておく。
+
+ただ、あんまりしっくり来てないので、Quitaの方で詳しい方からのツッコミ待ちの状態です。
+
+[ExpressからJadeに渡したObjectをeachで使用する - Qiita](http://qiita.com/tohu_masao/items/cb47cee102877e278600)<cite class="hatena-citation"><a href="http://qiita.com/tohu_masao/items/cb47cee102877e278600">qiita.com</a></cite>
+
+とりあえずコードの中身と表示結果を記載しておく。
+
+**practicejade.jade**
+
+```
+doctype html
+html
+  head
+    meta(charset='UTF-8')
+    title 最高にクールなホームページ
+    link(rel='stylesheet', href='./css/app.css')
+  body
+    h1 最高にクールなホームページ
+    p 最高にクールなホームページへようこそ。
+
+    hr
+    h1 each構文を使う
+    ul
+    //inに直接オブジェクトを記載すると、コンパイルエラーになる。
+      一旦、変数として定義してあげると問題ない。
+      each val,key in #{package}
+        li= key + ':' + val
+  
+    -var hoge = package
+      each val,key in hoge
+        li= key + ':' + val
+```
+
+**ブラウザの表示**  
+ ![f:id:konoemario:20170730160502p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170730/20170730160502.png "f:id:konoemario:20170730160502p:plain:w500")
+
+### include
+
+htmlファイルを部品化しておいて、使う側でinlucdeすることで再利用ができる、みたいなやつ。
+
+新たに、includeディレクトリを作成して、その配下に「include\_test.jade」を作成した。
+
+```
+├── include
+│   ├── include_test.jade
+├── practicejade.jade
+```
+
+部品化したファイル側にも#{変数名}の構文は使えるかな、という確認も込めて、package.titleを入れている。
+
+**include\_test.jade**
+
+```
+h3 これは、読み込んだincludeされたファイルです。 #{package.title}
+```
+
+「practicejade\_.jade」で上記のファイルをincludeします。
+
+**practicejade.jade**
+
+```
+doctype html
+html
+  head
+    meta(charset='UTF-8')
+    title 最高にクールなホームページ
+    link(rel='stylesheet', href='./css/app.css')
+  body
+    h1 最高にクールなホームページ
+    p 最高にクールなホームページへようこそ。
+    script(src='./js/app.js', charset='UTF-8')
+
+    //includeのテスト
+    h1 includeを使う
+      include ./include/include_test.jadek
+```
+
+**ブラウザの表示**  
+ ![f:id:konoemario:20170730161009p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170730/20170730161009.png "f:id:konoemario:20170730161009p:plain:w500")
+
+### extends
+
+オブジェクト指向のインタフェースっぽいという印象を受けた。  
+extendで大まかなテンプレートを定義しておいて、includeする側で具体的な処理だったりを書くみたいな。
+
+まず、extendされる「exten\_test.jade」を作成する。
+
+```
+├── include
+│   ├── include_test.jade
+│   ├── extend_test.jade
+├── practicejade.jade
+```
+
+ファイルの内容は、以下の通り。
+
+**extend\_test.jade**
+
+```
+doctype html
+html(lang='ja')
+  head
+    meta(charset='UTF-8')
+    title #{package.title}
+  body
+    block content
+              p 上書きされるのでこれは表示されない。
+```
+
+これを、practicejade.jadeでextendsをして継承している。
+
+**practicejade.jade**
+
+```
+//extend_test.jadeを継承する
+extends ./include/extend_test
+//extend_test.jadeのcontent部分を上書きする。
+block content
+    h1 Expressから渡されたオブジェクトを参照する
+    //いろいろな書き方がある。どれがいいんだろう。
+    p #{package.title}
+    p= package.description
+    p!= package.keywords
+
+    hr
+    h1 each構文を使う
+    ul
+    //inに直接オブジェクトを記載すると、コンパイルエラーになる。
+      一旦、変数として定義してあげると問題ない。
+      each val,key in #{package}
+        li= key + ':' + val
+  
+    -var hoge = package
+      each val,key in hoge
+        li= key + ':' + val
+
+    hr
+    //includeのテスト
+    h1 includeを使う
+      include ./include/include_test.jade
+```
+
+## Bootstrapを準備する
+
+jadeの記法を使って、BootstrapのStarter Templateを作ります。
+
+**Bootstrap4.xのStarter Template**
+
+```
+<html lang="en">
+  <head>
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+  head>
+  <body>
+    <h1>Hello, world!h1>
+
+    
+    <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous">script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous">script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous">script>
+  body>
+html>
+```
+
+### ファイル作成
+
+viewsディレクトリ配下に、以下のファイルを用意しました。
+
+```
+├── include
+│   ├── footer.jade
+│   ├── header.jade
+│   └── scripts.jade
+├── index.jade
+├── layout.jade
+```
+
+まずはextendsされるlayout.jadeです。
+
+**layout.jade**
+
+```
+doctype html
+html(lang='ja')
+    head
+        meta(charset='utf-8')
+        meta(name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no")
+        link(rel='stylesheet', href='/stylesheets/style.css')
+        //Bootstrap ラズパイに乗せる時はCDNは使わないようにしたい
+        link(rel='stylesheet',href='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css' integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous")
+        block title
+    body
+        include ./include/header
+        block content
+        include ./include/footer
+        include ./include/scripts
+```
+
+- head内のtitleおよびbody内のcontentはextendsする側で再定義します。
+- body内の「header」「footer」およびBootstrapに必要なjQueryを書くjavascriptは全ページ共通ということで、layout.jade内でincludeしています。
+
+また、index.jadeの内容は以下の通りとなります。
+
+**index.jade**
+
+```
+extends ./layout
+block title
+  title レゴカー
+block content
+  h1 Hello World!
+```
+
+**ブラウザでみた場合**    
+ ![f:id:konoemario:20170730190403p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170730/20170730190403.png "f:id:konoemario:20170730190403p:plain:w500")
+
+以上で、node.js + express + jadeでBootstrapを使用したページを作成する準備が整いました。
+
+次回は、前回のリモコンの画面をjadeで書いていきたいと思います。

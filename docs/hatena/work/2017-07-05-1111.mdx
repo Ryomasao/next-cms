@@ -1,0 +1,290 @@
+---
+title: Node.jsを使って、簡単なWebアプリケーションをつくる(2)
+time: 2017-07-05 11:11
+---
+
+# 前回の続き
+
+今回は、リクエストしたURLの内容に応じて、ブラウザ側の表示を変えます。
+
+[Node.jsを使って、簡単なWebアプリケーションをつくる(1) - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/07/04/221335)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/07/04/221335">tohutokonsome.hatenablog.com</a></cite>
+
+- [前回の続き](#%E5%89%8D%E5%9B%9E%E3%81%AE%E7%B6%9A%E3%81%8D)
+  - [URLディスパッチャを実装する](#URL%E3%83%87%E3%82%A3%E3%82%B9%E3%83%91%E3%83%83%E3%83%81%E3%83%A3%E3%82%92%E5%AE%9F%E8%A3%85%E3%81%99%E3%82%8B)
+  - [htmlファイルを返す](#html%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E8%BF%94%E3%81%99)
+  - [動的コンテンツを表示する](#%E5%8B%95%E7%9A%84%E3%82%B3%E3%83%B3%E3%83%86%E3%83%B3%E3%83%84%E3%82%92%E8%A1%A8%E7%A4%BA%E3%81%99%E3%82%8B)
+
+## URLディスパッチャを実装する
+
+まずは、アクセスするURLに応じて、ブラウザに返す内容を変更してみます。
+
+**server.js(前回の状態)**
+
+```
+var http = require("http");
+
+var server = http.createServer();
+
+server.on("request",function(req, res){
+   console.log("リクエストがあったよ");
+   
+   //HTTPヘッダを編集する。
+   res.writeHead(200,{'Content-Type':'text/html','charset':'UTF-8'});
+   //サーバーにレスポンスを返す。
+   res.end("<h1>おはんきー！</h1>");
+});
+```
+
+上記の状態を、以下のように修正しました。
+
+**server.js(修正後)**
+
+```
+var http = require("http");
+
+var server = http.createServer();
+
+//urlディスパッチャに使う
+var url = require("url");
+
+server.on("request",function(req, res){
+   console.log("リクエストがあったよ");
+   
+   var incomingUrl = url.parse(req.url);
+
+   //サーバーにレスポンスを返す。
+    if (incomingUrl.path === "/hello"){
+       res.writeHead(200,{'Content-Type':'text/html'});
+       res.write('<head&gt<meta charset="UTF-8"&gt</head&gt');
+       res.end("<h1&gtおはんきー！</h1&gt");
+   }else if(incomingUrl.path === "/bye") {
+       res.writeHead(200,{'Content-Type':'text/html'});
+       res.write('<head&gt<meta charset="UTF-8"&gt</head&gt');
+       res.end("<h1&gtさよならんきー！</h1&gt");
+   }else{
+       res.writeHead(404,{'Content-Type':'text/html'});
+       res.write('<head&gt<meta charset="UTF-8"&gt</head&gt');
+       res.end("<h1&gt Not Found </h1&gt");
+    }
+ 
+});
+```
+
+引数reqにはurlの情報をもっていて、url.parse関数を用いることで解析することができます。  
+その情報をもとに、表示の出しわけをしているだけになります。  
+すごくあっさりしてますね。
+
+## htmlファイルを返す
+
+次に、「http://localhost:6677/hello」にアクセスしたら、htmlファイルを返却するようにします。
+
+プロジェクトのディレクトリ配下に、clientディレクトリを新規で作成し、その中に「index.html」をおきました。
+
+```
+masao-3:SampleProject konoe_mario$ tree
+.
+├── client
+│   └── index.html
+├── package.json
+└── server.js
+```
+
+index.htmlは、適当に作成します。
+
+**index.html**
+
+```
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>おはんきーブログtitle>
+head>
+<body>
+    <h1>てきとうにつくったh1>
+    <form>
+        <input id="nickname" type="text" name="nickname" placeholder="nickname"/>
+        <textarea id="text" placeholder="message" name="text">textarea>
+        <br/>
+        <br/>
+        <button type="submit">送信button>
+    form>
+
+body>
+html>
+```
+
+server.js側には、fsモジュールを読み込み、htmlファイルをfs.readFile関数で読み込んでいます。  
+読み込んだ結果は、第2引数のcallback関数のdataにあたるんですが、このへんの書き方がまだ慣れないです。
+
+**server.js(抜粋)**
+
+```
+//htmlファイルの読み込み
+var fs = require("fs");
+
+server.on("request",function(req, res){
+   console.log("リクエストがあったよ");
+
+   var incomingUrl = url.parse(req.url); 
+
+  //サーバーにレスポンスを返す。
+    if (incomingUrl.path === "/hello"){
+        //htmlファイルの読み込み
+        fs.readFile("./client/index.html",(err,data)=>{
+            if(err) {
+                res.writeHead(404,{'Content-Type':'text/html'});
+                res.write('<head&gt<meta charset="UTF-8"&gt</head&gt');
+                res.end("<h1&gt Not Found </h1&gt");
+            }
+
+            res.writeHead(200,{'Content-Type':'text/html'});
+            res.write(data);
+            res.end();
+
+        });
+```
+
+この状態で、「http://localhost:6677/hello」にアクセスすると、index.htmlの内容がブラウザに表示されるかと思います。
+
+## 動的コンテンツを表示する
+
+phpとかDjangoのpythonでもあったように、htmlの中にサーバー側で処理するスクリプト言語を埋め込んで動的に内容をかえたい、とういうことをやっていきます。
+
+まわりくどいですが、最初は自分でなんとかしてみようという発想です。
+
+さきほどの「index.html」にResultみたいなエリアを追加しています。
+
+**index.html**
+
+```
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>おはんきーブログtitle>
+head>
+<body>
+    <h1>てきとうにつくったh1>
+    <form>
+        <input id="nickname" type="text" name="nickname" placeholder="nickname"/>
+        <textarea id="text" placeholder="message" name="text">textarea>
+        <br/>
+        <br/>
+        <button type="submit">送信button>
+    form>
+    
+ 
+   <h1>Resulth1>
+    <div id="result">
+       <h2>hoge %>h2>
+    div>
+
+body>
+html>
+```
+
+「h2」の間に「hoge」を%で囲っています。 これは、ただの置き換えする際の目印なのでなんでもいいです。  
+ここの部分をserver.jsで書き換えます。
+
+**server.js(抜粋)**
+
+```
+//htmlファイルの読み込み
+var fs = require("fs");
+
+server.on("request",function(req, res){
+   console.log("リクエストがあったよ");
+
+   var incomingUrl = url.parse(req.url); 
+
+  //サーバーにレスポンスを返す。
+    if (incomingUrl.path === "/hello"){
+        //htmlファイルの読み込み
+        fs.readFile("./client/index.html","utf-8",(err,data)=>{
+            if(err) {
+                res.writeHead(404,{'Content-Type':'text/html'});
+                res.write('<head&gt<meta charset="UTF-8"&gt</head&gt');
+                res.end("<h1&gt Not Found </h1&gt");
+            }
+
+           //htmlファイルの一部を置き換え 
+            var rendarHtml = data.replace("","fuga");
+            
+            res.writeHead(200,{'Content-Type':'text/html'});
+            res.write(rendarHtml);
+            res.end();
+
+        });
+```
+
+上記のように、fs.readFileで読み込んだhtmlファイルをdata.replaceで置き換えています。  
+こうすると、以下のように、置き換えた文字列「fuga」が表示されるかと思います。
+
+ちなみに、こっそりfs.readFileの引数にencodingであるutf-8を追加しています。  
+これがないと、引数dataは、文字列として扱われないため、replace関数を使用することができません。
+
+```
+TypeError: data.replace is not a function
+```
+
+みたいなエラーがでるかと思います。
+
+さて、動的コンテンツを表示させるのに、毎回上記のようなreplaceを使ったり、htmlファイルをserver.jsで組み立てするのは面倒です。  
+なので、こういうときはejsという外部モジュールを使うみたいです。
+
+[Node.jsを基礎からはじめていく - Qiita](http://qiita.com/proelbtn/items/f6145edacd5a17ec60e8)<cite class="hatena-citation"><a href="http://qiita.com/proelbtn/items/f6145edacd5a17ec60e8">qiita.com</a></cite>
+
+EJSでぐぐると、それはもう新たな世界が広がりそうで本当に果てがないなぁなんて感じます。
+
+ここでは、深く考えずに使ってみます。
+
+ejsはNode.jsに標準で含まれていない機能になるので、別途インストールする必要があります。  
+とはいえ、パッケージマネジャーであるnpmを使うことで簡単に終わります。
+
+```
+masao-3:SampleProject2 konoe_mario$ npm install ejs
+```
+
+上記コマンドをたたくことで、プロジェクト配下に、node\_modulesディレクトが作成され、その中身をみると、ejsディレクトリが作成されていることが確認できます。
+
+```
+├── node_modules
+│   ├── ejs
+```
+
+あとは、server.js側でrequire(“ejs”)とするだけで使用ができます。 ejsでは置き換えたい文字列を%で囲む等のルールになっているので、index.htmlの内容は変更していません。
+
+**server.js(抜粋)**
+
+```
+//htmlファイルの読み込み
+var fs = require("fs");
+
+//動的コンテンツを提供するライブラリ
+var ejs = require("ejs");
+
+server.on("request",function(req, res){
+   console.log("リクエストがあったよ");
+
+   var incomingUrl = url.parse(req.url); 
+
+  //サーバーにレスポンスを返す。
+    if (incomingUrl.path === "/hello"){
+        //htmlファイルの読み込み
+        fs.readFile("./client/index.html","utf-8",(err,data)=>{
+            if(err) {
+                res.writeHead(404,{'Content-Type':'text/html'});
+                res.write('<head&gt<meta charset="UTF-8"&gt</head&gt');
+                res.end("<h1&gt Not Found </h1&gt");
+            }
+
+           //htmlファイルの一部を置き換え 
+            var rendarHtml = ejs.render(data,{hoge:'fuga'});
+            
+            res.writeHead(200,{'Content-Type':'text/html'});
+            res.write(rendarHtml);
+            res.end();
+
+        });
+```
+
+今回は、ここまでにしたいと思います。

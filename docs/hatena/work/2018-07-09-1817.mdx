@@ -1,0 +1,288 @@
+---
+title: Reactメモ
+time: 2018-07-09 18:17
+---
+
+## 環境構築
+
+まずは、Node.jsのインストールはしておこう。
+
+**Node.jsのバージョン**
+
+```
+$ node -v
+v9.6.1
+```
+
+少なくとも最近のNode.jsのバージョンであれば、パッケージ管理マネージャーのnpmも一緒にインストールされているはず。
+
+**npmのバージョン**
+
+```
+$ node -v
+v9.6.1
+```
+
+ただ、今回はnpmではなくってyarnを使ってみる。  
+yarnはnpmと互換性のあるパッケージ管理マネージャーなんだけれども、なんだか速いらしいです。
+
+yarn自身はnpmでもインストールできるみたいです。  
+また、他のプロジェクトでも使う可能性もあるので、グローバル環境にインストールしちゃいます。 yarnをインストールするのにnpmを使うという切なさ。
+
+**yarnのインストール**
+
+```
+$ npm install yarn -g
+```
+
+そうしたらReact用のディレクトリを作成して、そこにいろいろ追加することにします。
+
+**React用のディレクトリを作成**
+
+```
+$ mkdir sample-react
+```
+
+まずは、ここはyarnで管理するぞ！という宣言を込め`npm init`ならぬ`yarn init`をしておきます。  
+いろいろ聞かれますが、全部Enterで流します。  
+例のごとく、yarn(npm)でパッケージを公開する際に必要なものらしいので特に気にしなくて大丈夫です。
+
+**yarnの初期設定**
+
+```
+$ yarn init
+yarn init v1.7.0
+question name (sample-react):
+question version (1.0.0):
+question description:
+question entry point (index.js):
+question repository url:
+question author:
+question license (MIT):
+question private:
+success Saved package.json
+Done in 6.63s.
+```
+
+さあ、こっからはいろんなパッケージをいれていく時間だよ！ この辺をやればやるほど、よくわからないものを触ってる感が強くなってきますね。
+
+何はともあれ最初は、webpackを入れます。
+
+**webpackのインストール**
+
+```
+$ yarn add webpack webpacl-cli webpack-dev-server
+```
+
+ここでwebpackとはこんなものだよ！と端的に言えればいいのですが、いまだによくわかってないという。 複数モジュールをひとつにまとめる過程が、コンパイルっぽい段階なのか、webpackなのか、そもそもwebpackはコンパイラみたいなもんだよというものかと混乱の極みです。
+
+次にES6のjsをES5でも動くようにするbabel達をインストールしておきます。
+
+**babelのインストール**
+
+```
+$ yarn add babel-core babel-loader babel-preset-es2015 babel-preset-env
+```
+
+最後に、本命のReactをインストールします。
+
+```
+$ babel-preset-react react react-dom
+```
+
+webpack.config.jsをつくっとく。
+
+```
+var publidDir = __dirname + '/public';
+module.exports = {
+  // コンパイル対象のエントリーポイント
+  entry: [
+    './src/index.jsx'
+  ],
+  //出力先
+  output: {
+    path: publidDir,
+    filename: 'bundle.js'
+  },
+  // ローダーの設定
+  module: {
+    rules: [
+      {
+        // コンパイル対象の拡張子を書けばいいみたい
+        test: /\.(js|jsx)$/,
+        // nodo_modules配下は対象外にしろってことなんだろうけど、対象にするとどうなるんだろう。
+        // あー、entryのindex.js内で@importとかしてるからか。
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+        // ここに書いてもいいし、.babelrcに書いてもいいみたい
+        options: {
+          presets: ['react', 'env']
+        }
+      }
+    ]
+  },
+  // @import するときに.jsとか.jsxとかつけなくていいのはこの子のおかげと思われる
+  resolve: {
+      extensions: ['.js', '.jsx'],
+  },
+  //webpack-serverの設定
+  devServer: {
+    // 謎
+    historyApiFallback: true,
+    //documentroot
+    contentBase: publidDir
+  }
+};
+```
+
+### コンパイル
+
+```
+.$ /node_modules/.bin/webpack --mode development
+```
+
+### webpack-dev-serverの起動
+
+```
+"./node_modules/.bin/webpack-dev-server --mode development
+```
+
+vagrantやdockerとかで起動しているときは、こんなかんじでいけた。
+
+```
+$ ./node_modules/.bin/webpack-dev-server --mode development --host 0.0.0.0 --public VMのIP:port --watch-poll
+```
+
+◆関数
+
+```
+const Map = ({ lat, lng }) => {
+  return (
+  <MyMapComponent
+    isMarkerShown
+    googleMapURL="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry,drawing,places&key=AIzaSyAlmZk5ORyFRNbPQ2mNf9rK7YXOClDHW2I"
+    loadingElement={<div style={{ height: '100%' }} />}
+    containerElement={<div style={{ height: '400px' }} />}
+    mapElement={<div style={{ height: '100%' }} />}
+    location={{ lat, lng }}
+  />
+);
+}
+```
+
+↑と↓は同じ。 reactというよりかは、javascriptの話。 実行するブロックがひとつなら、returnを書かなくても、return してくれる。
+
+```
+const Map = ({ lat, lng }) => (
+  <MyMapComponent
+    isMarkerShown
+    googleMapURL="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry,drawing,places&key=AIzaSyAlmZk5ORyFRNbPQ2mNf9rK7YXOClDHW2I"
+    loadingElement={<div style={{ height: '100%' }} />}
+    containerElement={<div style={{ height: '400px' }} />}
+    mapElement={<div style={{ height: '100%' }} />}
+    location={{ lat, lng }}
+  />
+);
+```
+
+◆上記に関連して疑問
+
+```
+return axios.get().then()
+
+return (axios.get().then())
+```
+
+上段の方は、呼ぶ側でthenが使えない。 下段は使える。
+
+何が違うんだろう。
+
+◆axiosに関しての疑問
+
+```
+return (axios
+    .get(GEOCODE_ENDPOINT, config)
+    .then((res) => {
+      const { data } = res;
+      const { status } = data;
+      const result = data.results[0];
+
+      if (typeof result === 'undefined') {
+        return { status };
+      }
+
+      const address = result.formatted_address;
+      const { location } = result.geometry;
+
+      return { status, address, location };
+    }));
+};
+```
+
+thenの中でreturnするとどうなるんだけっけ。resolveと同じ？
+
+◆プロパティ
+
+```
+<hoge location={ここにコンポーネントに渡すプロパティを書く} />
+```
+
+プロパティを書く際に {lat} って書くと、 {lat: lat}って渡す。
+
+◆shothand キーとバリューが同じなら、これでいいじゃんてきな。
+
+```
+{lat: lat, lng: lng} → { lat , lng } でいける
+```
+
+◆shothand キーとバリューが同じなら、これでいいじゃんてきな2。
+
+```
+let name = member.name;
+↓
+let { name } = member
+```
+
+◆shothand3
+
+```
+const params = {
+  a:1
+  b:2
+}
+
+{ params } はparams : {
+  a:1,
+  b:2
+}
+
+paramsは {a:1, b:1)
+```
+
+◆shothand2 プロパティの値を展開してくれるやつ
+
+```
+<Marker {...props.location} > → <Marker lat={props.lat} lng={props.lng} />
+```
+
+◆mao
+
+```
+const hotels: [
+        { id: 111, name: 'hotel ookura', url: 'https://google.co.jp' },
+        { id: 222, name: 'かまど や', url: 'https://google.co.jp' },
+      ],
+
+    const result = hotels.map((hotel) => {
+      console.log(hotel);
+      return {
+        id: hotel.id,
+      };
+    });
+```
+
+結果は、[{id:111},{id:222}]が返ってくる。
+
+◆
+
+idはメアド passはco[https://webservice.rakuten.co.jp/app/create](https://webservice.rakuten.co.jp/app/create)

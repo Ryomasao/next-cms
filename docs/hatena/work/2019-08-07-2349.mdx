@@ -1,0 +1,349 @@
+---
+title: webpackの設定を行う対話ツールをつくる
+time: 2019-08-07 23:49
+---
+
+webpackの設定をちょっと変更して起動したいとき、`webpack.config.js`を直接書き換えるか、それ用の`webpack.config.hoge.js`とかを用意したりすればいいよね。  
+なんだけど、`yarn hogehoge`ってしたらCLIツールが立ち上がって、対話形式で設定を変更できたらすこしおしゃれじゃないですか。
+
+ということで、試してみた。
+
+参考にさせていただいた記事は以下の通り。
+
+[https://codeburst.io/building-a-node-js-interactive-cli-3cb80ed76c86](https://codeburst.io/building-a-node-js-interactive-cli-3cb80ed76c86)
+
+## まずは下準備
+
+おもむろに`index.js`を作成しよう。
+
+**index.js**
+
+```
+const init = () => {
+  console.log('Ohanky');
+};
+
+const run = async () => {
+  init();
+};
+
+run()
+```
+
+早速実行してみよう。コンソールに`Ohanky`がでるはずだ。
+
+**実行**
+
+```
+$ node index.js
+Ohanky
+```
+
+## かっこよくする
+
+このままだと味気ないで、コンソールに表示される文字に色をつけよう。
+
+`chalk`というパッケージを使うみたい。  
+githubのページもカラフルで綺麗な感じになってる。
+
+[chalk/chalk](https://github.com/chalk/chalk)<cite class="hatena-citation"><a href="https://github.com/chalk/chalk">github.com</a></cite>
+
+```
+$ yarn add --dev chalk
+```
+
+使い方は、ものすごくシンプルで、以下にように`console.log()`内に`chalk`の関数を実行しているだけ。
+
+**index.js**
+
+```
+// パッケージを読み込んで
+const chalk = require('chalk');
+
+const init = () => {
+  //ここで使うだけ
+  console.log(chalk.blue('Ohanky'));
+};
+
+const run = async () => {
+  init();
+};
+
+run();
+```
+
+さきほどと同様に実行してみれば、青色の`Ohanky`がコンソールに表示されたはず。
+
+## もっとかっこよくする
+
+いけてるCLIツールはかっこいいアスキーアートが起動すると表示されているよね。  
+自分でつくるのは大変だけど、`figlet`というパッケージをつかうと簡単にできるみたい。
+
+```
+$ yarn add --dev figlet
+```
+
+[patorjk/figlet.js](https://github.com/patorjk/figlet.js#readme)<cite class="hatena-citation"><a href="https://github.com/patorjk/figlet.js#readme">github.com</a></cite>
+
+いろんなオプションがあるけと、アスキーアートを作成はデフォルト非同期とのことなので、同期的に実行できる`textSync`だけを使うことにしてみる。
+
+**index.js**
+
+```
+const chalk = require('chalk');
+// 同じようにパッケージを読み込んで
+const figlet = require('figlet');
+
+const init = () => {
+  // ちょっとみにくいけど、chakl()の中で実行するだけ
+  console.log(chalk.blue(figlet.textSync('Ohanky')));
+};
+
+const run = async () => {
+  init();
+};
+
+run();
+```
+
+実行してみると、もうかっこいい！ ※ブラウザでみるとフォントの違いか、とても見にくい😇
+
+```
+$ node index.js 
+   ___ _ _          
+  / _ \| | ____ _ _ __| |___ _ 
+ | | | | '_ \ / _` | '_ \| |/ / | | |
+ | |_| | | | | (_| | | | | <| |_| |
+  \ ___/|_| |_|\__ ,_|_| |_|_|\_\\__, |
+                               |___/
+```
+
+## 対話できるようにする
+
+ようやく本題。
+
+といってもパッケージ、`inquirer`を使うだけでシンプルに作ることができるとのこと。
+
+```
+$ yarn add --dev inquirer
+```
+
+[SBoudrias/Inquirer.js](https://github.com/SBoudrias/Inquirer.js/)<cite class="hatena-citation"><a href="https://github.com/SBoudrias/Inquirer.js/">github.com</a></cite>
+
+ひとまず、webpackの設定という方針は忘れて、適当に選択肢を作って選ぶことにしてみる。
+
+**index.js**
+
+```
+const chalk = require('chalk');
+const figlet = require('figlet');
+// 同じようにパッケージを読み込んで
+const inquirer = require('inquirer');
+
+const askQuestions = () => {
+  // 設定を書く
+  const questions = [
+    {
+      // 今回は選択肢の中から選ぶようにlistを指定
+      type: 'list',
+      // 選択肢から選んだ結果を保持する際のキー名
+      name: 'member',
+      // 質問文 
+      message: "Please choose which one you like from",
+      // 選択肢
+      choices: ['ayane', 'mirin']
+    }
+  ];
+  // この関数はPromiseを返すので、受け取る方でPromise.resolveしたときの処理を書く
+  return inquirer.prompt(questions);
+};
+
+const init = async () => {
+  console.log(chalk.blue(figlet.textSync('Ohanky')));
+  // async await構文でPromise.resolveしたときの処理を書く
+  const result = await askQuestions();
+  console.log(result);
+};
+
+const run = async () => {
+  init();
+};
+
+run();
+```
+
+これを実行すると、以下ように選択肢に設定した項目が選べるようになる！
+
+```
+___ _ _          
+  / _ \| | ____ _ _ __| |___ _ 
+ | | | | '_ \ / _` | '_ \| |/ / | | |
+ | |_| | | | | (_| | | | | |_| |
+  \ ___/|_| |_|\__ ,_|_| |_|_|\_\\__, |
+                               |___/ 
+? Please choose which one you like from (Use arrow keys)
+❯ ayane 
+  mirin 
+
+// 選んでEnterを押下すると以下のオブジェクトが出力される
+{ member: 'ayane' }
+```
+
+## もっと便利に対話できるようにする
+
+リストから選択肢を選ぶのもいいけれども、選択肢がたくさんあったら面倒だよね、ということで、ユーザー入力値を設けて、フィルターできる機能を追加することにする。
+
+これは、さきほどの`inquirer`のプラグインという形ですでに用意されている。
+
+```
+$ yarn add --dev inquirer-autocomplete-prompt
+```
+
+[mokkabonna/inquirer-autocomplete-prompt](https://github.com/mokkabonna/inquirer-autocomplete-prompt)<cite class="hatena-citation"><a href="https://github.com/mokkabonna/inquirer-autocomplete-prompt">github.com</a></cite>
+
+こちらが`inquirer-autocomplete-prompt`を使ったサンプルは以下の通り。  
+githubをみると、絞り込みにはさらに`fuzzy`なるパッケージがおすすめというとでしたが、ひとまずシンプルにarray.filterを使うことにします。
+
+**index.js**
+
+```
+const chalk = require('chalk')
+const figlet = require('figlet')
+const inquirer = require('inquirer')
+
+// 追加したプラグインはこんな感じに読み込めるみたい
+// autcompleteっていうプラグイン名なのかしら
+inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'))
+
+// 選択肢はわかりやすいように切り出しただけ
+const members = ['ayane', 'mirin', 'eitaso', 'risa', 'nemo', 'perorin']
+
+// ユーザが文字を入力するたびに、呼ばれる関数を実装する
+// inputはユーザー入力値、answerは前回のフィルターした結果が格納されるっぽいけど、今回は使ってない
+const getMember = (answer, input) => {
+  // ユーザー入力値を含む値をフィルターで取得
+  const member = members.filter(item => item.indexOf(input) !== -1)
+  // なにも該当しない場合は、リスト全体を返すようにした
+  const result = member.length > 0 ? member : members
+  // 結果はPromiseで返さなきゃいけないとのこと
+  return Promise.resolve(result)
+}
+
+const askQuestions = () => {
+  const questions = [
+    {
+      // typeをlistからautocompleteに
+      type: 'autocomplete',
+      name: 'member',
+      message: 'Please choose which one you like from ',
+      // choicesではなく、ユーザー入力値が設定されるごとに実行される関数を設定
+      source: getMember,
+    },
+  ]
+  return inquirer.prompt(questions)
+}
+```
+
+こうすることでいい感じに絞り込みを行うことができた。
+
+```
+/ _ \| | ____ _ _ __| |___ _ 
+ | | | | '_ \ / _` | '_ \| |/ / | | |
+ | |_| | | | | (_| | | | | |_| |
+  \ ___/|_| |_|\__ ,_|_| |_|_|\_\\__, |
+                               |___/ 
+? Please choose which one you like from ne
+❯ ayane 
+  nemo
+```
+
+## 本題という名の蛇足
+
+あ、webpackの設定だったね、ということで、この対話ツールをwebpack起動時に呼び出すようにする。
+
+試しにマルチページアプリケーションでエントリーポイントがページごとにあるという設定で考えてみる。
+
+さきほど`index.js`でつくっていたファイルを`selectEntry.js`に変更して、`webpack.config.js`の設定を書いてみる。  
+対話ツールは、ユーザーが操作して値が決まるので、それを待ってからwebpackを起動する必要がある。
+
+これについては、公式サイトをみるとPromiseを返す設定もできるとのこと。  
+[Configuration Types | webpack](https://webpack.js.org/configuration/configuration-types/#exporting-a-promise)<cite class="hatena-citation"><a href="https://webpack.js.org/configuration/configuration-types/#exporting-a-promise">webpack.js.org</a></cite>
+
+なので、以下のように設定を行う。
+
+**webpack.config.js**
+
+```
+// つくった対話ツールを読み込んで
+const selectEntry = require('./selectEntry')
+
+// Promsieを返すようにする
+module.exports = async () => {
+  // 対話ツールの結果をawaitする
+  const entry = await selectEntry()
+
+ // あとは、結果を設定したオブジェクトを返すだけ
+  return {
+    // modeはwebpack4から必須なので書いとく
+    mode: 'development',
+    entry
+  }
+}
+```
+
+ここまできたら、`selectEntry.js`を`wepback.config.js`から呼び出せるように修正を行うだけ。
+
+**index.js**
+
+```
+const chalk = require('chalk')
+const figlet = require('figlet')
+const inquirer = require('inquirer')
+// パスからファイル名を取得するパッケージを追加
+const parsePath = require('parse-filepath')
+
+inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'))
+
+// 選択肢はエントリーポイントっぽく変更した
+const entryPaths = ['./src/index.js', './src/other.js']
+
+// 関数名とかも少しかえた
+const getEntryPoint = (answer, input) => {
+  const target = entryPaths.filter(item => item.indexOf(input) !== -1)
+  const result = target.length > 0 ? target : entryPaths
+  return Promise.resolve(result)
+}
+
+const askQuestions = () => {
+  const questions = [
+    {
+      type: 'autocomplete',
+      name: 'ENTRY',
+      message: "select webpack's entry point",
+      source: getEntryPoint,
+    },
+  ]
+  return inquirer.prompt(questions)
+}
+
+const init = async () => {
+  console.log(chalk.blue(figlet.textSync('Ohanky')))
+  return await askQuestions()
+}
+
+// Promiseを返すようにasyncを指定
+const run = async () => {
+  const answer = await init()
+
+  // entryは{entyName: path }の形式で返したかったので、こんな感じにしてる
+  const name = parsePath(answer.ENTRY).name
+  return {
+    [name]: answer.ENTRY,
+  }
+}
+
+// 最後にメインとなるrun関数をexportするだけ
+module.exports = run
+```
+
+これで、webpack起動時に、対話ツールが起動し、対話ツールで選択した結果がconfigに反映することができた。

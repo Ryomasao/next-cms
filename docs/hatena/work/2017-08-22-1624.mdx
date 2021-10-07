@@ -1,0 +1,159 @@
+---
+title: CSSの勉強の成果物をHerokuで管理する
+time: 2017-08-22 16:24
+---
+
+仕事帰りの奥さんを喫茶店で待っていた。
+
+表参道の喫茶店である。
+
+Mac Book Proを持ち込み、ｶﾀｶﾀｶｯﾀｰﾝ!とカッコよく作業をしていた。
+
+ターミナルの黒色背景に緑文字は、僕ってかっこいい！という自己陶酔に浸るにはぴったりの環境だ。
+
+```
+$ mkdir hoge 
+$ touch hoge.txt
+```
+
+やっぱり、hoge〜はいらないやと
+
+```
+$ rm -r *
+```
+
+と、やった直後に気がついた。
+
+作業ディレクトリを変更していた。
+
+結果、意図するものと異なるものを消してしまい、ここ１週間あまり作業していたソースやらなんやらが消失してしまった。
+
+ファイルはローカルにしか存在しておらず、githubにもあげていなかった。
+
+雑といわれがちな自分だけれども、表参道・喫茶店・MacBookPro + Terminalという組み合わせが、いつも以上の悲劇を呼んでしまった。
+
+このことから、今更ではあるのだけれども、成果物をリモート上で管理していく習慣をつけていこうと思う。  
+(そもそもrm -r \* なんてやらないほうがいいのだけれども)
+
+そこで今回は、試しにHerokuを用いて作業物を管理してみたいと思うので、それをするにあたっての作業記録を書いていく。
+
+ちなみに消えてしまったものは、以下の「Node.jsを始めてみよう」を参考にいろいろ試していたものだった。
+
+わかりやすくて、すごい読みやすい内容なので自分みたいにNode.jsを始めたばかりの方にはおすすめしたい。 僕は、こういうものを書けるようになりたい。
+
+今回のHerokuを使う、というのものこれをきっかけに使ってみることにした。
+
+[osamu38/node-express-curriculum](https://github.com/osamu38/node-express-curriculum/wiki/Node.js%E3%82%92%E5%A7%8B%E3%82%81%E3%81%A6%E3%81%BF%E3%82%88%E3%81%86)<cite class="hatena-citation"><a href="https://github.com/osamu38/node-express-curriculum/wiki/Node.js%E3%82%92%E5%A7%8B%E3%82%81%E3%81%A6%E3%81%BF%E3%82%88%E3%81%86">github.com</a></cite>
+
+# 作成したサイト
+
+以下のように、HerokuにWebサイトをデプロイして、CSS練習用のページをつくってみた。
+
+[CSS練習用のTOPページ](https://sample-basic-css.herokuapp.com/sample)
+
+あれ、Githubでソース管理して、ローカルで確認すればいいんじゃないの？っていう心の声は押さえましょう。
+
+Herokuを使いたいんだよね！そうだよね！
+
+まだ触ったばかりですが、githubにあげたタイミングでHerokuにもあげていこうかと思います。  
+(そもそもgithubにあげてなかったのが問題ですが)
+
+# Herokuをつかってみる
+
+今回、sample\_basic\_cssというディレクトリ配下に、以下のnode.jsのプロジェクトを作成したので、こちらをHerokuにデプロイしていきます。
+
+**sample\_baisc\_css配下**
+
+```
+.
+├── app.js
+├── bin
+├── node_modules
+├── package-lock.json
+├── package.json
+├── public
+├── routes
+└── views
+```
+
+##### アカウント作成
+
+Herokuにアクセスして、新規にアカウントを作成します。  
+今回のように、データベースとかまったくつかわないシンプルなサイトであれば、クレジットカードとかの情報も不要でした。
+
+[Cloud Application Platform | Heroku](https://www.heroku.com)<cite class="hatena-citation"><a href="https://www.heroku.com">www.heroku.com</a></cite>
+
+##### Heroku CLIをインストールする
+
+Herokuのサイト上からも、アプリケーションの作成やらなんやらできるみたいですが、CLIツールもあるので、こちらをインストールします。
+
+MacOSであればHomebrewでつっこんじゃいましょう。
+
+```
+$ brew install heroku
+```
+
+Windowsであれば、インストーラーがあるみたいです。  
+[Heroku CLI | Heroku Dev Center](https://devcenter.heroku.com/articles/heroku-cli)<cite class="hatena-citation"><a href="https://devcenter.heroku.com/articles/heroku-cli">devcenter.heroku.com</a></cite>
+
+##### デプロイの準備
+
+HerokuへのデプロイはGitを使って行います。  
+sample\_baisc\_cssはGithubで管理していたので、さくっといけました。
+
+##### Procfileの作成
+
+Herokuにデプロイする際に必要なファイルとのこと。  
+エントリーポイントがわかるように必要なのかな。
+
+**Procfile**
+
+```
+web: node ./bin/www
+```
+
+**sample\_baisc\_css配下**
+
+```
+.
+├── Procfile //追加
+├── app.js
+├── bin
+├── node_modules
+├── package-lock.json
+├── package.json
+├── public
+├── routes
+└── views
+```
+
+##### Herokuでアプリケーション作成
+
+「heroku create \<アプリケーション名\>」で空のアプリケーションを作成します。  
+作成されると、アプリケーションのURLとgitのリポジトリのURLが表示されます。
+
+```
+$ heroku create sample-basic-css
+Creating ⬢ sample-basic-css... done
+https://sample-basic-css.herokuapp.com/ | https://git.heroku.com/sample-basic-css.git
+```
+
+リモートのリポジトリもherokuという名前で作成されていますね。
+
+```
+$ git remote -v
+heroku https://git.heroku.com/sample-basic-css.git (fetch)
+heroku https://git.heroku.com/sample-basic-css.git (push)
+origin https://github.com/Ryomasao/sample_basic_css.git (fetch)
+origin https://github.com/Ryomasao/sample_basic_css.git (push)
+```
+
+あとは、githubにpushするのと同じ要領で
+
+```
+$ git push heroku master
+```
+
+デプロイが完了しました。
+
+先ほどの「[https://sample-basic-css.herokuapp.com/](https://sample-basic-css.herokuapp.com/)」にアクセスすると、Webサイトが参照できました！

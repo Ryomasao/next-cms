@@ -1,0 +1,140 @@
+---
+title: Apache2.4 + php-fpm + php7.1 でLaravel環境を作成する
+time: 2018-04-18 14:14
+---
+
+Apache.2.4系の最新、php7.1系の最新版でLaravelを動かせるようにする必要があったので作業記録をメモ。 開発環境なのでVagant上で設定しました。
+
+最終的にはAnsibleを使って開発環境を自動でつくることを目標にするのですが、まずは手作業で必要なことを確認することにします。
+
+## 事前準備
+
+Amazon Linux用のBoxを用意します。
+
+といってもBoxに`mvbcoding/awslinux`を指定しただけ。
+
+`vagrant up`後に、バージョンを確認したところ、こんな感じでした。
+
+**Amazon Linuxのバージョン確認**
+
+```
+$ cat /etc/system-release
+Amazon Linux AMI release 2017.03
+```
+
+## Apache
+
+何はともあれ、Apacheを用意することにします。 なんでnginxじゃないんだろうっていう疑問もありますが、nginxの方がいいよ！っていう明確な理由を答えることができないので、そのへんは置いておきます。
+
+「Apache2.4系 インストール」で調べた結果、`yum install httpd24'を叩けば簡単にインストールできることがわかりました。
+
+が、パッケージ情報を見るとバージョンが、`2.4.27`でした。
+
+**パッケージの確認**
+
+```
+$ yum info httpd24
+Loaded plugins: priorities, update-motd, upgrade-helper
+Available Packages
+Name : httpd24
+Arch : x86_64
+Version : 2.4.27
+Release : 3.73.amzn1
+Size : 1.4 M
+Repo : amzn-updates/2017.03
+Summary : Apache HTTP Server
+URL : http://httpd.apache.org/
+License : ASL 2.0
+Description : The Apache HTTP Server is a powerful, efficient, and extensible
+            : web server.
+```
+
+この記事を書いた(2018/4/18)時点の最新は、`2.4.33`が最新みたいです。
+
+あれ、こういう場合ってどうしたらいいんだろう、とここで詰んでしまった感があります。
+
+あきらめる、という選択肢もあったのですがもう少しがんばってみることにします。
+
+### リポジトリの追加
+
+Amazon Linuxにはamazon-mainなるパッケージを管理するリポジトリが存在するとのこと。
+
+[リポジトリの追加 - Amazon Elastic Compute Cloud](https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/add-repositories.html)
+
+**リポジトリの確認**
+
+```
+ls /etc/yum.repos.d
+```
+
+このリポジトリに最新のApacheがないのであれば、他のリポジトリを追加すればいいじゃないの！ということで調べてみます。
+
+すると、こんな素敵な記事がまとまっております。
+
+[yumリポジトリ追加リスト 完全版 - Qiita](https://qiita.com/bezeklik/items/9766003c19f9664602fe)<cite class="hatena-citation"><a href="https://qiita.com/bezeklik/items/9766003c19f9664602fe">qiita.com</a></cite>
+
+いろいろと勘違いしている可能性はあるのですが、どうもApacheの最新版を落とすんであれば、iusというリポジトリがよさそうです。
+
+どれどれと[パッケージ一覧](https://ius.io/Packages/)を見てたのですが、RedHat、CentOSとリストがあるなかで、そもそもAmazon Linuxはどれなんだろう、ということで絶望してしまいました。
+
+[Apache2.4系をソースからインストール - Qiita](https://qiita.com/ksugawara61/items/70f5d1faf192c4ba6ca0)
+
+**Apacheビルドに必要なパッケージ**
+
+```
+$ sudo yum -y install pcre-devel expat-devel
+```
+
+**Apacheビルドに必要なパッケージ**
+
+```
+cd /usr/local/src/
+sudo wget http://ftp.jaist.ac.jp/pub/apache//apr/apr-1.6.3.tar.gz
+sudo tar xvzf apr-1.6.3.tar.gz
+cd apr-1.6.3/
+sudo ./configure
+sudo make
+sudo make install
+```
+
+```
+cd /usr/local/src/
+sudo wget http://ftp.jaist.ac.jp/pub/apache//apr/apr-util-1.6.1.tar.gz
+sudo tar xvzf apr-util-1.6.1.tar.gz
+cd apr-util-1.6.1/
+sudo ./configure --with-apr=/usr/local/apr
+sudo make
+sudo make install
+```
+
+```
+cd /usr/local/src/
+sudo wget http://ftp.jaist.ac.jp/pub/apache//httpd/httpd-2.4.33.tar.gz
+sudo tar xvzf httpd-2.4.33.tar.gz
+```
+
+```
+sudo yum install mod_ssl openssl openssl-devel
+```
+
+```
+$ sudo ./configure --enable-rewrite --enable-shared=yes --enable-ssl
+$ sudo make
+$ sudo make install
+```
+
+**/usr/local/apache2/conf/httpd.conf**
+
+```
+$ vim /usr/local/apache2/conf/httpd.conf 
+
+//コメントアウトを解除
+ServerName www.example.com:80
+```
+
+**Apache起動**
+
+```
+$ sudo /usr/local/apache2/bin/apachectl start
+$ curl localhost
+```

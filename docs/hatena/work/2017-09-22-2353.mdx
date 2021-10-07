@@ -1,0 +1,66 @@
+---
+title: pyenvでpythonをインストールできなかった
+time: 2017-09-22 23:53
+---
+
+根本的に解決しなかったので、こちらの記事から切り出しました。
+
+[ラズパイZeroでWringPiが使えるまでメモ - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/04/30/163148)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/04/30/163148">www.tohuandkonsome.site</a></cite>
+
+以下のバージョンでpythonをpyenvでインストールしたら、エラーになった。   
+(OSではなく、pyenv側の仕様がかわったのかな）
+
+**python3.5.1をインストール**
+
+```
+$ pyenv install 3.5.1
+```
+
+sslのパッケージがねえよ！ってことみたいなので、apt-getでインストールした。  
+ラズパイZeroとかだと、このエラーが出るまでに、結構な時間がかかるので、事前にインストールしておいたほうがよさげ。
+
+**pyenvのバージョン**
+
+```
+$ pyenv -v
+pyenv 1.1.4-2-gf9183b5
+```
+
+**OSのバージョン**
+
+```
+$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Raspbian
+Description: Raspbian GNU/Linux 9.1 (stretch)
+Release: 9.1
+Codename: stretch
+```
+
+**エラーの内容**
+
+```
+WARNING: The Python bz2 extension was not compiled. Missing the bzip2 lib?
+WARNING: The Python readline extension was not compiled. Missing the GNU readline lib?
+ERROR: The Python ssl extension was not compiled. Missing the OpenSSL lib?
+```
+
+**足りないパッケージの追加**
+
+```
+$ sudo apt-get install libssl-dev libbz2-dev libreadline-dev
+```
+
+これでいける、と思ったらいけなかった。
+
+[ERROR: The Python ssl extension was not compiled. Missing the OpenSSL lib? · Issue #950 · pyenv/pyenv](https://github.com/pyenv/pyenv/issues/950)<cite class="hatena-citation"><a href="https://github.com/pyenv/pyenv/issues/950">github.com</a></cite>
+
+どうもうまくいかないみたいです。
+
+python3.5.3だったらうまくいったという記載があったので、試したところうまくいきました。
+
+**python3.5.3をインストール**
+
+```
+$ pyenv install 3.5.3
+```

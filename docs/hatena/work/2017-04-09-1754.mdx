@@ -1,0 +1,86 @@
+---
+title: RaspBerryPiではじめる電子工作まとめ：電気ってなんだろう
+time: 2017-04-09 17:54
+---
+
+RaspBerryPiではじめる電子工作まとめ<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/04/09/175440" title="RaspBerryPiではじめる電子工作まとめ - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/04/09/175440">tohutokonsome.hatenablog.com</a></cite>
+
+## 電気ってなんだろう
+
+いろいろなサイトを読みつつ、自分なりの理解を書くつもりだったのですが  
+電気とは、みたいなことを書こうとすると、かなりややこしいのでちょっと諦めちゃいました。
+
+ここでは箇条書きにとどめます。  
+作業を進めていく上で、理屈に合わない点が出てきたら見直していきます。
+
+- すべての物質は原子から成り立っている。
+
+- 原子は、原子核と **電子** で構成されており、原子核は **陽子** と中性子で構成されている。
+
+- 電子と陽子は引かれあう。ただ陽子の方が重いので、電子が陽子に引っ張られる。
+
+- 便宜上、 **電子をマイナス** 、 **陽子をプラス** とする。
+
+- 乾電池のマイナス極とプラス極をなにかしらの物体でつなげると  
+マイナスの電子がプラスの陽子を求めて動き出す。 この流れを **電流** と呼ぶ。  
+ 単位はA(アンペア)。  
+ ただし、電流はプラスからマイナスに流れるとされている。
+
+- 電流は電位が高い方から、低い方に流れる。  
+ 電位の差があればあるほど、電流はたくさん流れる。
+
+- 電位差の単位を **電圧** という。単位はV(ボルト)。
+
+ちょっと注釈。  
+この電位、および電位差というものがさっぱりわかりませんでした。 勝手な見解として、電子、または陽子が、より偏っている状態のことを  
+電位差があるのではないかと解釈してみました。
+
+乾電池を例にしてみます。  
+以下の図のように、あぶれたマイナスの電子が相方を求めて プラス極へ移動しようとします。
+
+図1 電位差があまりない状態   
+ ![f:id:konoemario:20170409173539p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170409/20170409173539.png "f:id:konoemario:20170409173539p:plain:w300")
+
+このとき、あぶれたマイナスの電子が多ければ多いほど  
+たくさんの電子がプラス極へ移動するような気がします。
+
+図2 電位差があり、電流がいっぱい流れる状態   
+ ![f:id:konoemario:20170409173928p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170409/20170409173928.png "f:id:konoemario:20170409173928p:plain:w300")
+
+このとき、図2の状態は図1より電位差があるのではないか、とそう考えました。
+
+つまり、乾電池が使えなくなった状態とは、以下の図のように すべての電子が相方である陽子を見つけてしまったことにより  
+電子の移動が起きなくなった状態を指すのではないかと思いました。
+
+図3 電位差がなく安定した世界  
+ ![f:id:konoemario:20170409174412p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170409/20170409174412.png "f:id:konoemario:20170409174412p:plain:w300")
+
+では、箇条書きに戻ります。
+
+- 電流の流れを妨げる作用として **抵抗** というものがある。  
+単位はΩ（オーム)。
+
+- 豆電球など、電流を流すことで仕事をする物体そのものにも抵抗がある。
+
+- 電圧、電流、抵抗の関係はオームの法則で求められる。
+
+以下、参考にさせていただいた記事になります。
+
+電池の仕組み  
+[電池のしくみ - Panasonic](https://www.panasonic.com/global/consumer/battery/academy/jp/sikumi.html#01)  
+[乾電池が電気を生み出す仕組み | pecodrive](http://pecodrive.net/?p=2587)
+
+流れた電気はどこにいくのか  
+[使った電気はどこへ行く？](http://fchem.4rm.jp/log/nichijo/646.html)
+
+電位差とは  
+[電位差･電圧の仕組み【電気代はかせ】](http://www.denki-cost.com/article/denisa.html)
+
+豆電球を直列より、並列で接続したほうが明るい理由  
+[直列接続と並列接続 ■わかりやすい高校物理の部屋■](http://wakariyasui.sakura.ne.jp/p/elec/kairo/tyokuhei.html)
+
+電気とは  
+[電気とは](http://www9.wind.ne.jp/fujin/diy/denki/kiso/denka.htm)
+
+電子工作をはじめるにあたっての基本  
+[電流と電圧 ― 電子工作を始める前の基礎知識 - Build Insider](http://www.buildinsider.net/small/electronics/01)

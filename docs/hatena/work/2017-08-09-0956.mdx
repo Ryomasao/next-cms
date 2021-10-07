@@ -1,0 +1,123 @@
+---
+title: RaspBerryPiでラジコンをつくる(13):コントロール画面が完成した
+time: 2017-08-09 09:56
+---
+
+免許合宿の空き時間を利用して、ラズパイのラジコンのコントロール画面を作成してきましたが、一区切りついたのでまとめます。
+
+ラズパイどうのこうのより、画面をつくるほうが大変だった！
+
+- [つくったもの](#%E3%81%A4%E3%81%8F%E3%81%A3%E3%81%9F%E3%82%82%E3%81%AE)
+  - [コントロールする画面](#%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AD%E3%83%BC%E3%83%AB%E3%81%99%E3%82%8B%E7%94%BB%E9%9D%A2)
+  - [動くもの](#%E5%8B%95%E3%81%8F%E3%82%82%E3%81%AE)
+- [技術的なこと](#%E6%8A%80%E8%A1%93%E7%9A%84%E3%81%AA%E3%81%93%E3%81%A8)
+  - [コントロール画面:node.js](#%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AD%E3%83%BC%E3%83%AB%E7%94%BB%E9%9D%A2nodejs)
+  - [ラズパイのGPIOを制御する機能:Flask](#%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4%E3%81%AEGPIO%E3%82%92%E5%88%B6%E5%BE%A1%E3%81%99%E3%82%8B%E6%A9%9F%E8%83%BDFlask)
+
+### つくったもの
+
+#### コントロールする画面
+
+画面のレイアウトに関してはBootstrap4.xを使用しました。  
+CSSの基礎は、使わないとすぐに忘れちゃいます。
+
+今回は、スマホで見ることも意識して、レスポンシブを多少意識することにしました。
+
+**PC画面**  
+ ![f:id:konoemario:20170807223712p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170807/20170807223712.png "f:id:konoemario:20170807223712p:plain:w500")
+
+**スマホ画面(実際に映像をつけているところ)**  
+ ![f:id:konoemario:20170807223610p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170807/20170807223610.png "f:id:konoemario:20170807223610p:plain:w500")
+
+コントロール画面でできることは、
+
+- カメラモジュールの映像を見る
+- レゴカーの前進、後退
+- 右折・左折(ただし、直進は実装していないというポンコツっぷり)
+- レゴカーのクレーンを動かすことによるカメラの視点変更
+- ラズパイと同じネットワーク内で使用する場合と、外部のネットワークから使用する場合の切り替え
+
+になります。
+
+ラズパイを外部のネットワークから参照するには、以下を参考にさせていただきました。
+
+[Raspberry Piに外部ネットワークからアクセスできる様にして携帯でペットを遠隔監視する方法 - Qiita](http://qiita.com/kinpira/items/c9e6dc910e8d96e8c19b)<cite class="hatena-citation"><a href="http://qiita.com/kinpira/items/c9e6dc910e8d96e8c19b">qiita.com</a></cite>
+
+ssh接続自体は、秘密鍵が必要なのでまだいいのですが、Webサーバーには普通にアクセスできてしまうのが現状なので、勉強がてらログインページでも作成しようと思っています。
+
+#### 動くもの
+
+こちらは、以前に紹介したレゴカー第２弾のものになります。
+
+[RaspBerryPiでラジコンをつくる(9)：軽量化問題を解消するためのたったひとつの冴えたやり方 - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/06/20/103846)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/06/20/103846">www.tohuandkonsome.site</a></cite>
+
+**レゴカー**
+
+![f:id:konoemario:20170808222546j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170808/20170808222546.jpg "f:id:konoemario:20170808222546j:plain:w500")
+
+前回と比較して、
+
+- ステアリングを実装するためのサーボモータをもう少しパワーのあるものにした
+- レゴカーそのものをパーツを外して軽量化した
+- カメラモジュールの延長ケーブルを購入して、レゴカーのクレーン部分につけた
+
+などの変更を加えました。
+
+**カメラモジュール**  
+ ![f:id:konoemario:20170808223844j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170808/20170808223844.jpg "f:id:konoemario:20170808223844j:plain:w500")
+
+コントローラー画面からクレーンを左右に操作することで、周囲の映像を見ることが可能になりました。
+
+**クレーンが動いているところ**  
+ ![f:id:konoemario:20170808224101g:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170808/20170808224101.gif "f:id:konoemario:20170808224101g:plain")
+
+### 技術的なこと
+
+こちらも、以前書いたことがありますが、改めて整理します。
+
+[RaspBerryPiでラジコンをつくる(11)：socket.ioをFlaskで実装する - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/07/20/230249)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/07/20/230249">www.tohuandkonsome.site</a></cite>
+
+**なんとなくの全体図**![f:id:konoemario:20170719083402j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170719/20170719083402.jpg "f:id:konoemario:20170719083402j:plain:w500")
+
+- node.jsでコントロール画面を作成
+- コントロール画面からsocket.ioでFlaskのWebサーバーに接続し、前進・後退等の命令を送信
+- FlaskのWebサーバーがwiringpiでラズパイのGPIOをコントロール
+- ラズパイに「mjpg-streamer」をインストールして、カメラモジュールの映像をコントロール画面表示
+
+#### コントロール画面:node.js
+
+コントロールする画面は、node.jsを使いました。
+
+node.jsにした理由は、socket.ioを使いたかったからです。
+
+また、node.jsをそのまま使ってももちろんよかったのですが、なんとなくフレームワークのexpressを使うことにしました。
+
+expressを使うことで、テンプレートエンジンという言葉にぶつかり、せっかくなのでjade(pug)を使うことにしました。
+
+express、jadeに関しては、以下で触れました。
+
+[Udemyの無料のExpress講習受講メモ - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/07/21/153646)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/07/21/153646">www.tohuandkonsome.site</a></cite>
+
+[Node.js + express + jade + Bootstrapに触れてみる - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/07/30/203720)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/07/30/203720">www.tohuandkonsome.site</a></cite>
+
+ただ、socket.ioに関してはPythonのFlaskでも普通に使えるみたいなので、コントロールする画面含め、全てFlaskで作ってもよかったです。
+
+コントロールする画面に関しては、以下のリポジトリに管理しています。
+
+[Ryomasao/legocar\_express](https://github.com/Ryomasao/legocar_express)<cite class="hatena-citation"><a href="https://github.com/Ryomasao/legocar_express">github.com</a></cite>
+
+自分のためにも、READMEはこれから更新します。
+
+#### ラズパイのGPIOを制御する機能:Flask
+
+こちらに関しても、以前触れたことがあるのであまり書くことがありません。
+
+[RaspBerryPiでラジコンをつくる(11)：socket.ioをFlaskで実装する - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/07/20/230249)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/07/20/230249">www.tohuandkonsome.site</a></cite>
+
+機会があればDjangoでsocket.ioを使ってみたいです。
+
+リポジトリは以下で管理しています。
+
+こちらも、READMEを更新します。
+
+[Ryomasao/legocar](https://github.com/Ryomasao/legocar)<cite class="hatena-citation"><a href="https://github.com/Ryomasao/legocar">github.com</a></cite>

@@ -1,0 +1,61 @@
+---
+title: Pythonでキーイベントを取得する
+time: 2017-05-07 15:00
+---
+
+# #
+
+## Pygameのインストール
+
+```
+(raspberry_3.5.1) masao-3:raspberry konoe_mario$ sudo pip install pygame
+
+・
+（省略）
+・
+
+    #include "SDL.h"
+             ^
+    1 error generated.
+    error: command 'clang' failed with exit status 1
+```
+
+Mercurialのインストール
+
+```
+(raspberry_3.5.1) masao-3:raspberry konoe_mario$ brew install mercurial
+==> Downloading https://homebrew.bintray.com/bottles/mercurial-3.4.2.yosemite.bottle.tar.gz
+######################################################################## 100.0%
+==> Pouring mercurial-3.4.2.yosemite.bottle.tar.gz
+==> Caveats
+Bash completion has been installed to:
+  /usr/local/etc/bash_completion.d
+
+zsh completion has been installed to:
+  /usr/local/share/zsh/site-functions
+
+Python modules have been installed and Homebrew's site-packages is not
+in your Python sys.path, so you will not be able to import the modules
+this formula installed. If you plan to develop with these modules,
+please run:
+  mkdir -p /Users/konoe_mario/.local/lib/python3.5/site-packages
+  echo 'import site; site.addsitedir("/usr/local/lib/python2.7/site-packages")' >> /Users/konoe_mario/.local/lib/python3.5/site-packages/homebrew.pth
+==> Summary
+🍺 /usr/local/Cellar/mercurial/3.4.2: 370 files, 5.1M
+```
+
+```
+(raspberry_3.5.1) masao-3:raspberry konoe_mario$ brew install sdl sdl_image sdl_mixer sdl_ttf smpeg portmidi
+```
+
+```
+(raspberry_3.5.1) masao-3:raspberry konoe_mario$ sudo pip install hg+http://bitbucket.org/pygame/pygame
+
+・
+(省略)
+・
+Successfully installed pygame-1.9.4.dev0
+
+(raspberry_3.5.1) masao-3:raspberry konoe_mario$ pip freeze
+pygame==1.9.4.dev0
+```

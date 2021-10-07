@@ -1,0 +1,122 @@
+---
+title: ラズパイのVimでyankした文字列をMacで使用する
+time: 2017-07-24 23:55
+---
+
+ラズパイでシェルスクリプトをvimを使って書いていたときに、ふとコードの内容をgoogle検索したくなったとかありますよね！
+
+自分はあんまりないんですが、vimの設定をする際についでに気になったので設定したのでメモとして記載します。
+
+参考にさせていただいた記事は以下になります。
+
+[Vim copy clipboard between mac and ubuntu over ssh](https://stackoverflow.com/questions/37444399/vim-copy-clipboard-between-mac-and-ubuntu-over-ssh)<cite class="hatena-citation"><a href="https://stackoverflow.com/questions/37444399/vim-copy-clipboard-between-mac-and-ubuntu-over-ssh">stackoverflow.com</a></cite>
+
+X11.appを使う方法です。
+
+話はそれますが、一時期Vim使うってかっこいい！使いこなしたい！といろいろがんばったのですが、VscodeだったりいろいろなIDEツールがでてきたりで、どこまでをVimでがんばって、どこからIDEツールを使ってけばいいのだろう、悶々としておりました。
+
+結果VimもIDEもろくにつかえないのですが、コードを書くときのキー移動だったりの基本的な操作はVim準拠でファイラーみたいな部分はIDEに頼ればいいかなと思っている今日このごろです。
+
+検索とか置換とかもIDEでいいかなと思いつつ、Vimでもできたら便利だよなぁとも思う今日このごろです。
+
+- [ラズパイの設定](#%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4%E3%81%AE%E8%A8%AD%E5%AE%9A)
+  - [インストール](#%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
+    - [話がそれるけれどもvim-genomeって？](#%E8%A9%B1%E3%81%8C%E3%81%9D%E3%82%8C%E3%82%8B%E3%81%91%E3%82%8C%E3%81%A9%E3%82%82vim-genome%E3%81%A3%E3%81%A6)
+    - [なんでvim-gnomeなの？](#%E3%81%AA%E3%82%93%E3%81%A7vim-gnome%E3%81%AA%E3%81%AE)
+  - [.vimrcの設定](#vimrc%E3%81%AE%E8%A8%AD%E5%AE%9A)
+- [Mac側の設定](#Mac%E5%81%B4%E3%81%AE%E8%A8%AD%E5%AE%9A)
+- [ssh接続](#ssh%E6%8E%A5%E7%B6%9A)
+
+## ラズパイの設定
+
+なにはともあれ、ラズパイにvimをインストールしていきます。
+
+### インストール
+
+まずはパッケージリストを更新しときます。
+
+```
+$ sudo apt-get update
+```
+
+検証が怪しいのですが、vim-gnomeを導入します。
+
+```
+$ sudo apt-get install vim-gnome
+```
+
+#### 話がそれるけれどもvim-genomeって？
+
+あまり意識したことはなかったのですが、vimには様々なディストリビューションがあるみたいです。  
+その中のひとつになります。
+
+参考にさせていただいた記事。  
+[Vim の種類 (Vim family) - Qiita](http://qiita.com/b4b4r07/items/f7a4a0461e1fc6f436a4)
+
+上記の記事でいえば、vim-gnomeは「Huge」の一番機能が多いものにあたると思われます。
+
+```
+$ vim --version | grep -e Huge -e Small -e Normal
+Huge 版 with GTK2-GNOME GUI. 機能の一覧 有効(+)/無効(-)
+```
+
+#### なんでvim-gnomeなの？
+
+参考にさせていただいた記事。  
+[MacのVimでHomebrewを使ってクリップボード連携を有効にする - Qiita](http://qiita.com/shoma2da/items/92ea8badcd4655b6106c)
+
+クリップボード（command + cやcommand + pで使用できるいわゆるコピペ）とvimを連携するには、vimのディストリビューションがそれに対応している必要があるとのことです。  
+vim-gnomeはクリップボードに対応しているので、こちらを使用しました。
+
+```
+$ vim --version|grep clip
++clipboard +iconv +path_extra +toolbar
++eval +mouse_dec +startuptime +xterm_clipboard
+```
+
+### .vimrcの設定
+
+vimの設定ファイル、.vimrcをホーム配下に作成します。
+
+```
+$ vim ~/.vimrc
+```
+
+以下、一行を追加します。
+
+**.vimrc**
+
+```
+set clipboard^=unnamed
+```
+
+ラズパイ側の設定は以上になります。
+
+## Mac側の設定
+
+X11.appをインストールします。  
+このアプリケーションが本来どういったものなのかって、あんまりわかってないです。
+
+[XQuartz](https://www.xquartz.org/)
+
+インストールしたら、ツールバーのX11-\>環境設定を開き、ペーストボードタブを選択します。
+
+以下のように設定します。
+
+![f:id:konoemario:20170724233613p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170724/20170724233613.png "f:id:konoemario:20170724233613p:plain:w500")
+
+※各設定の意味をあんまり調べてないので、正直なところ全部チェックしちゃえ！という具合です。
+
+設定が終わったら、アプリケーションを終了します。
+
+## ssh接続
+
+一点、ssh接続する際に、-Xオプションをつける必要があります。
+
+```
+$ ssh 接続先のIP -X
+```
+
+このオプションをつけることで、ssh接続時にX11.appが起動してくるかと思います。
+
+以上になります。

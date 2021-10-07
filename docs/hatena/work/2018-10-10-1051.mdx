@@ -1,0 +1,68 @@
+---
+title: 
+time: 2018-10-10 10:51
+---
+
+[なんとなくで理解しないWebpackのCSS周辺 - Qiita](https://qiita.com/terrierscript/items/0574ab1ef358fecb55b9)<cite class="hatena-citation"><a href="https://qiita.com/terrierscript/items/0574ab1ef358fecb55b9">qiita.com</a></cite>
+
+[最新版で学ぶwebpack 4入門 - スタイルシート(CSSやSass)を取り込む方法 - ICS MEDIA](https://ics.media/entry/17376)<cite class="hatena-citation"><a href="https://ics.media/entry/17376">ics.media</a></cite>
+
+[Webpackで始めるVue.js](https://log.pocka.io/posts/vue-webpack-tutorial)<cite class="hatena-citation"><a href="https://log.pocka.io/posts/vue-webpack-tutorial">log.pocka.io</a></cite>
+
+```
+$ ./node_modules/.bin/vue-cli-service inspect > output.js
+```
+
+```
+$ tree
+.
+├── App.vue
+├── components
+│      ├── Test.vue
+```
+
+### 初期設定：App.vueのみスタイル
+
+**App.vue**
+
+```
+<style lang="scss">
+#app {
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
+}
+</style>
+```
+
+**ビルド**
+
+```
+$ npm run build
+```
+
+**結果**
+
+```
+File Size Gzipped
+
+  dist/app.js 1055.63 kb 253.24 kb
+```
+
+あれ、javascriptだけしかない。Chromeでみても、ちゃんとスタイルはあたってる。スタイルはどこに？
+
+Webpackは基本的に各リソースをjavasciptで実行できる形のものという考え方がめちゃくちゃわかりやすい。
+
+Webpackのloaderと呼ばれるものが、`.css`で書いたものを`app.js`にまとめて、app.js実行時にhtmlに`style`タグを埋め込んでるみたい。
+
+<figure class="figure-image figure-image-fotolife" title="chromeで見た図"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20181010/20181010104556.png" alt="f:id:konoemario:20181010104556p:plain" title="f:id:konoemario:20181010104556p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>chromeで見た図</figcaption></figure>
+
+Webpackでcssをjsに変換して、htmlに埋め込むという一連の流れには、最低限`css-loader`と`style-loader`が必要とのこと。   
+\* css-loader: @importとかを依存解決してくれるみたい \* style-loader:先ほどのstyleタグをhtmlに埋め込んでくれるもの
+
+あれ、でもさわってるのって`.css` じゃなくって `.vue`だよね。
+
+\*vue-loader:いろいろな機能があるけれども、ここで大事なのは、`.vue`に書かれた`style`タグに書かれた内容をwebpackのloaderに処理可能にするものということ

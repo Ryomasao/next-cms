@@ -1,0 +1,383 @@
+---
+title: HTTP/2をApacheで設定してみる
+time: 2018-12-04 19:31
+---
+
+HTTP2まわりでの設定を行ったのでメモ。
+
+# 本題
+
+- [本題](#%E6%9C%AC%E9%A1%8C)
+- [HTTP2ってなに？](#HTTP2%E3%81%A3%E3%81%A6%E3%81%AA%E3%81%AB)
+  - [わたしのHTTP/1.1](#%E3%82%8F%E3%81%9F%E3%81%97%E3%81%AEHTTP11)
+  - [わたしのHTTP/2](#%E3%82%8F%E3%81%9F%E3%81%97%E3%81%AEHTTP2)
+- [HTTP/2を導入する](#HTTP2%E3%82%92%E5%B0%8E%E5%85%A5%E3%81%99%E3%82%8B)
+  - [クライアント側：curlの準備](#%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88%E5%81%B4curl%E3%81%AE%E6%BA%96%E5%82%99)
+  - [サーバー側の準備: Apache](#%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC%E5%81%B4%E3%81%AE%E6%BA%96%E5%82%99-Apache)
+  - [リクエストの内容を確認する(HTTP)](#%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88%E3%81%AE%E5%86%85%E5%AE%B9%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%99%E3%82%8BHTTP)
+  - [リクエストの内容を確認する(HTTPS)①](#%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88%E3%81%AE%E5%86%85%E5%AE%B9%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%99%E3%82%8BHTTPS)
+    - [自己証明書の用意](#%E8%87%AA%E5%B7%B1%E8%A8%BC%E6%98%8E%E6%9B%B8%E3%81%AE%E7%94%A8%E6%84%8F)
+  - [リクエストの内容を確認する(HTTPS)②](#%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88%E3%81%AE%E5%86%85%E5%AE%B9%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%99%E3%82%8BHTTPS-1)
+  - [備忘](#%E5%82%99%E5%BF%98)
+
+# HTTP2ってなに？
+
+こちらの記事を読ませていただきました。
+
+[普及が進む「HTTP/2」の仕組みとメリットとは | さくらのナレッジ](https://knowledge.sakura.ad.jp/7734/)<cite class="hatena-citation"><a href="https://knowledge.sakura.ad.jp/7734/">knowledge.sakura.ad.jp</a></cite>
+
+#### わたしのHTTP/1.1
+
+理解不足なので、いろいろ間違いはあるけれども、以下の理解。  
+\* ファイルが複数ある場合は、複数のコネクションをはる \* ファイルごとにリクエスト・レスポンスのやりとりが必須なので、リクエストヘッダ・レスポンスヘッダ等、コンテンツ以外の部分でのデータも多く発生してしまう。
+
+#### わたしのHTTP/2
+
+理解不足なので(省略) \* ファイルが複数あっても1コネクション内でやりとりできる。(ストリームを使う) \* (なので)ファイルごとにリクエストヘッダ・レスポンスヘッダとか不要になる。
+
+つまり、HTTP/2のほうが、パフォーマンスに優れる！
+
+# HTTP/2を導入する
+
+導入するまえに、クライアント(ブラウザ)とサーバのやりとりを。
+
+- クライアント（ブラウザ）側がHTTP/2のやり方でいけるぜ！とサーバに連絡する。
+- サーバー(Apache、Nginx等)が対応していれば、HTTP/2でいくか！と応答する
+- サーバー(Apache、Nginx等)が対応してなければ、HTTP/2って何よ？HTTP/1.1でやるよと応答する
+
+こんなイメージ。
+
+クライアント(ブラウザ側)は、Wikiに書いてある通り。(大抵は対応している)  
+[HTTP/2 - Wikipedia](https://ja.wikipedia.org/wiki/HTTP/2)
+
+ただ、ブラウザはHTTPSでしか対応していないみたい。
+
+サーバー側も、上記Wikiに書いてある通り。
+
+## クライアント側：curlの準備
+
+以降では、クライアント側にブラウザではなくcurlを使って検証します。
+
+curlがHTTP/2に対応しているかは以下の記事を参考にさせていただきました。
+
+[curl エクステンションで HTTP/2 リクエストを送信する - Qiita](https://qiita.com/masakielastic/items/f563437c44b0d4c04f87)<cite class="hatena-citation"><a href="https://qiita.com/masakielastic/items/f563437c44b0d4c04f87">qiita.com</a></cite>
+
+## サーバー側の準備: Apache
+
+サーバー側はAmazonLinux2の環境を用意し、Apacheを使うことにします。
+
+**Apacheのインストール**
+
+```
+$ sudo yum install -y httpd
+$ httpd -v
+Server version: Apache/2.4.34 ()
+Server built: Sep 1 2018 05:35:00
+$ sudo systemctl start httpd
+```
+
+Apacheの初期ページでもいいんだけれども、初期ページのHTTPステータスコードが403を返して不安になるので、別途用意します。
+
+**適当なページをApacheのドキュメントルート配下に作成**
+
+```
+$ sudo vim index.html
+```
+
+さて、ApacheでHTTP/2を有効にするには、`mod_http2`というモジュールが必要になるとのことですが、AmazonLinux2のリポジトリにあるApacheに、こちらのモジュールが既にありそうです。
+
+**Apacheのモジュール確認**
+
+```
+$ httpd -M|grep http2_module
+ http2_module (shared)
+ proxy_http2_module (shared)
+```
+
+以下のconfファイルで読み込んでるみたいでした。
+
+/etc/httpd/conf.modules.d/10-h2.conf
+
+```
+LoadModule http2_module modules/mod_http2.so
+```
+
+また、`httpd.conf`についてもデフォルトで以下の設定が記載されていました。
+
+**httpd.conf**
+
+```
+# Enable HTTP/2 by default
+#
+# https://httpd.apache.org/docs/2.4/mod/core.html#protocols
+
+<IfModule mod_http2.c>
+    LogLevel http2:debug
+    Protocols h2 h2c http/1.1
+</IfModule>
+```
+
+## リクエストの内容を確認する(HTTP)
+
+さっそく、リクエストを投げてみます。
+
+シンプルに、EC2内で`localhost`に対してリクエストを行います。
+
+**curlでリクエスト**
+
+```
+$ curl localhost -vso /dev/null --http2
+```
+
+- -v: verboseの略、詳細なログがでる
+- -s: 進捗を非表示に
+- -o: body部分の出力先を /dev/nullにする(ヘッダだけ表示の-Iオプションでもいいのかな)
+
+**curlでリクエストした結果**
+
+```
+$ curl localhost -vso /dev/null --http2
+* Rebuilt URL to: localhost/
+* Trying 127.0.0.1...
+* TCP_NODELAY set
+* Connected to localhost (127.0.0.1) port 80 (#0)
+
+---リクエストヘッダ
+> GET / HTTP/1.1
+> Host: localhost
+> User-Agent: curl/7.55.1
+> Accept: */*
+> Connection: Upgrade, HTTP2-Settings
+> Upgrade: h2c
+> HTTP2-Settings: AAMAAABkAARAAAAAAAIAAAAA
+>
+
+---レスポンスヘッダ
+< HTTP/1.1 200 OK
+< Date: Tue, 04 Dec 2018 02:01:45 GMT
+< Server: Apache/2.4.34 ()
+< Last-Modified: Tue, 04 Dec 2018 01:56:59 GMT
+< ETag: "a-57c2894b5f659"
+< Accept-Ranges: bytes
+< Content-Length: 10
+< Content-Type: text/html; charset=UTF-8
+<
+```
+
+あれー、レスポンスヘッダは、HTTP/1.1のままだ、、、
+
+ということで、いろいろ試行錯誤して、悩んでいたところ、以下の記事に従い、Log設定を見直したところ
+
+[how to h2 in apache](https://icing.github.io/mod_h2/howto.html)
+
+**Apacheのログ**
+
+```
+[http2:warn] [pid 1354] AH10034: The mpm module (prefork.c) is not supported by mod_http2. The mpm determines how things are processed in your server. HTTP/2 has more demands in this regard and the currently selected mpm will just not do. This is an advisory warning. Your server will continue to work, but the HTTP/2 protocol will be inactive.
+```
+
+Apacheのプリフォーク型だとHTTP/2対応してねえよ！とのメッセージが。
+
+なので、ApacheのMPMの設定をイベントに変更する。
+
+**/etc/httpd/conf.modules.d**
+
+```
+#LoadModule mpm_prefork_module modules/mod_mpm_prefork.so
+LoadModule mpm_event_module modules/mod_mpm_event.so
+```
+
+Apache再起動後に試してみると、
+
+**再度リクエストを投げる**
+
+```
+$ curl -vso /dev/null http://localhost --http2
+* Rebuilt URL to: http://localhost/
+* Trying 127.0.0.1...
+* TCP_NODELAY set
+* Connected to localhost (127.0.0.1) port 80 (#0)
+
+--リクエストヘッダ
+> GET / HTTP/1.1
+> Host: localhost
+> User-Agent: curl/7.55.1
+> Accept: */*
+> Connection: Upgrade, HTTP2-Settings
+> Upgrade: h2c
+> HTTP2-Settings: AAMAAABkAARAAAAAAAIAAAAA
+>
+
+---レスポンスヘッダ
+< HTTP/1.1 101 Switching Protocols
+< Upgrade: h2c
+< Connection: Upgrade
+* Received 101
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=28
+* Connection state changed (MAX_CONCURRENT_STREAMS updated)!
+< HTTP/2 200
+< date: Sun, 00 Jan 1900 00:00:00 GMT
+< server: Apache/2.4.34 () OpenSSL/1.0.2k-fips
+< last-modified: Tue, 04 Dec 2018 02:09:45 GMT
+< etag: W/"175-57c28c25dc213"
+< accept-ranges: bytes
+< content-length: 373
+< content-type: text/html; charset=UTF-8
+<
+{ [373 bytes data]
+* Connection #0 to host localhost left intact
+```
+
+無事、HTTP/2.0でかえってきた！ ちなみに`h2c`は`HTTP/2 over TCP`の略語で、上記のリクエストはhttpsではなくhttpプロトコルでリクエストを投げてるので、HTTP/2のh2cの方式で応答しているってことなのかな。
+
+## リクエストの内容を確認する(HTTPS)①
+
+せっかくなので、HTTPS経由でも試してみる。
+
+まずは、ApacheがTLSで受け付けるように設定する。  
+設定にあたってはこちらを参考にした。
+
+[チュートリアル: Amazon Linux 2 に SSL/TLS を設定する - Amazon Elastic Compute Cloud](https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/SSL-on-an-instance.html)<cite class="hatena-citation"><a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/SSL-on-an-instance.html">docs.aws.amazon.com</a></cite>
+
+**mod\_sslの導入**
+
+```
+$ httpd -M|grep mod_ssl
+$ sudo yum install -y mod_ssl
+```
+
+上記のAWSのドキュメントには、自己証明書が用意されているっぽい記述があるんだけれどもなかった。 なのでまずは、自己証明書を用意することにする。
+
+### 自己証明書の用意
+
+以下の記事を参考にさせていただきました。
+
+[AWS で自己署名証明書を使ってみる - akiyoko blog](https://akiyoko.hatenablog.jp/entry/2015/05/24/234148)<cite class="hatena-citation"><a href="https://akiyoko.hatenablog.jp/entry/2015/05/24/234148">akiyoko.hatenablog.jp</a></cite>
+
+**自己証明書の作成**
+
+```
+$ sudo su -
+
+# cd /etc/httpd/conf
+
+//鍵と証明書の作成
+#openssl genrsa 2048 > server.key
+# openssl req -new -key server.key > server.csr
+# openssl x509 -days 3650 -req -signkey server.key < server.csr > server.crt
+
+//鍵と証明書を置くディレクトリを別途作成して配置する
+# mkdir /etc/httpd/conf/ssl.crt
+# mkdir /etc/httpd/conf/ssl.key
+# mv server.crt /etc/httpd/conf/ssl.crt
+# mv server.key /etc/httpd/conf/ssl.key
+```
+
+`mod_ssl`をインストールしたら、`ssl.conf'ができてたのでこちらを編集
+
+**Apacheの設定変更**
+
+```
+sudo vim /etc/httpd/conf.d/ssl.conf
+```
+
+**鍵と証明書のパスを修正**
+
+```
+SSLCertificateFile /etc/httpd/conf/ssl.crt/server.crt
+SSLCertificateKeyFile /etc/httpd/conf/ssl.key/server.key
+```
+
+以上に設定をし、Apacheを再起動する。
+
+## リクエストの内容を確認する(HTTPS)②
+
+証明書を導入後にhttpsをつけてリクエストしてみる。
+
+**リクエスト**
+
+```
+$ curl --insecure -vso /dev/null https://localhost --http2
+```
+
+- --insecure: オレオレ証明書だけど大丈夫だよ！っていうオプション
+
+**リクエストの結果**
+
+```
+$ curl --insecure -vso /dev/null https://localhost --http2
+* Rebuilt URL to: https://localhost/
+* Trying 127.0.0.1...
+* TCP_NODELAY set
+* Connected to localhost (127.0.0.1) port 443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* Cipher selection: ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
+* successfully set certificate verify locations:
+* CAfile: /etc/pki/tls/certs/ca-bundle.crt
+  CApath: none
+* TLSv1.2 (OUT), TLS header, Certificate Status (22):
+} [5 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server hello (2):
+{ [103 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [782 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [333 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [70 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Client hello (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS change cipher, Client hello (1):
+{ [1 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+* subject: C=XX; L=Default City; O=Default Company Ltd
+* start date: Dec 4 02:29:14 2018 GMT
+* expire date: Dec 1 02:29:14 2028 GMT
+* issuer: C=XX; L=Default City; O=Default Company Ltd
+* SSL certificate verify result: self signed certificate (18), continuing anyway.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+} [5 bytes data]
+* Using Stream ID: 1 (easy handle 0x19a3ea0)
+} [5 bytes data]
+> GET / HTTP/2
+> Host: localhost
+> User-Agent: curl/7.55.1
+> Accept: */*
+>
+{ [5 bytes data]
+* Connection state changed (MAX_CONCURRENT_STREAMS updated)!
+} [5 bytes data]
+< HTTP/2 200
+< date: Tue, 04 Dec 2018 04:08:54 GMT
+< server: Apache/2.4.34 () OpenSSL/1.0.2k-fips
+< last-modified: Tue, 04 Dec 2018 02:09:45 GMT
+< etag: "175-57c28c25dc213"
+< accept-ranges: bytes
+< content-length: 373
+< content-type: text/html; charset=UTF-8
+```
+
+TLSの分、やりとりが長いけれどもHTTP/2でかえってきた！
+
+## 備忘
+
+AWSで、クライアント---①---ELB--②--EC2のときに、HTTP/2の通信はどうなってるんだろう。
+
+①はHTTP/2.0っぽいんだけど、②は一体？
+
+2018/12/5 ついき ELBはリスナーとしてはHTTP/2対応してるけど、背後のEC2に接続するときはHTTP/1.1とのこと！ AWS のELBのドキュメントに書いてある。

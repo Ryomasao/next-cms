@@ -1,0 +1,421 @@
+---
+title: RaspBerryPiでラジコンをつくる(12):もう少しブラウザから操作する
+time: 2017-07-28 19:35
+---
+
+- [使用したHTMLエディタ](#%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%9FHTML%E3%82%A8%E3%83%87%E3%82%A3%E3%82%BF)
+- [さっそく作成する](#%E3%81%95%E3%81%A3%E3%81%9D%E3%81%8F%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B)
+  - [とりあえず最初にグリッド](#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9A%E6%9C%80%E5%88%9D%E3%81%AB%E3%82%B0%E3%83%AA%E3%83%83%E3%83%89)
+  - [ヘッダーを編集する](#%E3%83%98%E3%83%83%E3%83%80%E3%83%BC%E3%82%92%E7%B7%A8%E9%9B%86%E3%81%99%E3%82%8B)
+- [作成する画面イメージ](#%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B%E7%94%BB%E9%9D%A2%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8)
+  - [メインコンテンツ](#%E3%83%A1%E3%82%A4%E3%83%B3%E3%82%B3%E3%83%B3%E3%83%86%E3%83%B3%E3%83%84)
+    - [カメラ部分](#%E3%82%AB%E3%83%A1%E3%83%A9%E9%83%A8%E5%88%86)
+    - [コントローラ部分](#%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AD%E3%83%BC%E3%83%A9%E9%83%A8%E5%88%86)
+  - [申し訳程度にフッターをつける](#%E7%94%B3%E3%81%97%E8%A8%B3%E7%A8%8B%E5%BA%A6%E3%81%AB%E3%83%95%E3%83%83%E3%82%BF%E3%83%BC%E3%82%92%E3%81%A4%E3%81%91%E3%82%8B)
+
+以前、ブラウザからキー入力した情報をsocket.ioを使用してFlaskで作成したWebサーバーに送信する、というところまでやりました。
+
+[RaspBerryPiでラジコンをつくる(11)：socket.ioをFlaskで実装する - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/07/20/230249)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/07/20/230249">tohutokonsome.hatenablog.com</a></cite>
+
+ラジコンとしては、最低限の機能を有しているわけですが、もうすこし画面に凝ってみたい、スマホからの操作も意識してみたい、というところもありまして、画面を作成することにしました。
+
+このブログを始めた当初に、日めくりカレンダーを作ってみよう、という中途半端なもの作成した際に、HTMLとCSSの勉強を少ししたのですが、もう忘れてしまっていました。
+
+[COBOLERが頑張る：日めくりカレンダー：参考サイト - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/01/31/230551)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/01/31/230551">tohutokonsome.hatenablog.com</a></cite>
+
+あまり作業メモを取っておらず後悔しましたので、今回はちゃんとメモっておこうと思います。
+
+全般的に役に立つ内容はほとんどなく、自分のメモという側面が大きいです。  
+（あれ、このブログで役に立つことなんてあったけ？）
+
+## 使用したHTMLエディタ
+
+node.jsの時にはWebStromを使っていたので、こちらを使いたかったのですがお試し期間が終わっちゃいました。  
+ライセンスを購入したいところなんですが、とり急ぎVsCodeで作業することにしました。
+
+VsCodeのプラグインはこちらを参考させていただきました。   
+[Visual Studio CodeでHTML作成環境を整える - Qiita](http://qiita.com/84zume/items/476a29264fdc98d98201)<cite class="hatena-citation"><a href="http://qiita.com/84zume/items/476a29264fdc98d98201">qiita.com</a></cite>
+
+## さっそく作成する
+
+とりあえず、socket.ioやらなんやらは忘れて、純粋にhtmlとcssのみ使っていきます。
+
+Bootstrap公式のテンプレートをとってくるところからやろうと思ったのですが、わかりやすい記事がありましたので、以下を参考にしました。
+
+[Bootstrap3.x.で何かやるときの最低限のメモ - Qiita](http://qiita.com/zaburo/items/e5b8c51873b193bb1573)
+
+ただ、今回使用するBootstrapのバージョンは4.xにしました。
+
+### とりあえず最初にグリッド
+
+参考記事をそのまま真似ています。
+
+**てきとうなhtml**
+
+```
+<html lang="ja">
+  <title>LegoCarコントローラtitle>
+  <head>
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+  head>
+  <body>
+
+<div class="container">
+    
+    <div class="row">
+    <div id="header" style="background-color:#ff0000">headerdiv>
+    div>
+
+    
+    <div class="row" style="background-color:#00ff00">
+        <div class="col-md-3">leftdiv>
+        <div class="col-md-6">centerdiv>
+        <div class="col-md-3">rightdiv>
+    div>
+
+    
+    <div class="row">
+    <div id="header" style="background-color:#0000ff">footerdiv>
+    div>
+div>
+
+    
+    <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous">script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous">script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous">script>
+  body>
+html>
+```
+
+**ブラウザでみた場合**  
+ ![f:id:konoemario:20170726111013p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170726/20170726111013.png "f:id:konoemario:20170726111013p:plain:w500")
+
+参考記事のBootstrap3.xでは、上記でいい感じに幅が揃っていたのですが。headerとfooterがはみ出てしまいました。   
+どうもBootstrap4.0の影響っぽいです。
+
+選択肢として、カラムの値を12にすればできたけれども、違和感があります。
+
+```
+<div class="row">
+           <div class="col-md-12" style="background-color:#ff0000">headerdiv>
+    div>
+```
+
+今回、全体をcontainerで囲む必要性を感じなかったので、メインコンテツ部分のみをcontainerで囲むことにしました。
+
+**てきとうなhtml(抜粋)**
+
+```
+<div id="header" style="background-color:#ff0000">headerdiv>
+
+    <div class="container">
+        
+        <div class="row" style="background-color:#00ff00">
+            <div class="col-md-3">leftdiv>
+            <div class="col-md-6">centerdiv>
+            <div class="col-md-3">rightdiv>
+        div>
+    div>
+        
+    <div id="header" style="background-color:#0000ff">footerdiv>
+```
+
+**ブラウザでみた場合**  
+ ![f:id:konoemario:20170727132424p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170727/20170727132424.png "f:id:konoemario:20170727132424p:plain:w500")
+
+### ヘッダーを編集する
+
+やっぱり、ヘッダーにナビゲーションっぽいものがあるといいのかな、ということでnavbarをつけます。
+
+navbarに関しては、公式のほぼそのままです。
+
+[Navbar · Bootstrap](https://v4-alpha.getbootstrap.com/components/navbar/)
+
+さきほどのheader部分をまるっと以下に置き換えます。
+
+**てきとうなhtml(抜粋)**
+
+```
+<nav class="navbar navbar-toggleable-md navbar-inverse bg-primary">
+      <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon">span>
+      button>
+
+      
+      <a class="navbar-brand navbar-inverse" href="#">tohua>
+
+      
+      <div class="collapse navbar-collapse" id="navbarNav" >
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="#">要素1a>
+          li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">要素2a>
+          li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">要素3a>
+          li>
+        ul>
+      div>
+    nav>
+```
+
+**ブラウザでみた場合**  
+ ![f:id:konoemario:20170727160354p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170727/20170727160354.png "f:id:konoemario:20170727160354p:plain:w500")
+
+せっかくなので、上部に固定します。   
+navのclassにfixed-topを追加しました。
+
+**てきとうなhtml(抜粋)**
+
+```
+<nav class="navbar navbar-toggleable-md navbar-inverse bg-primary fixed-top">
+      <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon">span>
+      button>
+
+      
+      <a class="navbar-brand navbar-inverse" href="#">tohua>
+
+      
+      <div class="collapse navbar-collapse" id="navbarNav" >
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="#">要素1a>
+          li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">要素2a>
+          li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">要素3a>
+          li>
+        ul>
+      div>
+    nav>
+```
+
+また、例のごとくfixed-topで固定した分、メインコンテンツをnavbarの高さ分paddingします。
+
+どれくらいpaddingしていいかは、公式サンプルを参考にしました。
+
+[Fixed top navbar example for Bootstrap](https://v4-alpha.getbootstrap.com/examples/navbar-top-fixed/)
+
+```
+<style>
+        /* Show it is fixed to the top */
+        body {
+        /*min-heightはスクロール検証用*/
+          min-height: 75rem;
+          padding-top: 4.5rem;
+        }
+    style>
+```
+
+**ブラウザでみた場合**  
+ ![f:id:konoemario:20170727160605p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170727/20170727160605.png "f:id:konoemario:20170727160605p:plain:w500")
+
+## 作成する画面イメージ
+
+ここに来て、手がとまっちゃいました。  
+というのも、どんな感じの画面をつくるのかをあまり考えていなかった！
+
+とりえあえずのイメージをdraw.ioで書いてみました。
+
+**作成する画面イメージ**  
+ ![f:id:konoemario:20170727210800j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170727/20170727210800.jpg "f:id:konoemario:20170727210800j:plain:w500")
+
+右側に広大なスペースがありますが、あまったら畑でも耕しておけばいいと思うので、とりあえずこんな感じでいきます。
+
+### メインコンテンツ
+
+とりあえずメイン部分となる、カメラの映像の部分と、コントローラーの部分をつくっていきたいと思います。
+
+メインは、カメラ、コントローラ部分と畑部分とで2カラムとしますので、以下のようにしました。
+
+**てきとうなhtml(抜粋)**
+
+```
+<div class="container">
+        
+        <div class="row" style="background-color:#00ff00">
+             
+            <div class="col-md-9" style="background:red">maindiv>
+            
+            <div class="col-md-3" style="background:yellow">sidediv>
+        div>
+    div>
+```
+
+**ブラウザでみた場合**  
+ ![f:id:konoemario:20170727161728p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170727/20170727161728.png "f:id:konoemario:20170727161728p:plain:w500")
+
+#### カメラ部分
+
+ラズパイのカメラの映像はお馴染みの「mjpg-streamer」を使っています。  
+なので、ストリミーング映像は、以下のimgタグを使うことで簡単に表示できます。
+
+```
+<img src="http://ラズパイのIPアドレス:8080/?action=stream">
+```
+
+ストリーミング映像のサイズは、mjpg-streamerのオプションで設定しています。  
+今は、「240 X 320」で設定しているのでそのサイズを意識することにしました。
+
+**てきとうなhtml(抜粋)**
+
+```
+<div class="col-md-9" style="background:red">
+                <div id="monitor-wrapper">
+                  <div id="monitor">
+                      
+                      <img src="https://placehold.jp/240x320.png">
+                  div>
+                div>
+```
+
+styleは以下のようにしました。
+
+```
+#monitor-wrapper{
+            padding-left:30px;
+        }
+
+        #monitor > img {
+            transform: rotate(90deg);
+        }
+```
+
+とりあえず、こんな感じになった。
+
+**ブラウザでみた場合**  
+ ![f:id:konoemario:20170727213011p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170727/20170727213011.png "f:id:konoemario:20170727213011p:plain:w500")
+
+「monitor-wrapper」やらimgタグでrotateしているのはラズパイのカメラの取り付けの際にカメラの向きが90度右になった状態で設置してしまったので、それを補正するために対応した。
+
+自宅のカメラを直せば、こんなことをしなくてよいのだけれども、免許合宿先で作業しているため、仕方がない。
+
+#### コントローラ部分
+
+ボタンを4つ十字に並べるだけといわれれば、それだけなんだけれども、それだけをどうやってやればいいのかなぁと悩んだ。
+
+結果、flexboxと呼ばれるCSSレイアウトを使うことにした。
+
+[CSS3 Flexbox の各プロパティの使い方を詳しく解説](http://coliss.com/articles/build-websites/operation/css/css3-flexbox-properties-by-scotch.html)<cite class="hatena-citation"><a href="http://coliss.com/articles/build-websites/operation/css/css3-flexbox-properties-by-scotch.html">coliss.com</a></cite>
+
+とりあえず、以下のように3 X 3のマスの上にButtonを並べるイメージで考えることにして、Button以外の要素は背景色に同化させて見えないようにした。
+
+**3X3のマスにボタンがあるイメージ**  
+ ![f:id:konoemario:20170727214246p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170727/20170727214246.png "f:id:konoemario:20170727214246p:plain:w500")
+
+**てきとうなhtml(抜粋)**
+
+```
+<div class="col-md-9" style="background:red">
+                
+                <div id="monitor-wrapper">
+                  <div id="monitor">
+                      <img src="https://placehold.jp/240x320.png">
+                  div>
+                div>
+                
+                <div id="controller_wrapper">
+                    <div class="dummy_button">div>
+                    <button class="controller_button">前進:Wbutton>
+                    <div class="dummy_button">div>
+                    <button class="controller_button">左折:Abutton>
+                    <div class="dummy_button">div>
+                    <button class="controller_button">右折:Dbutton>
+                    <div class="dummy_button">div>
+                    <button class="controller_button">後退:Sbutton>
+                    <div class="dummy_button">div>
+                div>
+```
+
+styleは以下とした。
+
+```
+/*flexさせたい要素の親要素のdisplayとして設定する。*/
+        #controller_wrapper{
+            background: #42aaf4;
+            width:300px;
+            height: 150px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+
+        .controller_button{
+            margin: 1%;
+            padding: 0;
+            width:30%;
+            height:30%;
+            background: #c97796;
+            text-align: center;
+            color: white;
+            border-radius: 10px;
+        }
+
+        .dummy_button{
+            margin: 1%;
+            padding: 0;
+            width:30%;
+            height:30%;
+        }
+```
+
+**ブラウザでみた場合**  
+ ![f:id:konoemario:20170727215055p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170727/20170727215055.png "f:id:konoemario:20170727215055p:plain:w500")
+
+### 申し訳程度にフッターをつける
+
+フッターがあるとそれっぽいかなぁということで、フッターをつけることにした。
+
+Bootstrap公式のフッターをそのままもってくる。
+
+[Sticky Footer Template for Bootstrap](https://getbootstrap.com/examples/sticky-footer/)
+
+**てきとうなhtml(抜粋)**
+
+```
+<footer class="footer">
+      <div class="container">
+        <p class="text-muted"><a href="http://tohutokonsome.hatenablog.com/archive">豆腐とコンソメa>p>
+      div>
+    footer>
+```
+
+スタイルもそのまま。
+
+```
+/* Sticky footer styles
+        -------------------------------------------------- */
+        html {
+          position: relative;
+          min-height: 100%;
+        }
+        body {
+          /* Margin bottom by footer height */
+          margin-bottom: 60px;
+        }
+        .footer {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          /* Set the fixed height of the footer here */
+          height: 60px;
+          background-color: #f5f5f5;
+        }
+```
+
+**ブラウザでみた場合**  
+ ![f:id:konoemario:20170728175930p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170728/20170728175930.png "f:id:konoemario:20170728175930p:plain:w500")
+
+なかなかひどいデザインです。 もう動かしたい！という気持ちがでてきちゃっているので、先に使えるようしてからデザインを整えたいなぁと思っとります。
+
+次回は、これをnode.jsのプロジェクトにのっけていきます。

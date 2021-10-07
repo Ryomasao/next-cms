@@ -1,0 +1,132 @@
+---
+title: Laravelで始めるTDD開発 (4):個別ページを作成する
+time: 2017-12-02 00:52
+---
+
+# 前回の続き
+
+ちょっとだけ慣れてきた感じがする。今日このごろ。
+
+[Laravelで始めるTDD開発 (3):スタイルを整える - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/11/29/224332)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/11/29/224332">www.tohuandkonsome.site</a></cite>
+
+- [前回の続き](#%E5%89%8D%E5%9B%9E%E3%81%AE%E7%B6%9A%E3%81%8D)
+  - [やること](#%E3%82%84%E3%82%8B%E3%81%93%E3%81%A8)
+  - [個別ページのテストコードを書く](#%E5%80%8B%E5%88%A5%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%AE%E3%83%86%E3%82%B9%E3%83%88%E3%82%B3%E3%83%BC%E3%83%89%E3%82%92%E6%9B%B8%E3%81%8F)
+  - [実装を書く](#%E5%AE%9F%E8%A3%85%E3%82%92%E6%9B%B8%E3%81%8F)
+    - [個別画面](#%E5%80%8B%E5%88%A5%E7%94%BB%E9%9D%A2)
+    - [テストを実行する](#%E3%83%86%E3%82%B9%E3%83%88%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%99%E3%82%8B)
+
+## やること
+
+`/thread/1`にアクセスすると、対応するthreadのページが見えるようにしてみる。
+
+## 個別ページのテストコードを書く
+
+まずは、個別ページが見えることのテストコードはこんな感じに。
+
+**ThreadTest.php**
+
+```
+/**
+     * すべてのユーザーは、/thread/{id}にアクセスすると、idに対応するthreadが参照できること
+     *
+     * @return void
+     */
+    public function test_all_user_can_view_thread()
+    {
+        //Threadがあって
+        $thread = factory('App\Thread')->create();
+
+        //Threadを表示するURLにアクセスすると
+        $response = $this->get('/thread/'.$thread->id);
+        
+        //Threadの内容が見えるんだよ
+        $response->assertSee($thread->body)
+                 ->assertSee($thread->title);
+    }
+```
+
+## 実装を書く
+
+ルーティングはこんな感じで、**web.php(抜粋)**
+
+```
+//Threadを表示する
+Route::get('/thread/{thread}', 'ThreadController@show');
+```
+
+コントローラーはこんな感じになる。
+
+**ThreadController.php(抜粋)**
+
+```
+public function show(Thread $thread)
+    {
+        return view('thread.show', compact('thread'));
+    }
+```
+
+冷静に考えると、こんな感じにするんだけれども (といっても、この例自体もLaravelならではの機能があって、なんか説明しにくいね。)
+
+**普通はこうなんじゃ**
+
+```
+//web.phpがこんな感じだったとして
+// Route::get('/thread/{id}', 'ThreadController@show');
+
+//コントローラーのstoreはこんな感じ
+    public function show($id)
+    {
+      //URIのidを条件にひとつのthreadをとってくる 
+      $thread = Thread::find($id) 
+       return view('thread.show', compact('thread'));
+    }
+```
+
+Laravelでは、URIとコントローラーにモデルが定義されていると、勝手にURIの数字に紐づくidをもとに対象のインスタンスをコントローラーに渡してくれるみたい。 恐ろしい子。
+
+[ルーティング 5.5 Laravel](https://readouble.com/laravel/5.5/ja/routing.html)
+
+> Laravelはタイプヒントされた変数名とルートセグメント名が一致する場合、Laravelはルートかコントローラアクション中にEloquentモデルが定義されていると、自動的に依存解決します。
+
+### 個別画面
+
+個別画面は新たに`show.blade.php`を用意して、ほぼコピペで終えます。
+
+**show.blade.php**
+
+```
+@extends('layouts.app')
+@section('content')
+<div class="container">
+    <h1>This is Thread's Detail!h1>
+        <div class="thread">
+            <h1> {{ $thread->title }} h1>
+            <p> {{ $thread->body }} p>
+        div>
+    div>
+div>
+@endsection
+```
+
+### テストを実行する
+
+問題なく通りました。  
+ちなみにphpunitで `--filter`オプションでメソッドを指定してあげると、対象のメソッドだけテストしてくれるみたいです。
+
+**テストコードを実行**
+
+```
+$ phpunit --filter test_all_user_can_view_thread
+PHPUnit 6.4.4 by Sebastian Bergmann and contributors.
+
+.. 2 / 2 (100%)
+
+Time: 1.66 seconds, Memory: 14.00MB
+```
+
+ためしにブラウザで見てみると、こんな感じになりました。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171202/20171202004932.png" alt="f:id:konoemario:20171202004932p:plain" title="f:id:konoemario:20171202004932p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>/thread/1にアクセスした場合</figcaption></figure>
+
+次回は登録ページを作成します。

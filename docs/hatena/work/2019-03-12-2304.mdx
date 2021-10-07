@@ -1,0 +1,39 @@
+---
+title: 
+time: 2019-03-12 23:04
+---
+
+**react-reduxとreact-router**
+
+```
+<Provider store={store}>
+  <ParentComponent>
+    <Router>
+      <Route path="/" render={props => <ChildComponent {...props}/> }/>
+    </Router>
+  </ParentComponent>
+</Provider>
+```
+
+こういう構成で、`ParentComponent`と`ChildComponent`がそれぞれが`react-redux`の`connect()`を使ってるとする。
+
+`connect()`を可視化するとこんなかんじかしら。
+
+**ちょっとわかりやすく**
+
+```
+<Provider store={store}>
+  <connect>
+    <ParentComponent>
+      <Router>
+        <Route path="/" render={(props) => 
+          <connect> 
+            <ChildComponent> 
+          <connect />
+        }/>
+      </Router>
+    </ParentComponent>
+  <connect>
+
+</Provider>
+```

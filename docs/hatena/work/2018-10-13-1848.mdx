@@ -1,0 +1,62 @@
+---
+title: Nuxt.jsでaxiosを使うときのパターン
+time: 2018-10-13 18:48
+---
+
+### いつもの
+
+サーバーサイドレンダリングはいらないぜパターン。
+
+**index.vue**
+
+```
+import axios from 'axios'
+
+export default {
+  data() {
+    return {
+      articles: []
+    }
+  },
+  created() {
+    console.log('index page is created')
+    axios.get('https://osake-d4cfe.firebaseio.com/articles.json')
+    .then(res => {
+      this.articles = res.data
+    })
+    .catch(error => {
+      console.log(error)
+    })
+  },
+}
+```
+
+- Vuex.jsでaxiosをシンプルに使うときのパターン
+- Nuxt.jsだからといってとくだんなにもかわらない
+- async await でもいいんだけれども話が別に方向にいきそうなのであんまり触れない
+
+### いつもの + Nuxt.jsのaxiosプラグインを使用
+
+Nuxt.jsのプラグインとして用意されているaxiosをせっかくだから利用してみるパターン。
+
+[nuxt-community/axios-module](https://github.com/nuxt-community/axios-module)<cite class="hatena-citation"><a href="https://github.com/nuxt-community/axios-module">github.com</a></cite>
+
+**インストール**
+
+```
+$ npm install @nuxtjs/axios
+```
+
+**nuxt.config.js**
+
+```
+module.exports = {
+  modules: [
+    '@nuxtjs/axios',
+  ],
+  axios: {
+    // ここにオプションを設定できたりする
+    // proxyHeaders: false
+  }
+}
+```

@@ -1,0 +1,296 @@
+---
+title: やっぱり、WebpackもBabelもよくわからない
+time: 2018-07-13 18:20
+---
+
+# 日記
+
+Reactをさわってみることにした。
+
+# 本題
+
+webpackとBabelの違いがなんだかわからなくなってしまった今日このごろ。
+
+自分の中では、両者はこんな認識だった。
+
+- webpack：複数のjsファイルとかだったりをひとつにまとめることができる。
+- Babel： ES6構文をES6が対応していないブラウザでも使えるようにES5にトランスパイルしてくれる。
+
+なんだけれども、こんな感じの`Hello.js`とそれを`@import`する`index.js`があった場合、どっちが何をやってるのかがわからなくなった。
+
+**Hello.js**
+
+```
+export function sayHello(message) {
+   console.log(message);
+}
+```
+
+**index.js**
+
+```
+import { sayHello } from "./lib/Hello.js"
+sayHello('Ohankyyyyyy');
+```
+
+というのも`@import`はES6構文だと思うんだけれども、これをIE11でも使えるようにしているのはwebpackなのか、Babelなのかどっちなんだろう。
+
+## 2018/10/16 追記
+
+検証するまでもなく、下記にある参考にさせていただいた記事に記載がありました。 これを自分のことばで認識すると、
+
+BabelはES6構文をES6が対応していないブラウザが実行できる形に変換してくれるが、import/exportの依存解決まではやってくれない。   
+ Webpackなどのモジュールバンドラーでまとめる必要がある。
+
+とのことでした。  
+※ちなみにES6っていってるけどES7とかES8とかもあって日々構文が進化しているみたい。 BabelはES8⇒ES6とか、柔軟に対応できるとのこと。  
+ まさにカオス。
+
+## ということで検証してみる
+
+試してみればいいじゃん！ということで試してみます。  
+webpackの記事については以下を参考にさせていただきました。
+
+[ブラウザで覚えるES Modules入門 - JavaScriptでモジュールを使う時代 - ICS MEDIA](https://ics.media/entry/16511)<cite class="hatena-citation"><a href="https://ics.media/entry/16511">ics.media</a></cite>
+
+めっちゃわかりすい。
+
+### まずは、何も使わないでES6構文
+
+さきほどの、二つのjsファイルを作成して、
+
+**Hello.js**
+
+```
+export function sayHello(message) {
+   console.log(message);
+}
+```
+
+**index.js**
+
+```
+import { sayHello } from "./lib/Hello.js"
+sayHello('Ohankyyyyyy');
+```
+
+`index.js` を読み込みます。
+
+**index.html**
+
+```
+//省略
+  script(src="/javascripts/index.js")
+```
+
+Chromeで参照してみると、シンタックスエラーになってることが確認できます。
+
+<figure class="figure-image figure-image-fotolife" title="Chromeでシンタックスエラー"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180713/20180713144557.png" alt="f:id:konoemario:20180713144557p:plain" title="f:id:konoemario:20180713144557p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Chromeでシンタックスエラー</figcaption></figure>
+
+おや、ChromeはES6構文に対応しているはずでは？と思いきや、`type="module"`を指定しなきゃいけないみたいです。
+
+**index.html**
+
+```
+//省略
+ script(type="module" src="/javascripts/index.js")
+```
+
+再度確認すると、無事実行されていることが確認できました。
+
+<figure class="figure-image figure-image-fotolife" title="Chromeで動いてる！"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180713/20180713145216.png" alt="f:id:konoemario:20180713145216p:plain" title="f:id:konoemario:20180713145216p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Chromeで動いてる！</figcaption></figure>
+
+ネットワークタブを確認してみると、`index.js`読込み後に、`Hello.js`を読みにいってそうなことがわかります。
+
+<figure class="figure-image figure-image-fotolife" title="Chromeのネットワークタブの様子"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180713/20180713145632.png" alt="f:id:konoemario:20180713145632p:plain" title="f:id:konoemario:20180713145632p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Chromeのネットワークタブの様子</figcaption></figure>
+
+さてさて、この状態でIEで確認してみると、コンソールログは何も出力されておらず、またネットワークも`index.js`のみ取得しているみたいです。
+
+![f:id:konoemario:20180713145919p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180713/20180713145919.png "f:id:konoemario:20180713145919p:plain")
+
+ここで、ES6構文の`@import`はIE11では対応してなくて、使えないということが確認できました。
+
+### 次にWebpackをためす
+
+次にwebpackでひとつにまとめてみようと思います。 早速インストールします。
+
+**webpackを導入**
+
+```
+$ npm install webpack webpack-cli
+```
+
+インストールができたら、さっそく実行します。  
+webpackの設定ファイルである`webpack.config.js`がなければ、`src`ディレクトリあるるものを`dist`に`main.js`として出力してくれるみたいです。
+
+**webpackを実行**
+
+```
+./node_modules/.bin/webpack --mode production
+```
+
+作成された`main.js`を読み込むように修正します。 また`type="module"`の定義も元に戻して消しておきます。
+
+**index.html**
+
+```
+//省略
+ script(src="/javascripts/main.js")
+```
+
+この状態でChrome、IE11で確認してみると、無事javascriptが動いていることが確認できました。  
+※画像はIE11のみです。
+
+<figure class="figure-image figure-image-fotolife" title="IE11でも動いた"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180713/20180713152435.png" alt="f:id:konoemario:20180713152435p:plain" title="f:id:konoemario:20180713152435p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>IE11でも動いた</figcaption></figure>
+
+とすると、`@import`を使えるようにしているのはwebpackだ！という結論が自分の中ででました。  
+あれ、実はBabelなんていらないんじゃないかとも思ってきたので、他の構文で試してみます。
+
+### Babelじゃなきゃだめそうな構文を試す
+
+さきほどの`Hello.js`にES6構文のアロー関数式を追加してみることにします。
+
+**Hello.js**
+
+```
+export function sayHello(message) {
+
+   console.log(message);
+   // アロー関数式を追加
+   const Bye = () => console.log('Bye');
+   Bye();
+}
+```
+
+これをwebpackを通して、IE11で実行してみたところ  
+**webpackを実行**
+
+```
+./node_modules/.bin/webpack --mode production
+```
+
+予想に反して、IE11でも実行できてしまいました。
+
+<figure class="figure-image figure-image-fotolife" title="あれ、IE11でも実行できる"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180713/20180713172109.png" alt="f:id:konoemario:20180713172109p:plain" title="f:id:konoemario:20180713172109p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>あれ、IE11でも実行できる</figcaption></figure>
+
+そもそもIE11でアロー関数が使えるのではないかとも思い、webpackを通さないで実行してみたところ、構文エラーになってしまいました。
+
+とすると、webpackを通せばBabelなんていらないのでしょうか？
+
+そんなはずはないという思いで、IE11で実行できないという構文をぐぐってみることにしました。
+
+[Babelを使えばIE11で使えないjavascriptも使用できるのでしょうか。｜teratail](https://teratail.com/questions/115501)<cite class="hatena-citation"><a href="https://teratail.com/questions/115501">teratail.com</a></cite>
+
+上記の記事を参考に、試してみることにします。
+
+**Hello.js**
+
+```
+export function sayHello(message) {
+
+   console.log(message);
+  // だめそうな構文を追加
+   const cityList = [
+    { name: '東京', value: '1' },
+    { name: '神奈川', value: '2' },
+    { name: '千葉', value: '3' },
+    { name: '埼玉', value: '4' },
+    ];
+
+    const target = cityList.find((city) => {
+        return (city.name === '東京');
+    });
+
+    console.log(target);
+}
+```
+
+ちゃんと？エラーになりました。
+
+<figure class="figure-image figure-image-fotolife" title="無事、IE11でエラーになった"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180713/20180713173114.png" alt="f:id:konoemario:20180713173114p:plain" title="f:id:konoemario:20180713173114p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>無事、IE11でエラーになった</figcaption></figure>
+
+### Babelを使う
+
+さきほどの構文がBabelを使うことで動くことを確認してみる。
+
+何はともあれ、Babelをインストールする。   
+**Babelのインストール**
+
+```
+$ npm install babel-core babel-loader babel-preset-env
+```
+
+Babelを使うにあたっては、こちらの記事はとてもわかりやすい。
+
+[最新版で学ぶwebpack 4入門 - Babel 7でES2018環境の構築(React, Vue, Three.js, jQueryのサンプル付き) - ICS MEDIA](https://ics.media/entry/16028)<cite class="hatena-citation"><a href="https://ics.media/entry/16028">ics.media</a></cite>
+
+上記の記事を参考に、webpack.config.jsを作成する。
+
+**webpack.config.js**
+
+```
+module.exports = {
+  mode: 'development',
+
+  entry: './src/index.js',
+
+  output: {
+    path: `${__dirname}/public/javascripts`,
+    filename: 'main.js'
+  },
+
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: [
+                ['env', {'modules': false}]
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+```
+
+この状態で再度webpackを実行。 **webpackを実行**
+
+```
+./node_modules/.bin/webpack
+```
+
+IE11を実行してみると、
+
+<figure class="figure-image figure-image-fotolife" title="IE11でメッセージかわってエラー"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180713/20180713175754.png" alt="f:id:konoemario:20180713175754p:plain" title="f:id:konoemario:20180713175754p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>IE11でメッセージかわってエラー</figcaption></figure>
+
+あら、Babel実行前とメッセージがかわりますが、エラーになっちゃってます。  
+調べてみると、ArrayをfindするというメソッドがIE11で実装されていないみたい。
+
+こちらの最下部にある、Array.prototype.findがない場合に代替するコードを先に読み込んでおけば、無事にarray.findを使うことができた。  
+[Array.prototype.find()](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Array/find)<cite class="hatena-citation"><a href="https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Array/find">developer.mozilla.org</a></cite>
+
+### とりあえずの結果
+
+なんだかよくわからない結果になってしまった。
+
+なんとなくの結論をメモしておく。
+
+- `@import`などのモジュールに関する機能はwebpackだけで事足りる。というのもwebpackはモジュールをまとめたりするものだから。
+
+- ES6構文をES5にしか対応していないブラウザで使用するにはwebpackだけじゃ足りなくってbabelでトランスパイルする必要がある。
+
+- とはいえ、babelだけやっとけばいいというものもなく、ものによっては代替コード(pollyfill)が必要になる。
+
+また、また気になったら試してみたいことは、
+
+- webpackを使わないでbabelを使ったときに、@import構文は機能するのか。  
+(gulpとかでやった場合ってどうなんだろう)
+
+- 今回はpollyfillが必要になってしまったけれども、babelを通すことで通るようになるものってなんだろう。
+
+こうやってみると何もわかってないことがわかる。

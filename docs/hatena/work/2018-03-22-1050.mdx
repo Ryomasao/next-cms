@@ -1,0 +1,51 @@
+---
+title: 
+time: 2018-03-22 10:50
+---
+
+## デーモン化したDocker
+
+デーモンと聞くと、こんな感じだけれども、
+
+システムの世界だとバックグラウンドで動くプログラムを指すみたい。
+
+とりあえず実行してみよう。
+
+**デーモンとして動かす**
+
+```
+docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+4ce8869a2d56231998eae86cd339f42c30553f6abd35401f88e6d54ec507cc6a
+```
+
+ポイントは'-d'オプション。これをつけることでバックグラウンドで実行してくれるみたい。  
+実行結果は、謎の文字列が表示されるんだけれども、どうやらコンテナIDみたい。
+
+`docker ps`でもコンテナIDが確認できるんだけれども、こちらのIDは短縮系みたい。
+
+**実行されているコンテナのIDを表示する**
+
+```
+$ docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+4ce8869a2d56 ubuntu:14.04 "/bin/sh -c 'while..." 15 seconds ago Up 15 seconds quizzical_kowalevski
+```
+
+試しに、オラ！オラ！と同じコマンドを叩いてみると、叩いた分だけコンテナがつくられることがわかった。　　
+
+<d>デーモンを3個つくる</d>
+
+```
+[vagrant@localhost docker_test]$ docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+64c6f7dc5fc4b36753973971ceaa7e0b4f90ca7ee41dd0088f11dafc482f323c
+[vagrant@localhost docker_test]$ docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+944b34729fc51c4fd3bfe4c6789edf5ff7f60c4baa8cc4036b16cd4a7ee12975
+[vagrant@localhost docker_test]$ docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+5bc9a22c81a29a3c74af49ec8a445075b90845b1fc6bd91ffd716e462071d137
+[vagrant@localhost docker_test]$ docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+5bc9a22c81a2 ubuntu:14.04 "/bin/sh -c 'while..." 3 seconds ago Up 2 seconds modest_goldwasser
+944b34729fc5 ubuntu:14.04 "/bin/sh -c 'while..." 4 seconds ago Up 3 seconds romantic_wozniak
+64c6f7dc5fc4 ubuntu:14.04 "/bin/sh -c 'while..." 5 seconds ago Up 4 seconds compassionate_visvesvaraya
+4ce8869a2d56 ubuntu:14.04 "/bin/sh -c 'while..." About a minute ago Up About a minute quizzical_kowalevski
+```

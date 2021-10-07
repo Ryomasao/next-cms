@@ -1,0 +1,357 @@
+---
+title: Laravelで始めるTDD開発 (5):登録ページを作成する
+time: 2017-12-04 21:55
+---
+
+# 前回の続き
+
+[Laravelで始めるTDD開発 (4):個別ページを作成する - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/12/02/005231)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/12/02/005231">www.tohuandkonsome.site</a></cite>
+
+- [前回の続き](#%E5%89%8D%E5%9B%9E%E3%81%AE%E7%B6%9A%E3%81%8D)
+  - [やること](#%E3%82%84%E3%82%8B%E3%81%93%E3%81%A8)
+    - [テストコード](#%E3%83%86%E3%82%B9%E3%83%88%E3%82%B3%E3%83%BC%E3%83%89)
+    - [実装](#%E5%AE%9F%E8%A3%85)
+    - [テストの前に](#%E3%83%86%E3%82%B9%E3%83%88%E3%81%AE%E5%89%8D%E3%81%AB)
+  - [登録ページをつくる](#%E7%99%BB%E9%8C%B2%E3%83%9A%E3%83%BC%E3%82%B8%E3%82%92%E3%81%A4%E3%81%8F%E3%82%8B)
+  - [バリデーションを作成する](#%E3%83%90%E3%83%AA%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B)
+  - [実装](#%E5%AE%9F%E8%A3%85-1)
+  - [ここまでの実装　](#%E3%81%93%E3%81%93%E3%81%BE%E3%81%A7%E3%81%AE%E5%AE%9F%E8%A3%85)
+
+## やること
+
+登録ページを作成して、Threadを新規に登録できるようにする。
+
+### テストコード
+
+こんな感じのコードを書いてみるよ。
+
+**ThreadTest.php**
+
+```
+/**
+     * （本当はログインした）ユーザは、Threadを作成することができる。
+     *
+     * @return void
+     */
+    public function test_user_can_post_thread()
+    {
+        //Threadがあって
+        $thread = factory('App\Thread')->make();
+
+        //Threadを表示するURLにアクセスすると
+        $this->post('/thread', $thread->toArray());
+
+       //あれ、何をassertをすればいんだろうというのは後半で
+        
+    }
+```
+
+`factory('App\Thread')->make()`は、createと違って、データベースに保存はされないけれども、テストデータのインスタンスを作成してくれる。
+
+そのインスタンスを`toArray()`でpostの第二引数に渡してあげることで、postリクエストとして渡すことができるみたい。
+
+また、本当はログインしたユーザーが作成できること、というテストを行うんだけれども、認証周りは後回しにすることにしたよ。
+
+### 実装
+
+ルーティングの定義はこんな感じ。
+
+`ThreadController@show`より下に投稿の定義を持ってちゃうと、`{thread}`のせいかうまくいかなかったりする。
+
+**web.php**
+
+```
+//Threadの一覧を表示する
+Route::get('/thread', 'ThreadController@index');
+
+//Threadを投稿する(今回新規で作成)
+Route::post('/thread', 'ThreadController@store');
+
+//Threadを表示する
+Route::get('/thread/{thread}', 'ThreadController@show');
+```
+
+コントローラーはこんな感じ。
+
+ものすごくシンプルだね。
+
+**ThreadController.php**
+
+```
+public function store(Request $request, Thread $thread)
+    {
+
+        $thread->create($request->all());
+
+        return redirect('/thread');
+    }
+```
+
+そして、忘れがちだけれどもモデルについても、マスアサイントメント機能を有効にしておくよ。
+
+`ThreadContoroller@store`のようにリクエストの内容全部をcreateみたいにしていると、リクエストの中に本来さわっちゃいけないname属性をこっそりいれられちゃったりした場合に、意図せずデータがつくられたり、更新されたりやべーよ！ということでこういった機能があるみたいだね。
+
+**Thread.php**
+
+```
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Thread extends Model
+{
+   //マスアサイントメント機能を有効にしておく 
+   //guardedするカラムはなにもない！
+   protected $guarded = [];
+}
+```
+
+### テストの前に
+
+実装が終えたので、テストを実行するよ！とする前に、ちょっと寄り道。
+
+今回のテストは何をもって成功とればいいんだろう。
+
+少し考えてみると、こんなような候補があがってくるね！
+
+- `$thread()->create()`でデータが保存されていること
+- エラーでなければ、`return redirect()`リダイレクトしているから、リダイレクトされること
+- いっそのことHTTPステータスコード200ってのも
+
+正解はなんだろう、というところだけれども自分もよくわからないんだ。
+
+そもそもホワイトボックス的に、最終的なアウトプットだけをみればいいのか、ブラックボックス的なことが必要なのかとかそのへんがまだあんまりわかってないです。
+
+今回に関していえば、Laracastの動画に則り、
+
+- 作成したThreadが個別ページで見れること
+
+というアプローチで成功かどうかを判断するよ。
+
+ということで直したテストコードはこんな感じ。
+
+**ThreadTest.php**
+
+```
+/**
+     * （本当はログインした）ユーザは、Threadを作成することができる。
+     *
+     * @return void
+     */
+    public function test_user_can_post_thread()
+    {
+        //Threadがあって
+        $thread = factory('App\Thread')->make();
+
+        //Threadを表示するURLにアクセスすると、threadが作成されて
+        $this->post('/thread', $thread->toArray());
+
+        //thread/thread_id にアクセスすると個別ページがみえる
+        $this->get('/thread/'.$thread->id)
+             ->assertSee($thread->title)
+             ->assertSee($thread->body);
+        
+    }
+```
+
+テストを実行すると、問題なく通りました。
+
+## 登録ページをつくる
+
+さて、なんとなくThreadを登録する機能ができあがってきたので、画面をつくっていきます。
+
+このへんは慣れてきたのでさくっといきます。
+
+ルーティングを書いて、
+
+**web.php**
+
+```
+//Threadの一覧を表示する
+Route::get('/thread', 'ThreadController@index');
+
+//Threadを投稿するページを表示する(今回新規で追加)
+Route::get('/thread/create', 'ThreadController@create');
+
+//Threadを投稿する
+Route::post('/thread', 'ThreadController@store');
+
+//Threadを表示する
+Route::get('/thread/{thread}', 'ThreadController@show');
+```
+
+コントローラーに定義を追加して
+
+**ThreadController.php(抜粋)**
+
+```
+public function create()
+    {
+        return view('thread.create');
+    }
+```
+
+画面を作成しよう。  
+スタイルをいろいろあてているけれども、scssは省略しちゃうよ。  
+需要はまったくないだろうけれどもgithubに上げておくよ！
+
+**create.blade.php**
+
+```
+@extends('layouts.app')
+@section('content')
+<div class="container justfy-center">
+    <form class="form" action="/thread" method="post">
+        {{ csrf_field() }}
+        <h2 class="form-header">何かを投稿しようh2>
+        <div class="form-group">
+            <label for="title">タイトルlabel>
+            <input type="text" name="title">
+        div>
+        <div class="form-group">
+            <label for="body">本文label>
+            <textarea name="body" rows="10" cols="50">textarea>
+        div>
+        <div class="form-group">
+            <label for="user_id">ユーザーIDlabel>
+            <input type="text" name="user_id" placeholder="とりあえずの実装">
+        div>
+        <div class="form-group">
+            <button>投稿するbutton>
+        div>
+    form>
+
+div>
+@endsection
+```
+
+こんな感じの画面になりました。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171202/20171202160125.png" alt="f:id:konoemario:20171202160125p:plain" title="f:id:konoemario:20171202160125p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Threadを作成する画面</figcaption></figure>
+
+ユーザーIDについては、ログイン機能をつくったらつくった人のIDが入ってくるイメージになりますが、今は適当に入力します。
+
+試しに投稿してみると、問題なく投稿できることが確認できました。
+
+## バリデーションを作成する
+
+現在の状態で、タイトルなどを空っぽにして投稿すると、タイトルにnullはだめだよ！というエラーでExceptionが発生してしまいます。
+
+なので、入力が必須の項目が未入力の場合は、入力してね！ってメッセージを出してあげましょう。
+
+なにはともあれはテストコードを先に書きます。
+
+**ThreadTest.php**
+
+```
+/**
+     * Thread投稿時にtitleが未入力だとValidationError
+     *
+     * @return void
+     */
+    public function test_thread_require_title()
+    {
+        //titleがnullのThreadがあって
+        $thread = factory('App\Thread')->make(['title' => null]);
+
+        //Threadを表示するURLにアクセスすると、threadを作成しようとして
+        $this->post('/thread', $thread->toArray())
+        //バリデーションに引っかかって、セッションに'title'というキーでエラーが書かれる
+             ->assertSessionHasErrors('title');
+        
+    }
+```
+
+ここで使うのは`assertSessionHasErrors`になります。 バリデーションに失敗してエラーになったかどうかの判断が、なんでセッションなんだろう、と思いませんか。
+
+気になったので調べてみました。
+
+> ではやって来たリクエストの入力が指定したバリデーションルールに当てはまらなかった場合はどうなるんでしょう？　既に説明した通り、Laravelは自動的にユーザーを以前のページヘリダイレクトします。付け加えて、バリデーションエラーは全部自動的にフラッシュデータとしてセッションへ保存されます。
+
+GETルートのビューへエラーメッセージを明示的に結合する必要がないことに注目してください。これはつまり、Laravelはいつもセッションデータの中にエラーの存在をチェックしており、見つけた場合は自動的に結合しているからです。
+
+公式のバリデーションには上記のことが書いてあります。
+
+つまり、バリデーションエラーの結果はセッションに書いていて、セッションにそのエラーが書かれていれば$errorsという変数に突っ込んでおくから、View(blade)で使ってね、ということみたいです。
+
+なるほどね！
+
+## 実装
+
+ということでバリデーションの実装をしていきます。
+
+バリデーションもコントローラーではなくって、フォームリクエストバリデーションというものを利用してみます。
+
+artisanで雛形を作成して、   
+**フォームリクエストの作成**
+
+```
+php artisan make:request ThreadRequest
+```
+
+フォームリクエストをこんな感じで書きます。
+
+**ThreadRequest.php**
+
+```
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class ThreadRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
+    public function authorize()
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array
+     */
+    public function rules()
+    {
+        return [
+            'title' => 'required',
+            'body' => 'required',
+            
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'title.required' => 'タイトルが未入力だよ',
+            'body.required' => '本文が未入力だよ',
+        ];
+    }
+}
+```
+
+コントローラーも、ThreadRequestを使うようにしてあげます。
+
+**ThreadController.php(抜粋)**
+
+```
+use App\Http\Requests\ThreadRequest;
+
+    public function store(ThreadRequest $request, Thread $thread)
+    {
+
+        $thread->create($request->all());
+
+        return redirect('/thread');
+    }
+```
+
+次回は登録ページにエラーを表示していきたいと思います。
+
+## ここまでの実装　
+
+[Ryomasao/forum](https://github.com/Ryomasao/forum/tree/tdd5)<cite class="hatena-citation"><a href="https://github.com/Ryomasao/forum/tree/tdd5">github.com</a></cite>

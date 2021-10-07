@@ -1,0 +1,307 @@
+---
+title: サーバーの設定ファイルをAnsibleで管理する
+time: 2018-06-20 16:02
+---
+
+ある日、保守しているサイトの担当者から、サイトが「502 Bad Gateway」の文字がでて見れねえぞ！どうなってるんだよ！とお怒りので電話が。
+
+ものすごくアクセスがきていて、単純にさばききれないだけなんじゃと思い、ロードバランサでリクエスト数を確認をしてみるも、たいしてアクセスはきていない。
+
+いろいろと調べてみると、特定のサーバーにのみ問題が発生していることが確認できた、
+
+Webサーバー周りの設定を確認をしてみると、問題のあったサーバーの設定が、他のサーバーと異なることが発覚。
+
+誰だ、こんなふざけたことをしたやつは！と思ったら自分でした、はい。
+
+目の前が真っ暗になりました。
+
+![f:id:konoemario:20180619122321j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180619/20180619122321.jpg "f:id:konoemario:20180619122321j:plain")
+
+その後、各サーバの設定を合わせることで、無事事象は解消したのですが、なんで設定に差分が！と後悔が押し寄せてきます。
+
+思い返せば、設定ファイルを各サーバにログインして個別で編集しており、その際に差分が発生したのではないかと。
+
+なので、今後こういったことがないように、Webサーバー周りの設定ファイルを管理して一括で配布できるようにしておこうと誓ったのでした。
+
+- [対応方法](#%E5%AF%BE%E5%BF%9C%E6%96%B9%E6%B3%95)
+- [前提事項](#%E5%89%8D%E6%8F%90%E4%BA%8B%E9%A0%85)
+- [Ansibleを用意する](#Ansible%E3%82%92%E7%94%A8%E6%84%8F%E3%81%99%E3%82%8B)
+- [ステージング用ファイルを用意する](#%E3%82%B9%E3%83%86%E3%83%BC%E3%82%B8%E3%83%B3%E3%82%B0%E7%94%A8%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E7%94%A8%E6%84%8F%E3%81%99%E3%82%8B)
+  - [hosts](#hosts)
+  - [group\_vars](#group_vars)
+- [Playbookを書いていく](#Playbook%E3%82%92%E6%9B%B8%E3%81%84%E3%81%A6%E3%81%84%E3%81%8F)
+  - [role](#role)
+  - [webservers.yml](#webserversyml)
+- [いざ実行する](#%E3%81%84%E3%81%96%E5%AE%9F%E8%A1%8C%E3%81%99%E3%82%8B)
+
+## 対応方法
+
+ソースコードはもちろんgitなどの構成管理ツールで管理しているのですが、サーバーの設定ファイルは適当になっていました。   
+なので、サーバーの設定ファイルもgitで管理していこうと思います。
+
+また、単純に管理するだけではだめで、きちんと一括で配布できるようにしておく必要があります。
+
+配布する処理はなんでもいいのですが、前回もさわったAnsibleを使っていこうと思います。
+
+[今日から君が開発環境を作ってねと言われたのでAnsbileでつくろう - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2018/05/08/223808)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2018/05/08/223808">www.tohuandkonsome.site</a></cite>
+
+## 前提事項
+
+今回の登場するサーバ達は以下になります。
+
+![f:id:konoemario:20180619124026j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180619/20180619124026.jpg "f:id:konoemario:20180619124026j:plain")
+
+- アプリサーバー：エンドユーザーがアクセスするサイトを置いている。一番リクエストが多い。
+- CMSサーバー：アプリサーバーに表示するコンテンツを管理するためのサイトを置いている。サイト運用者が使うだけなのでリクエスト数は少ない。
+- バッチサーバー： バッチで動かす処理はここで実行する。
+
+本来Web01とWeb02の設定はまったく一緒なはずなんですが、php-fpm回りの設定が異なっていました。 今回は、php-fpmだったりNginxあたりの設定ファイルをターゲットに作業を行おうと思います。
+
+また、これらのWebサーバー回りの設定は、アプリサーバーとCMSサーバーで、設定を変えています。  
+というのも、アプリサーバ側のほうは、リクエストがたくさんくることを想定した設定になっています。  
+一方CMSサーバの方はデフォルト値という適当設定になっています。(それがいいかはさておき)
+
+さらに、環境も本番環境とステージング環境でわかれています。  
+ ![f:id:konoemario:20180619124830j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180619/20180619124830.jpg "f:id:konoemario:20180619124830j:plain")
+
+なので、以下の4パターン用の設定ファイル管理・配布ができることを目標とします。
+
+| 環境 | サーバーの種類 |
+| --- | --- |
+| production | アプリサーバー |
+| production | CMSサーバー |
+| staging | アプリサーバー |
+| staging | CMSサーバー |
+
+## Ansibleを用意する
+
+早速、Ansibleを用意します。
+
+Ansileをインストールする場所ですが、開発環境用のVagrantでたてたOSにインストールすることにしました。
+
+ローカル環境においた各種設定ファイルを、ansibleがssh経由で各サーバーにおいてくれるイメージになります。  
+ ![f:id:konoemario:20180619135620j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180619/20180619135620.jpg "f:id:konoemario:20180619135620j:plain")
+
+**インストール**
+
+```
+$ sudo yum install ansible
+```
+
+インストールが完了したら、まずはディレクトリ構成を考えます。  
+Ansible使用する際の構成はいろいろな構成があって悩ましいのですが、公式のBestPracticeの例を参考にすることにしました。
+
+[Best Practices — Ansible Documentation](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html#best-practices)
+
+とりあえずこんな感じでディレクトリをきっておくことにしました。
+
+**Ansibleのディレクトリ構成**
+
+```
+$ tree
+.
+├── inventories
+│   ├── production
+│   └── staging
+├── roles
+│   ├── role-nginx
+```
+
+最後に実行するplaybook実行用のコマンドでステージング環境を選択した場合、inventories/staging配下のファイルが変数として使えるようになるイメージです。
+
+**ステージング環境用**
+
+```
+$ ansible-playbook -i inventories/staging/hosts 実行するplaybook名.yml
+```
+
+## ステージング用ファイルを用意する
+
+ここでは、ステージング環境に注目していきます。
+
+以下のように、inventories/staging配下にディレクトリ、ファイルをつくっておきます。
+
+**Ansibleのディレクトリ構成**
+
+```
+$ tree
+.
+├── inventories
+│   ├── production
+│   └── staging
+│   ├── group_vars ←追加
+│   │   ├── cms.yml ←追加
+│   │   └── web.yml ←追加
+│   └── hosts ←追加
+├── roles
+│   ├── role-nginx
+```
+
+#### hosts
+
+まずは、一番大事と思われる`hosts`に定義を追加します。  
+見ての通り、ステージング環境のサーバーのIPを記載しています。  
+（実際のIPを書くとまずいのでxxにしてます。)
+
+バッチサーバーは今回どうでもいいのですが、一応追加しています。
+
+**hosts**
+
+```
+[web]
+xx.xx.xx.100
+xx.xx.xx.101
+[cms]
+xx.xx.xx.200
+[batch]
+xx.xx.xx.300
+
+[webservers:children]
+web
+cms
+
+[all:vars]
+env=staging
+```
+
+'[グループ名]'をつけることで複数のサーバーをグループ化することができます。  
+また、childrenを使うとグループ同士をさらにグループ化できるみたいです。  
+今回は、nginxを使用している、webサーバーとcmsサーバーをまとめて`webservers`というグループとして扱っています。
+
+また最後の`all:vars`ですが、このhosts上に定義しているグループに関する処理を実行する際に使用できる変数を定義できるみたいです。  
+ここでは、変数名:envに値:stagingを設定しています。
+
+#### group\_vars
+
+続いて、グループごとに異なる変数はgroup\_vars配下で管理することにします。  
+さきほど追加した、`web.yml`と`cms.yml`を編集します。
+
+ここでは、変数:groupに値:web or cms をそれぞれ設定しています。
+
+**web.yml**
+
+```
+group: web
+```
+
+**cms.yml**
+
+```
+group: cms
+```
+
+## Playbookを書いていく
+
+ここからは実際にansibleのplaybookを書いていきます。  
+ここではroleを使ってかくことにします。
+
+#### role
+
+次に、実際に各サーバで行う処理を記述するためのroleを書いていきます。  
+以下のように、role-nginx配下にディレクトリ、ファイルを置くことにしました。  
+php-fpm用のロールも似たようなものになるので、これ以降は省略しています。
+
+**role-nginx配下にファイルを追加**
+
+```
+├── roles
+│   ├── role-nginx
+│   │   ├── files 
+│   │   │   └── staging
+│   │   │   ├── nginx.conf.cms
+│   │   │   └── nginx.conf.web
+│   │   └── tasks
+│   │   └── main.yml
+```
+
+`nginx.conf.cms`、`nginx.conf.web`は実際のサーバー上に置かれているnginxの設定ファイルを持ってきています。  
+テンプレートの`nginx.conf`を用意しておいて、その中で環境ごとの変数を展開させる方法でもよかったんですが、既に動いている環境だっだので、単純なものにしました。
+
+`main.yml`には、実際の設定処理を書きます。
+
+`copy`モジュールを使って、さきほど用意したnginxのファイルを、各サーバーにおいてあげます。  
+ここでは、コピー元のnginx.confを各環境で切り分けられるように、さきほど定義した変数を展開しているだけになります。
+
+**main.yml**
+
+```
+- name: copy nginx.conf
+  copy: src={{ env }}/nginx.conf.{{ group }} dest=/etc/nginx/nginx.conf owner=root group=root mode=0644
+```
+
+サーバーにcopyした後にnginxの再起動を行うというのであれば、以下のようにしてもいいかもしれません。
+
+**copy後にnginxを再起動する**
+
+```
+- name: copy nginx.conf
+  copy: src={{ env }}/nginx.conf.{{ group }} dest=/etc/nginx/nginx.conf owner=root group=root mode=0644
+
+#nginxの再起動
+- service: name=nginx state=restarted
+```
+
+#### webservers.yml
+
+最後に、先ほどつくったroleを束ねるメインとなるファイルを作成します。  
+以下のようにansible直下に`webservers.yml`を追加します。
+
+**webservers.ymlを追加する**
+
+```
+├── inventories
+└── webservers.yml
+```
+
+**webservers.yml**
+
+```
+- hosts: webservers
+  become: yes
+  roles:
+    - role-nginx
+```
+
+ここでは、`targes`に冒頭で定義したグループ`webservers`を指定してあげます。  
+また、roleに書いたコマンドをsudo権限で実行するように`become:yes`としてあげます。  
+最後に実行するroleとしてさきほど書いたroleを定義させてあげれば完了です。
+
+### いざ実行する
+
+ここまできたら後は実行するだけです。
+
+**ステージング環境用**
+
+```
+$ ansible-playbook -i inventories/staging/hosts webservers.yml
+```
+
+と思ったら、ansibleをインストールしたVagrant上の環境から各サーバーにSSHで接続できるようにしておく必要があります。 今回は、既存の接続の公開鍵が用意されているため、そちらを指定してあげることにします。
+
+用意されている鍵は、cms用とweb用とでわかれているため、グループ用の変数を定義していた`cms.yml`と`web.yml`に用意した鍵の場所とログインユーザーを記載しておきます。
+
+**web.yml**
+
+```
+group: web
+ansible_ssh_private_key_file: /home/vagrant/.ssh/web.ppk
+ansible_user: tohu
+```
+
+**cms.yml**
+
+```
+group: cms
+ansible_ssh_private_key_file: /home/vagrant/.ssh/cms.ppk
+ansible_user: tohu
+```
+
+また、各サーバーはsudo権限実行時にはパスワードをが要求される設定になっていたので`--ask-become-pass`オプションをつけてあげることにしました。
+
+**ステージング環境用**
+
+```
+$ ansible-playbook -i inventories/staging/hosts webservers.yml --ask-become-pass
+```
+
+これで無事、一括で作成したnginxの設定ファイルを配布することができるようになりました。

@@ -1,0 +1,421 @@
+---
+title: Udemyの無料のExpress講習受講メモ
+time: 2017-07-21 15:36
+---
+
+# Expressをすこしさわってみた。
+
+Udemyの無料のExpress講習を受けたのでメモがてら記載します。   
+[ExpressJS Fundamentals - Udemy](https://www.udemy.com/expressjs-fundamentals/learn/v4/overview)<cite class="hatena-citation"><a href="https://www.udemy.com/expressjs-fundamentals/learn/v4/overview">www.udemy.com</a></cite>
+
+また他にも、以下の記事を参考にしました。  
+[Express - Node.js web application framework](http://expressjs.com/)
+
+[node初心者がexpress-generatorで吐き出されたapp.jsを読んでみる - Qiita](http://qiita.com/mito_log/items/735f7079f99ec78ea7e6)<cite class="hatena-citation"><a href="http://qiita.com/mito_log/items/735f7079f99ec78ea7e6">qiita.com</a></cite>
+
+- [Expressをすこしさわってみた。](#Express%E3%82%92%E3%81%99%E3%81%93%E3%81%97%E3%81%95%E3%82%8F%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%9F)
+  - [Expressをとりあえずインストール](#Express%E3%82%92%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9A%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
+    - [Expressを使わない場合](#Express%E3%82%92%E4%BD%BF%E3%82%8F%E3%81%AA%E3%81%84%E5%A0%B4%E5%90%88)
+    - [Expressを使った場合](#Express%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%9F%E5%A0%B4%E5%90%88)
+- [Expressのスケルトンを使う](#Express%E3%81%AE%E3%82%B9%E3%82%B1%E3%83%AB%E3%83%88%E3%83%B3%E3%82%92%E4%BD%BF%E3%81%86)
+  - [とりあえず起動してみる](#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9A%E8%B5%B7%E5%8B%95%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+  - [もうすこしみていく](#%E3%82%82%E3%81%86%E3%81%99%E3%81%93%E3%81%97%E3%81%BF%E3%81%A6%E3%81%84%E3%81%8F)
+    - [ルーティング](#%E3%83%AB%E3%83%BC%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0)
+  - [app.useの補足](#appuse%E3%81%AE%E8%A3%9C%E8%B6%B3)
+
+## Expressをとりあえずインストール
+
+npmでパッケージ取得をします。
+
+```
+(raspberry_3.5.1) masao-3:legocar_node.js konoe_mario$ npm install express
+```
+
+適当につくったプロジェクトのエントリーポイント、server.jsに以下のコードを書く。
+
+```
+var express = require("express");
+var app = express();
+
+app.get('/',function(req, res){
+  res.send('Hello World');
+});
+
+app.listen(6677,function(){
+  console.log("リクエストがあったよ");
+});
+```
+
+ブラウザで「[http://localhost:6677](http://localhost:6677)」にアクセスすると、「Hello World」が確認できる。
+
+この時点で、Expressを導入するとURLディスパッチャの機能（ここではルーティングというべきかも)がシンプルになっていることがわかる。
+
+##### Expressを使わない場合
+
+```
+server.on("request",function(req, res){
+    var incomingUrl = url.parse(req.url);
+
+   if(incomingUrl.pathname === "/controller"){
+         if(req.method == "GET"){
+                   res.end('Hello World');
+         }
+   }
+
+});
+```
+
+##### Expressを使った場合
+
+```
+app.get('/controller',function(req, res){
+  res.send('Hello World');
+});
+```
+
+上記以外にも、javascirptやcssなどのstaticファイルをどうやって提供するかとか、エラーの場合のハンドリングとかいろいろあるみたい。  
+ただ、Expressを使わない場合の純粋なnode.jsだけでそこまでやってないので、あんまり有り難みがわからないかもしれません。
+
+## Expressのスケルトンを使う
+
+とりあれず、触ってみようということで、Expressのスケルトンを作成してくれる機能を用いて使ってみます。
+
+### とりあえず起動してみる
+
+Expressのスケルトンを作成するモジュールをインストールしておきます。 今回は、-gオプションを指定して、グローバル環境につっこんじゃいます。
+
+```
+(raspberry_3.5.1) masao-3:legocar_express konoe_mario$ npm install express-generator -g
+```
+
+インストールが完了したら、以下コマンドを実行します。
+
+```
+(raspberry_3.5.1) masao-3:legocar_express konoe_mario$ express
+```
+
+すると、いろいろなディレクトリやら、ファイルやらが作成されます。
+
+```
+(raspberry_3.5.1) masao-3:legocar_express konoe_mario$ tree -L 1
+.
+├── app.js
+├── bin
+├── node_modules
+├── package.json
+├── public
+├── routes
+└── views
+```
+
+package.jsonを見てみます。  
+これはExpressどうのこうのの話ではないのですが、dependenciesには必要なモジュールが記載されているみたいです。  
+結構いっぱいありますね。
+
+```
+1 {
+  2 "name": "legocar-express",
+  3 "version": "0.0.0",
+  4 "private": true,
+  5 "scripts": {
+  6 "start": "node ./bin/www"
+  7 },
+  8 "dependencies": {
+  9 "body-parser": "~1.17.1",
+ 10 "cookie-parser": "~1.4.3",
+ 11 "debug": "~2.6.3",
+ 12 "express": "~4.15.2",
+ 13 "jade": "~1.11.0",
+ 14 "morgan": "~1.8.1",
+ 15 "serve-favicon": "~2.4.2"
+ 16 }
+```
+
+これを個別で「npm install body-parser」としていくと面倒なので、以下コマンドで、dependenciesに記載されているモジュールをインストールしてくれます。
+
+```
+(raspberry_3.5.1) masao-3:legocar_express konoe_mario$ npm install
+```
+
+さて、起動してみましょう、というところですが、肝心のエントリーポイントがわかりません。  
+何を「node xxx」で実行すればいいんでしょう。
+
+package.jsonをよくみると、scirpts配下にstartなるものがあります。  
+どうもスクリプト経由で実行するのが一般的っぽいです。
+
+スクリプトを実行するには、npmコマンドを使えばよいそうです。
+
+```
+(raspberry_3.5.1) masao-3:legocar_express konoe_mario$ npm start
+```
+
+もちろん、下記で実行しても同じです。
+
+```
+(raspberry_3.5.1) masao-3:legocar_express konoe_mario$ node ./bin/www
+```
+
+少し話がそれますが、node.jsのプログラムを直すたびに、Webサーバーをctrl + cで落として、再度起動させるのは面倒です。
+
+なので、変更があった場合、それを検知して勝手に取込み直してくれるモジュール、nodemonをインストールしておきます。
+
+```
+(raspberry_3.5.1) masao-3:legocar_express konoe_mario$ npm install nodemon -g
+```
+
+nodemonの使い方は、単純に「node xxxx」としていたところを「nodemon xxxx」と置き換えるだけです。
+
+Expressで使用するときには、先ほどのscriptsをnodemonで実行するように置き換えておきます。
+
+```
+5 "scripts": { 
+ 6 "start": "nodemon ./bin/www"
+ 7 },
+```
+
+これで、「npm start」としたときにnodemonで実行されます。
+
+それでは、繰り返しになりますが、以下のコマンドで起動します。
+
+```
+(raspberry_3.5.1) masao-3:legocar_express konoe_mario$ npm start
+```
+
+その後、「http:localhost:3000」にアクセスしてみると、以下が表示されるかと思います。
+
+※デフォルトのポート番号は3000みたいです。
+
+![f:id:konoemario:20170721121713p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170721/20170721121713.png "f:id:konoemario:20170721121713p:plain:w500")
+
+### もうすこしみていく
+
+無事、表示されたので、もう少し見ていきます。  
+といっても細かいところだだいぶわからない。
+
+#### ルーティング
+
+スケルトンで実装されているルーティング例として、「[http://localhost:3000](http://localhost:3000)」と「[http://localhost:3000/users](http://localhost:3000/users)」とがある。
+
+これをどのように実現しているか見てみる。
+
+冒頭のチュートリアルの例だと、/に対しての割り当ては以下のようにしていた。
+
+```
+app.get('/',function(req, res){
+  res.send('Hello World');
+});
+```
+
+スケルトンではもう少し実践的な？内容になっている。
+
+app.jsファイルには、app.useだったり、app.setだったりいろいろあるのだけれども、いきなり何これ状態です。
+
+ここに関しては素敵な記事がありました。
+
+[node初心者がexpress-generatorで吐き出されたapp.jsを読んでみる - Qiita](http://qiita.com/mito_log/items/735f7079f99ec78ea7e6)<cite class="hatena-citation"><a href="http://qiita.com/mito_log/items/735f7079f99ec78ea7e6">qiita.com</a></cite>
+
+> app.useを使って、指定のpathにきたリクエストに対して、処理を記述できます。
+
+な、なるほどね！みたいな感じで次にいきます。
+
+**app.js**
+
+```
+app.use('/', index);
+app.use('/users', users);
+```
+
+app.useで設定しているindexとusersですが、以下のようにrequireでインスタンス化（この表現があってるのかわかりませんが)したものを設定しています。
+
+**app.js**
+
+```
+var index = require('./routes/index');
+var users = require('./routes/users');
+```
+
+一例として、users.jsを見てみます。
+
+**users.js**
+
+```
+var express = require('express');
+var router = express.Router();
+
+/* GET users listing. */
+router.get('/', function(req, res, next) {
+  res.send('respond with a resource');
+});
+
+module.exports = router;
+```
+
+express.Router()と、router.getというものがでてきます。  
+router.getについては、冒頭のapp.getと似たようなものと考えればいいのですが、express.Router()はあんましっくりきてないです。
+
+一点、おお、と思ったのが、router.get(‘/’,function)の/ですが、あくまで「[http://localhost:3000/users](http://localhost:3000/users)」を/としています。
+
+なので、以下のように「/hoge」を追加した場合、「[http://localhost:3000/users/hoge](http://localhost:3000/users/hoge)」に対する処理となります。
+
+express.Routerがこのあたりの仕組みを担っているのでしょうか。
+
+**users.js**
+
+```
+var express = require('express');
+var router = express.Router();
+
+/* GET users listing. */
+router.get('/', function(req, res, next) {
+  res.send('respond with a resource');
+});
+
+//追加
+router.get('/hoge', function(req, res, next) {
+  res.send('fuga');
+});
+
+module.exports = router;
+```
+
+また、これはexpressの話というより、node.jsの話ですが「module.exports = router」の部分はrequrie()したときの返り値になるみたいです。
+
+[[Node.js] モジュールの読み込み(require)・公開(exports)](http://fernweh.jp/b/nodejs-require-exports/)<cite class="hatena-citation"><a href="http://fernweh.jp/b/nodejs-require-exports/">fernweh.jp</a></cite>
+
+なので、さきほどのインスタンス化という表現をしていましたが、以下のapp.jsの処理ではexpress.Router()のから返されるオブジェクトが設定されているということがわかりました。
+
+**app.js**
+
+```
+var index = require('./routes/index');
+var users = require('./routes/users');
+```
+
+なんだかわかったようなわからないようなという感じですが、少しすっきりしました。
+
+### app.useの補足
+
+さきほど、app.useの説明については、参考記事から引用させていただきました。
+
+> app.useを使って、指定のpathにきたリクエストに対して、処理を記述できます。
+
+この部分について、もう少し掘り下げたいと思います。  
+ルーティングの箇所でrouter.getとかは置いておいて、基本的なやりかたとしては、以下の書き方になっていました。
+
+```
+app.get('/',function(req, res){
+  res.send('Hello World');
+});
+```
+
+これは、こう書いても同じことができるみたいです。
+
+```
+app.use('/',function(req, res){
+  res.send('Hello World');
+});
+```
+
+といっても、こうするとさきほどの「/users」にアクセスしたとしても、HelloWorldが表示されてしまいます。
+
+そもそものapp.useの使い方は、とあるリクエストに対して、このミドルウェアを使うとか、そういった場合に使うみたいです。
+
+使い方が非常に怪しいですが、一例をあげます。
+
+以下のような関数、validateとrenderを作成します。  
+その上で、app.useで/testというURLに対して、関数を割り当てています。
+
+**app.js**
+
+```
+app.use('/test',validate,render);
+
+//認証っぽい関数
+function validate(req, res,next){
+    if(req.query.id === "100"){
+        next();
+        return;
+    }
+    res.send("validate Error");
+}
+
+//認証OKの場合
+function render(req, res){
+    res.send("validate OK");
+}
+```
+
+「[http://localhost:3000/test?id=100](http://localhost:3000/test?id=100)」でアクセスすると、validate OKが表示されます。  
+ここでのポイントは、validate関数内のnext()になります。  
+next()はapp.useで渡した次の引数の関数が呼ばれる仕組みになっているみたいです。
+
+もうすこしミドルウェアっぽい仕組みとして、リクエストがあったら、コンソールにログを出すということをしてみます。
+
+以下のような関数を作成します。
+
+**app.js**
+
+```
+//こんなかんじの関数を追加する。
+function hoge(res,req,next){
+   console.log("hoge");
+   next();
+}
+```
+
+おもむろにapp.useに追加します。
+
+**app.js**
+
+```
+//hogeを追加
+app.use(hoge);
+app.use('/', index);
+app.use('/users', users);
+}
+```
+
+こうすると、ルートディレクトに限らず、どのディレクトリにアクセスしてもコンソールにhogeが表示されるかと思います。
+
+このとき、next()をコメントアウトすると、hoge()だけが呼び出され、肝心のapp.use(‘/’, index)の処理が呼び出されません。
+
+**app.js**
+
+```
+//こんなかんじの関数を追加する。
+function hoge(res,req,next){
+   console.log("hoge");
+   //next();
+}
+```
+
+app.useはさきほどのvalidateみたいに、app.user(function1,function2)みたいに書いたり、app.use(function1)、app.user(function2)みたいな書き方でもいいみたいですね。
+
+冗長かもしれませんが、以下のようにapp.useの定義順によっては関数hogeが実行されませんでした。
+
+**app.js**
+
+```
+app.use('/', index);
+app.use('/users', users);
+//ここに追加
+app.use(hoge);
+}
+```
+
+こういったことをするあれば、index.js側にもnext()をつけれあげればよさそうです。 あと、関数hogeのnext()は何もないのであれば、削除しときます。
+
+**index.js**
+
+```
+var express = require('express');
+var router = express.Router();
+
+/* GET home page. */
+router.get('/', function(req, res, next) {
+  res.render('index', { title: 'Express' });
+  next();
+});
+
+module.exports = router;
+```

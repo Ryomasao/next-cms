@@ -6,7 +6,7 @@ import { parse, format } from 'date-fns'
 import { serialize } from 'next-mdx-remote/serialize'
 import addFileName from './addFileName'
 
-const postsDirectory = path.join(process.cwd(), 'docs/hatena/work2')
+const postsDirectory = path.join(process.cwd(), 'docs/hatena/work')
 
 /**
  * markdownが置いてあるディレクトリのファイルを読んで、markdownのメタデータを取得して返す

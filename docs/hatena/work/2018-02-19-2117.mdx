@@ -1,0 +1,287 @@
+---
+title: 1時間くらいでラズパイ3の設定とカメラモジュールの起動確認まで行う
+time: 2018-02-19 21:17
+---
+
+1時間くらいで、ラズパイのインストール、SSH接続、カメラモジュールの起動をやるよ！
+
+以下は、どうでもよい経緯。
+
+ちょっとやりたいことがあって、ラズパイのカメラを起動しようとした。  
+過去にラズパイを公開鍵認証に設定したことがあったんだけれども、肝心のペアとなる鍵が見つからなくって、ssh接続できない、どうしようとなってしまった。  
+冷静に考えれば、ssh接続じゃなくってラズパイをディスプレイに接続して起動して、再度鍵を発行すればよかったんだけれども、なぜか再インストールをする選択をしてしまった。
+
+過去記事を参考にしてみたんだけれども、自分にとって微妙に痒いところに手が届かない内容だったので、新しく書くことにした。
+
+- [用意するもの](#%E7%94%A8%E6%84%8F%E3%81%99%E3%82%8B%E3%82%82%E3%81%AE)
+- [ラズパイのOS、Raspbianをダウンロードする(所要時間 20分 ※ネットワーク環境によって幅あり)](#%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4%E3%81%AEOSRaspbian%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B%E6%89%80%E8%A6%81%E6%99%82%E9%96%93-20%E5%88%86-%E3%83%8D%E3%83%83%E3%83%88%E3%83%AF%E3%83%BC%E3%82%AF%E7%92%B0%E5%A2%83%E3%81%AB%E3%82%88%E3%81%A3%E3%81%A6%E5%B9%85%E3%81%82%E3%82%8A)
+- [ラズパイのOSイメージを書く (所要時間 8分)](#%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4%E3%81%AEOS%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E3%82%92%E6%9B%B8%E3%81%8F-%E6%89%80%E8%A6%81%E6%99%82%E9%96%93-8%E5%88%86)
+- [WiFiの設定 (1分)](#WiFi%E3%81%AE%E8%A8%AD%E5%AE%9A-1%E5%88%86)
+- [ログインパスワードを変更する (1分)](#%E3%83%AD%E3%82%B0%E3%82%A4%E3%83%B3%E3%83%91%E3%82%B9%E3%83%AF%E3%83%BC%E3%83%89%E3%82%92%E5%A4%89%E6%9B%B4%E3%81%99%E3%82%8B-1%E5%88%86)
+- [ラズパイにリモートで接続できるよう設定する　(10分)](#%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4%E3%81%AB%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%81%A7%E6%8E%A5%E7%B6%9A%E3%81%A7%E3%81%8D%E3%82%8B%E3%82%88%E3%81%86%E8%A8%AD%E5%AE%9A%E3%81%99%E3%82%8B10%E5%88%86)
+  - [SSHで接続する](#SSH%E3%81%A7%E6%8E%A5%E7%B6%9A%E3%81%99%E3%82%8B)
+  - [IPアドレスを固定する](#IP%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9%E3%82%92%E5%9B%BA%E5%AE%9A%E3%81%99%E3%82%8B)
+- [カメラを接続する (5分)](#%E3%82%AB%E3%83%A1%E3%83%A9%E3%82%92%E6%8E%A5%E7%B6%9A%E3%81%99%E3%82%8B-5%E5%88%86)
+- [カメラモジュール用のソフトウェアをインストールする (5分)](#%E3%82%AB%E3%83%A1%E3%83%A9%E3%83%A2%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%AB%E7%94%A8%E3%81%AE%E3%82%BD%E3%83%95%E3%83%88%E3%82%A6%E3%82%A7%E3%82%A2%E3%82%92%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E3%81%99%E3%82%8B-5%E5%88%86)
+- [カメラを起動する (1分)](#%E3%82%AB%E3%83%A1%E3%83%A9%E3%82%92%E8%B5%B7%E5%8B%95%E3%81%99%E3%82%8B-1%E5%88%86)
+
+### 用意するもの
+
+- ラズパイ3 + 電源コード + HDMIケーブル
+- HDMIケーブルがつなげるディスプレイ(テレビとか)
+- マイクロSDカード 32GB (8GBもあれば十分)
+- キーボード・マウス(一時的に使用するだけなので他から流用してもいいい)
+
+- SDカードに書き込むためのPC
+
+- カメラモジュール (Raspberry Pi Camera V2)
+
+[![Raspberry Pi Camera V2](https://images-fe.ssl-images-amazon.com/images/I/41oaX6czzQL._SL160_.jpg "Raspberry Pi Camera V2")](http://www.amazon.co.jp/exec/obidos/ASIN/B01ER2SKFS/hatena-blog-22/)
+
+[Raspberry Pi Camera V2](http://www.amazon.co.jp/exec/obidos/ASIN/B01ER2SKFS/hatena-blog-22/)
+
+- 出版社/メーカー: Raspberry Pi
+- メディア: Personal Computers
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B01ER2SKFS/hatena-blog-22)
+
+### ラズパイのOS、Raspbianをダウンロードする(所要時間 20分 ※ネットワーク環境によって幅あり)
+
+今回は、RaspberryPi 3 + 32GBのSDカードを使うのでディスク容量、パフォーマンスもそこそこ余裕がありそう。
+
+なので、設定が簡単なデスクトップ版`RASPBIAN STRETCH WITH DESKTOP`を選択する。
+
+[Download Raspbian for Raspberry Pi](https://www.raspberrypi.org/downloads/raspbian/)<cite class="hatena-citation"><a href="https://www.raspberrypi.org/downloads/raspbian/">www.raspberrypi.org</a></cite>
+
+### ラズパイのOSイメージを書く (所要時間 8分)
+
+ダウンロードしたzipファイルを解凍して、でてきたimgファイルを選択して、ラズパイ用のSSDに書き込む。
+
+ラズパイ用のSSDをPCとつなぐには、100均で買った謎のUSBにつなぐ機器を使った。
+
+<figure class="figure-image figure-image-fotolife" title="謎の機器"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180219/20180219201321.jpg" alt="f:id:konoemario:20180219201321j:plain" title="f:id:konoemario:20180219201321j:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>謎の機器</figcaption></figure>
+
+書き込むの仕方はいろいろあるけれども、毎回使っている書き込み用のアプリ「Etcher」を使ってる。
+
+<figure class="figure-image figure-image-fotolife" title="OSイメージを書き込み"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180219/20180219200154.png" alt="f:id:konoemario:20180219200154p:plain" title="f:id:konoemario:20180219200154p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>OSイメージを書き込み</figcaption></figure>
+
+SSDにOSファイルを書き込んだら、ラズパイにセットして、電源コードにつないで起動する。
+
+このとき、キーボード、マウスもUSB経由でつけて、HDMIケーブルもディスプレイとラズパイに接続しておく。
+
+ディスプレイにラズパイのデスクトップ画面が表示される。
+
+### WiFiの設定 (1分)
+
+ラズパイを起動したら、画面右上のアンテナみたいなアイコンで、WiFiの設定を行う。
+
+設定といっても、スマートフォンと同じで、つなぐSSID選択してパスワードを入力するだけ。
+
+<figure class="figure-image figure-image-fotolife" title="WiFiの設定"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180219/20180219201802.jpg" alt="f:id:konoemario:20180219201802j:plain" title="f:id:konoemario:20180219201802j:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>WiFiの設定</figcaption></figure>
+
+デスクトップ版じゃない場合、コンソールから設定がいろいろと必要だけれどもデスクトップ版はすごい簡単。
+
+### ログインパスワードを変更する (1分)
+
+必須ではありませんが、やっておいたほうが無難。
+
+ラズパイの左上のアイコンから「Terminal」を起動します。  
+（画像撮り忘れちゃった)
+
+Terminalで以下のコマンドを叩くことで設定画面を起動します。
+
+**ラズパイの設定画面を起動**
+
+```
+$ sudo rasip-config
+```
+
+<figure class="figure-image figure-image-fotolife" title="ラズパイ設定画面"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180219/20180219202604.png" alt="f:id:konoemario:20180219202604p:plain" title="f:id:konoemario:20180219202604p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>ラズパイ設定画面</figcaption></figure>
+
+一番上の「Change User Password」を選択して、好きなパスワードを入力します。
+
+### ラズパイにリモートで接続できるよう設定する　(10分)
+
+ラズパイを毎回ディスプレイに接続して、操作する場合はこのへんの設定は不要になります。  
+ノートPCからラズパイにリモート接続したい場合のみ、設定しましょう。
+
+パスワード変更と同様に、設定画面を起動します。
+
+**ラズパイの設定画面を起動**
+
+```
+$ sudo rasip-config
+```
+
+上から5番目の「interfacing option」を選択します。  
+次の画面の「SSH」を選択すると、有効にするか？と聞かれるのでYESを選択します。
+
+<figure class="figure-image figure-image-fotolife" title="SSHを有効化"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180219/20180219203009.png" alt="f:id:konoemario:20180219203009p:plain" title="f:id:konoemario:20180219203009p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>SSHを有効化</figcaption></figure>
+
+また、その後に再度ターミナルを開いて、以下のコマンドを打ってラズパイのIPを確認しときます。
+
+**IPを確認する**
+
+```
+$ ifconfig
+```
+
+上記コマンドを打つと、ずらずらとでてくるけでども、以下のwlan0とうのが、ラズパイ3に標準搭載されている無線のNICカードのIPみたい。
+
+以下の例だと、「192.168.1.8」がラズパイのIPになります。
+
+**wlan0のIPを控えておく**
+
+```
+wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST> mtu 1500
+        inet 192.168.1.8 netmask 255.255.255.0 broadcast 192.168.1.255
+        inet6 2408:210:9006:7500:b6e2:cd5b:a921:338f prefixlen 64 scopeid 0x0<global>
+        inet6 fe80::a537:ca1e:f1c3:745e prefixlen 64 scopeid 0x20<link>
+        ether b8:27:eb:1a:ab:2e txqueuelen 1000 (Ethernet)
+        RX packets 8325 bytes 9798841 (9.3 MiB)
+        RX errors 0 dropped 0 overruns 0 frame 0
+        TX packets 5293 bytes 615893 (601.4 KiB)
+        TX errors 0 dropped 0 overruns 0 carrier 0 collisions 0
+```
+
+#### SSHで接続する
+
+自分のPCから、ラズパイに接続します。
+
+**MacのTerminalでssh接続**
+
+```
+$ ssh pi@192.168.1.10
+```
+
+初めてつなげると、フィンガプリントーやらで本当につなぐの？みたいな確認がでてきますが、問題ないのでYesを入力しちゃいます。
+
+#### IPアドレスを固定する
+
+こちらも必須ではないのでオプションです。
+
+SSHでつなぐ際に毎回IPアドレスがかわると、どこに繋げていいんだかわからなくなってしまうので、ラズパイのIPアドレスを固定します。
+
+まずは、変更前のIPアドレスを`ifconfig`コマンドで確認しときます。
+
+**ifconfig**
+
+```
+wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST> mtu 1500
+        inet 192.168.1.8 netmask 255.255.255.0 broadcast 192.168.1.255
+        inet6 2408:210:9006:7500:b6e2:cd5b:a921:338f prefixlen 64 scopeid 0x0<global>
+        inet6 fe80::a537:ca1e:f1c3:745e prefixlen 64 scopeid 0x20<link>
+        ether b8:27:eb:1a:ab:2e txqueuelen 1000 (Ethernet)
+        RX packets 8325 bytes 9798841 (9.3 MiB)
+        RX errors 0 dropped 0 overruns 0 frame 0
+        TX packets 5293 bytes 615893 (601.4 KiB)
+        TX errors 0 dropped 0 overruns 0 carrier 0 collisions 0
+```
+
+次に、以下のファイルに固定したいIPと、ゲートウェイのIP（私の環境だと、ルーターのIP）やらなんやらを新しく追記します。
+
+今回は「192.168.1.10」をラズパイのIPとします。
+
+**/etc/dhcpcd.conf**
+
+```
+interface wlan0
+static ip_address=192.168.1.10/24
+static routers=192.168.1.1
+staitc domain_name_servers=192.168.1.1
+```
+
+設定がおわったらラズパイを再起動します。
+
+**ラズパイを再起動**
+
+```
+$ sudo reboot
+```
+
+再起動が完了したら`ifconfig`を叩いて、wlanについて設定したIPアドレスが振られていることを確認します。
+
+**ifconfig**
+
+```
+pi@raspberrypi:~ $ ifconfig
+wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST> mtu 1500
+        inet 192.168.1.10 netmask 255.255.255.0 broadcast 192.168.1.255
+        inet6 2408:210:9006:7500:b6e2:cd5b:a921:338f prefixlen 64 scopeid 0x0<global>
+        inet6 fe80::a537:ca1e:f1c3:745e prefixlen 64 scopeid 0x20<link>
+        ether b8:27:eb:1a:ab:2e txqueuelen 1000 (Ethernet)
+        RX packets 213 bytes 23086 (22.5 KiB)
+        RX errors 0 dropped 0 overruns 0 frame 0
+        TX packets 206 bytes 31290 (30.5 KiB)
+        TX errors 0 dropped 0 overruns 0 carrier 0 collisions 0
+```
+
+### カメラを接続する (5分)
+
+動画を見た方がわかりやすい！
+
+<iframe width="480" height="270" src="https://www.youtube.com/embed/ojJhLQBiv0I?start=273&amp;feature=oembed" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://www.youtube.com/watch?v=ojJhLQBiv0I&amp;t=273s">www.youtube.com</a></cite>
+
+### カメラモジュール用のソフトウェアをインストールする (5分)
+
+再度、ラズパイの設定画面を起動します。
+
+**ラズパイの設定画面を起動**
+
+```
+$ sudo rasip-config
+```
+
+上から5番目の「interfacing option」を選択します。  
+次の画面の「camera」を選択すると、有効にするか？と聞かれるのでYESを選択します。
+
+これでカメラの使用が有効になりました。
+
+さらに、以下のコマンドをたたくことでカメラをラズパイに認識させます。
+
+**カメラを認識させる**
+
+```
+$ sudo modprobe bcm2835-v4l2
+```
+
+次に、カメラモジュール用のソフト「MJPG-streamer」をインストールします。
+
+インストールにあたっては、全面的にこちらのサイトの、「動画ストリーミングソフトウェアのインストール」を参考にさせていただきましたので、こちらを参照ください。
+
+[WEBカメラで動画ストリーミング](http://www.hiramine.com/physicalcomputing/raspberrypi/webcamstreaming.html)
+
+### カメラを起動する (1分)
+
+「MJPG-streamer」をインストールしたディレクトリに移動します。  
+私はホームディレクトリ配下にインストールしました。
+
+**ディレクトリに移動**
+
+```
+$ cd /home/pi/mjpg-streamer
+```
+
+何も考えずに、以下のコマンドを叩きます。
+
+**カメラを起動**
+
+```
+sudo ./mjpg_streamer -i "./input_uvc.so -f 10 -r 320x240 -d /dev/video0 -y -n" -o "./output_http.so -w ./www -p 8080"MJPG Streamer Version: svn rev: 3:172
+ i: Using V4L2 device.: /dev/video0
+ i: Desired Resolution: 320 x 240
+ i: Frames Per Second.: 10
+ i: Format............: YUV
+ i: JPEG Quality......: 80
+ o: www-folder-path...: ./www/
+ o: HTTP TCP port.....: 8080
+ o: username:password.: disabled
+ o: commands..........: enabled
+```
+
+ラズパイに接続しているディスプレイで参照する場合は、ラズパイのブラウザから「localhost:8080」を入力。
+
+別のPCから参照する場合は「ラズパイのIP:8080」でMPJG-Streamerの画面が参照できる。
+
+ここから、Streamを選択することでカメラのリアルタイム映像が参照することができる。
+
+<figure class="figure-image figure-image-fotolife" title="MPJG-Stremerの画面"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180219/20180219210229.png" alt="f:id:konoemario:20180219210229p:plain" title="f:id:konoemario:20180219210229p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>MPJG-Stremerの画面</figcaption></figure>

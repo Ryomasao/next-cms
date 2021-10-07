@@ -1,0 +1,205 @@
+---
+title: プロセスをforkしてみる
+time: 2018-06-14 20:48
+---
+
+php-fpmをチューニングする機会があって、いろいろと試していたんだけれども、根本的な部分がいまいちいちわからないことに気づかされる。
+
+プロセスという言葉だったり、スレッドという意味だったり、c10k問題だったり、NginxだったりApacheだったり。
+
+c10k問題という言葉が気になって調べたときに、ハード的には問題ないんだけれども、プロセスやらスレッドがたくさんありすぎるとやばいんだよ！という情報をみて、なんでプロセスを増やすんだろうとか、当たり前であろうことがわからなかったり。
+
+今回でいえば、php-fpmは、こんなイメージで親プロセスが子プロセスを生成してリクエストをさばいているんだと思う。
+
+<figure class="figure-image figure-image-fotolife" title="php-fpmの挙動"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180614/20180614152143.png" alt="f:id:konoemario:20180614152143p:plain" title="f:id:konoemario:20180614152143p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>php-f</figcaption></figure>
+
+これらの仕組みはphp-fpmのソースコードを読めばわかるんだろうけれども、ちらっと見た感じ、自分のスキルではお手上げ感が半端なかったので、基本的なところから試してみることにする。
+
+ちょうど前回さわったGoではforkとかしないんだよみたいなことが書いてあったりして、その理解にもなりそう。
+
+## プロセスをforkしてみる
+
+ということでforkというものを試してみる。  
+どいうときに使うかは一旦おいておくよ！
+
+今回はこちらの教科書に従って試してた。
+
+[![ふつうのLinuxプログラミング 第2版 Linuxの仕組みから学べるgccプログラミングの王道](https://images-fe.ssl-images-amazon.com/images/I/51P7Lxl0cKL._SL160_.jpg "ふつうのLinuxプログラミング 第2版 Linuxの仕組みから学べるgccプログラミングの王道")](http://www.amazon.co.jp/exec/obidos/ASIN/4797386479/hatena-blog-22/)
+
+[ふつうのLinuxプログラミング 第2版 Linuxの仕組みから学べるgccプログラミングの王道](http://www.amazon.co.jp/exec/obidos/ASIN/4797386479/hatena-blog-22/)
+
+- 作者: 青木峰郎
+- 出版社/メーカー: SBクリエイティブ
+- 発売日: 2017/09/22
+- メディア: 単行本
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/4797386479/hatena-blog-22)
+
+教科書通りが一番いいんだけれども、まずはシンプルに最低限写経することにした。
+
+**プロセスをforkするサンプル**
+
+```
+#include 
+#include 
+#include 
+#include 
+#include 
+
+int main(int argc, char *argv[]){
+
+    pid_t pid;
+
+    //fork()でプロセスを生成することができる！
+    pid = fork();
+
+    if(pid < 0) {
+      fprintf(stderr, "fork(2) failed\n");
+      exit(1);
+    }
+
+    //子プロセス
+    if(pid == 0) {
+       printf("im child, my-pid=%d, child-pid=%d\n", getpid(), pid);
+    }else{
+    //親プロセス
+      printf("im parent, my-pid=%d, child-pid=%d\n", getpid(), pid);
+    }
+    
+}
+```
+
+`fork`すると、自身のプロセスをコピーするとのこと。
+
+**fork命令**
+
+```
+pid = fork();
+```
+
+おもしろいのが、`fork`してできた子プロセスは、`fork`の命令以降から実行されるところ。  
+以下の図のように、親プロセスから生成された子プロセスは、親プロセスの頭から実行されるわけではなく、fork以降の`printf("hello")`のみが実行されることになる。
+
+<figure class="figure-image figure-image-fotolife" title="forkのうごき"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180614/20180614192732.png" alt="f:id:konoemario:20180614192732p:plain" title="f:id:konoemario:20180614192732p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>forkのうごき</figcaption></figure>
+
+興味深い、とおもっていたんだけれども、forkしてできたプロセスが親プロセスを頭から実行してたら、forkが無限に続いちゃうことに気づいた。  
+なので、forkした以降の命令を実行するのはもっともなことだと思った。
+
+### プロセスが親プロセスなのか、forkされた子プロセスなのか
+
+`fork'で親プロセスをコピーして、子プロセスを生成することがわかった。  
+そもそもなんでプロセスをコピーして生成する必要があるんだろうという最もな疑問はさておき、子プロセスだからやる処理みたいなことを実現する。  
+冒頭のphp-fpmの親プロセスと子プロセスがまさにそんな感じでしたね。
+
+これもおもしろいのが、二回目の登場の以下の部分。  
+`pid`にはforkして生成された子プロセスの場合、0が返却され、親プロセスの場合は子のプロセスIDが設定されるとのこと。  
+※forkに失敗すると、親プロセスの方で-1が返ってくるとのこと。
+
+**fork命令**
+
+```
+pid = fork();
+```
+
+なので、以下のようにpidの値をもとに処理を制御することができる。
+
+**親プロセスと子プロセスで処理を切り替える**
+
+```
+//子プロセス
+    if(pid == 0) {
+       printf("im child, my-pid=%d, child-pid=%d\n", getpid(), pid);
+    }else{
+    //親プロセス
+      printf("im parent, my-pid=%d, child-pid=%d\n", getpid(), pid);
+    }
+```
+
+`getpid()`は自身のプロセスIDを取得する関数。  
+これを実行すると、こんな感じになる。
+
+**実行結果**
+
+```
+$ ./bin/spawn
+im parent, my-pid=16166, child-pid=16167
+im child, my-pid=16167, child-pid=0
+```
+
+親のプロセスIDは16166で、forkされた子プロセスのIDは16167になってる。  
+親プロセスではforkした返り値のpidは子のプロセスIDだけれども、子のプロセスIDでは0が設定されていることが確認できた。
+
+### 子プロセスのプログラムの内容を新しいプログラムで上書きする
+
+なにいってんだこいつと思うタイトルです。そんなことできるんだと思いました。  
+`exec`族と呼ばれる命令達を使うとできるみたいです。
+
+教科書にしたがって、`execl()`関数を使います。
+
+**execlを使ってみる**
+
+```
+//子プロセス
+    if(pid == 0) {
+        execl("/home/vagrant/linux/src/linuxprogram/bin/loop", "/home/vagrant/linux/src/linuxprogram/bin/loop", NULL);
+        perror("error");
+    }else{
+    //親プロセス
+      printf("im parent, my-pid=%d, child-pid=%d\n", getpid(), pid);
+    }
+```
+
+`execl()`関数の第一引数には実行するプロセスのパスを渡して、第2引数がargv[0]に相当するとのこと。 argv[0]には、実行されたプロセス名が設定されるので、パスを同じものを渡しておく必要があるみたい。  
+argv[1]以降がなければ、NULLを渡しておく。
+
+ここでは、あらかじめコンパイルしておいた`loop`プログラムを実行してみることにする。  
+`loop`プログラムは、1秒ごとに標準出力に数字を出すだけの簡単なもの。
+
+**loop**
+
+```
+#include 
+#include 
+
+int main(int argc, char *argv[]){
+
+    int i;
+
+    for(i = 0; i < 10; i++){
+        sleep(1);
+        printf("count:%d\n", i);
+        fflush(stdout);
+    }
+
+    exit(0);
+}
+```
+
+これを実行してみると、こんな感じになった。
+
+**実行結果**
+
+```
+$ ./bin/spawn
+im parent, my-pid=19425, child-pid=19426
+[vagrant@localhost linuxprogram]$ count:0
+count:1
+count:2
+count:3
+count:4
+count:5
+count:6
+count:7
+count:8
+count:9
+```
+
+親プロセスはforkして、printfの結果を出力して終わってるんだけれども、子プロセスは親プロセスに関係なく処理を実行していることが確認できた。
+
+イメージとしてはこんな感じ。
+
+<figure class="figure-image figure-image-fotolife" title="execlのイメージ"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180614/20180614203051.png" alt="f:id:konoemario:20180614203051p:plain" title="f:id:konoemario:20180614203051p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>execlのイメージ</figcaption></figure>
+
+子プロセスは親プロセスのfork以降をコピーして実行するので、本来であれば`ohanky`が出力されるところを、`hoge`プログラムをexeclすることで、`buhii`が出力されることになる。  
+あなおそろしや。
+
+何に使うんだろうとか、いろいろな疑問はさておき次は、親プロセスで子プロセスの実行結果を待ってみたり、プロセスがゾンビになってしまう等を試したい。

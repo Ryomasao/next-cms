@@ -1,0 +1,41 @@
+---
+title: 
+time: 2018-06-26 20:46
+---
+
+ここに巨大なファイル`before_big_file.csv`と`after_big_file.csv`とが存在している。 ※GBを超えるファイル。
+
+`after_big_file.csv`は`before_big_file.csv`をもとに、一定条件で置換処理を行っている。  
+正しく置換できたか確認をするために、念のためファイル間で差分をとっておきたい。
+
+**巨大なファイルを100万件ごとに分割する**
+
+```
+$ split -l1000000 -d before_big_file.tsv
+```
+
+これを実行すると、x00、x01、x02、、、とファイルが分割されて作成されていく。  
+`-d`オプションを付けないと、xaa、xab、xac、、、というファイル名で作成されていく。 分割したファイルが2桁を超えるようであれば、'-a'オプションで桁数を指定できるみたい。
+
+**分割したファイルをbeforeディレクトリに移動**
+
+```
+$ mkdir before
+$ mv x* before
+```
+
+変更後のファイル、`after_big_file.csv`でもファイル分割して、afterディレクトリに移動しておく。
+
+**比較用シェルスクリプト**
+
+```
+#!/bin/bash
+for file in `ls before/x*`
+do
+        diff ./before/${file##*/} ./after/${file##*/}
+done
+```
+
+```
+./diff.sh
+```

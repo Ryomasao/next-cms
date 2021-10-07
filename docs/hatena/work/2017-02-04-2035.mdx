@@ -1,0 +1,67 @@
+---
+title: BoostnoteをMacとWindows環境に導入してみたがうまく同期できない
+time: 2017-02-04 20:35
+---
+
+どなたか助けてくれるかもしれないということでメモ
+
+## 導入のきっかけ
+
+MacBookとiPhone間では、Evernoteを使ってメモ帳を同期していました。 最近、FallOut4をやるために買ったきりのWindows8.1端末を有効活用しようと思いたちEvernoteをWindows8.1端末にインストールしてました。
+
+しかし、以下の問題があり、他に素敵なメモ帳はないかと探していました。
+
+- WindowsでEvernoteを見ると、表示が汚い
+- Evernoteで同期できる端末の台数が無料プランでは2台に制限されていた
+
+適当にぐぐってみると、以下の記事があり、さっそく試してみることにしました。
+
+## Boostnoteとは
+
+プログラマ向けのメモ帳みたいです。
+
+[プログラマ向けのメモアプリ「Boostnote」が便利。Markdownメモ、スニペットの管理に。](http://nelog.jp/boostnote)<cite class="hatena-citation"><a href="http://nelog.jp/boostnote">nelog.jp</a></cite>
+
+プログラマ向けという響きだけで、にやにやしながら導入することにしました。
+
+## データ同期
+
+自分でもなんとか使えそうだ！と思ったのですが、やりたかったことは、MacBookとWindows8.1端末間のメモ帳の内容の同期です。 こちらも調べてみると、以下の記事があったので早速設定をしてみました。
+
+[BoostnoteのメモをDropboxを用いて複数PC間で同期させる方法](http://nelog.jp/how-to-sync-boostnote-memos)<cite class="hatena-citation"><a href="http://nelog.jp/how-to-sync-boostnote-memos">nelog.jp</a></cite>
+
+## うまくいかない
+
+データ同期の記事を参考にGoogleドライブを作成して、MacBookとWindows8.1端末から参照できるようにした。
+
+##### 1.MacBookでGoogleDriveをストレージに指定
+
+[![f:id:konoemario:20170204201858p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170204/20170204201858.png "f:id:konoemario:20170204201858p:plain:w300") ]
+
+##### 2.MacBookでGoogleDrive配下にフォルダ、ノートを作成
+
+![f:id:konoemario:20170204202027p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170204/20170204202027.png "f:id:konoemario:20170204202027p:plain:w300")
+
+##### 3.Windows8.1端末でGoogleDriveをストレージに指定
+
+Win8.1端末は、テーマを黒にしました。
+
+![f:id:konoemario:20170204202058p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170204/20170204202058.png "f:id:konoemario:20170204202058p:plain:w300")
+
+##### 4.Windows8.1端末でリロード(Ctrl + R)を行う。
+
+![f:id:konoemario:20170204202258p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170204/20170204202258.png "f:id:konoemario:20170204202258p:plain:w300")
+
+##### 5.うまくいかず
+
+MacBookで編集されたフォルダ、ノートがでてくると思いきやでてこない。
+
+![f:id:konoemario:20170204203156p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170204/20170204203156.png "f:id:konoemario:20170204203156p:plain:w300")
+
+ためしに、Windouws8.1端末からフォルダ、ノートを作成してみると、 MacBook側からはUnknown状態で参照することができた。
+
+![f:id:konoemario:20170204203141p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170204/20170204203141.png "f:id:konoemario:20170204203141p:plain:w300")
+
+Boostnoteの問題ではなく、GoogleDriveの同期タイミングの問題なんでしょうか。
+
+----- COMMENT: AUTHOR: junp0819 IP: 126.247.9.126 DATE: 08/31/2017 17:50:47 ありがとうございます！ 今後ともよろしくお願いします！ ----- COMMENT: AUTHOR: konoemario IP: 126.94.66.69 DATE: 08/31/2017 16:47:33 ご連絡ありがとうございます！使ってみます！ ----- COMMENT: AUTHOR: junp0819 IP: 106.181.182.176 DATE: 08/31/2017 11:36:45 私、Boostnoteを開発しているチームのjunp0819と申します。 Boostnoteについて書いていただきまして誠にありがとうございます！ この度私たちは、Boostnoteのモバイル版をAppstore,Androidにてリリースしましたので、是非ご利用ください！ ■App Store URL https://itunes.apple.com/us/app/boostnote/id1273066636?l=ja&ls=1&mt=8 ■GooglePlay URL https://play.google.com/store/apps/details?id=io.boostnote こちらに詳細を上げております。 http://boostnote.hatenablog.com/entry/2017/08/28/113045

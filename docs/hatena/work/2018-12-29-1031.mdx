@@ -1,0 +1,510 @@
+---
+title: 年末だしReactに入門する(1)
+time: 2018-12-29 10:31
+---
+
+UdemyのReactの講座を受ける機会があったので、備忘録がてら感想をメモ。
+
+[https://www.udemy.com/react-redux/](https://www.udemy.com/react-redux/)
+
+過去にも、UdemyのReact講習をやったんだけれども、せっかくなのでやってみる。
+
+[Vue.jsから入りReactを触ったときの気づき - 豆腐とコンソメ](https://www.tohuandkonsome.site/entry/2018/07/20/171437)<cite class="hatena-citation"><a href="https://www.tohuandkonsome.site/entry/2018/07/20/171437">www.tohuandkonsome.site</a></cite>
+
+受けた人のレベル的に
+
+- Web開発経験2年目
+- javascriptそのものに自信はない
+- Vue.jsはコンポーネントの使用、Vuex、VueRouterとある程度はさわったと思う
+
+ぐらい。
+
+まだ半分もいってないけれども、今回の講習はかなり丁寧に勧めてくれる印象があるので、とっつきやすいと思う。
+
+- [SECTION1 こんなことができるよ](#SECTION1-%E3%81%93%E3%82%93%E3%81%AA%E3%81%93%E3%81%A8%E3%81%8C%E3%81%A7%E3%81%8D%E3%82%8B%E3%82%88)
+- [SECTION2 プロジェクトをつくってみる](#SECTION2-%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%82%92%E3%81%A4%E3%81%8F%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B)
+- [SECTION3 コンポーネントをつかう](#SECTION3-%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%82%92%E3%81%A4%E3%81%8B%E3%81%86)
+- [SECTION4 クラスコンポーネントを使う](#SECTION4-%E3%82%AF%E3%83%A9%E3%82%B9%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%82%92%E4%BD%BF%E3%81%86)
+- [SECTION5 ステートをつかう](#SECTION5-%E3%82%B9%E3%83%86%E3%83%BC%E3%83%88%E3%82%92%E3%81%A4%E3%81%8B%E3%81%86)
+- [SECTION6 ライフサイクルについて](#SECTION6-%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B5%E3%82%A4%E3%82%AF%E3%83%AB%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6)
+- [SECTION7 イベントを学ぶ](#SECTION7-%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%92%E5%AD%A6%E3%81%B6)
+  - [thisについて](#this%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6)
+
+### SECTION1 こんなことができるよ
+
+CodePenを使って、Reactってこんなことができるんだよっていう説明が主に続く。
+
+### SECTION2 プロジェクトをつくってみる
+
+create-react-appを使って、新規にプロジェクトを作成する。  
+HelloWorld的なことを主にやった。  
+JSXに触れて、HTMLに近いんだけれども、javascriptの予約語とかぶる部分は独自の記述だよ、的なことを学ぶ。  
+Babelの公式サイトを初めてみた。そこにreact用のプリセットがあり、jsxがpureなjavascriptの構文にどのように書き変わるのかって見えるが、とてもよかった。
+
+[Babel · The compiler for next generation JavaScript](https://babeljs.io/repl)<cite class="hatena-citation"><a href="https://babeljs.io/repl">babeljs.io</a></cite>
+
+### SECTION3 コンポーネントをつかう
+
+ベタに書いていた部分をコンポーネントとして切り出す。  
+SemanticUIを初めて使った。   
+あと、適当なデータを生成してくれるfakerも使った。PHPUnitの単体テストではお世話になってたけれども、フロントサイドでも当然あるのね。
+
+コンポーネントで親コンポーネントから子コンポーネントはプロパティとして渡す。  
+プロパティの型チェックとかは別のライブラリで実装するのかな。
+
+あと、Vue.jsでいうスロットみたいなものはjsxで以下のようにネストさせて
+
+```
+const App = () => {
+    return (
+      <div className="ui container comments">
+       <ApprovalCard>
+          <CommentDetail 
+            author="tarou" 
+            content="How articstic!" 
+            avatar={ faker.image.avatar() } 
+            timeAgo="Today at 4:45PM"
+          />
+        </ApprovalCard>
+      </div> 
+    )
+}
+```
+
+ネストの外側である親コンポーネントの`props.children`で表示できる。
+
+```
+const ApporovalCard = (props) => {
+  return (
+    <div className="ui card">
+      <div className="content">{ props.children }</div>
+      <div className="extra content">
+        <div className="ui two buttons">
+          <div className="ui basic green button">Approve</div>
+          <div className="ui basic red button">Decline</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+こんな感じに複数のコンポーネントが含まれてたらどうなるんだろうと思ったけれども、`props.children[0]`のような形で1個目のコンポーネントみたいに参照できる。
+
+```
+const App = () => {
+    return (
+      <div className="ui container comments">
+        <ApprovalCard>
+          <CommentDetail 
+            author="tarou" 
+            content="How articstic!" 
+            avatar={ faker.image.avatar() } 
+            timeAgo="Today at 4:45PM"
+          />
+          <Hoge/>
+        </ApprovalCard>
+      </div> 
+    )
+}
+```
+
+### SECTION4 クラスコンポーネントを使う
+
+今まで使っていたコンポーネントは関数型コンポーネント。  
+コンポーネントにステートをもたないようなシンプルなものは関数側コンポーネントで書いた方がいい。  
+(可読性の点なのか、パフォーマンスの点なのかはよくわかってない)
+
+ここでは、新たらにクラス型のコンポーネントを使用していく。
+
+まずは比較しやすいように今まで通り、関数型コンポーネントを使う。  
+非同期で位置情報を取得するgeolocationAPIを使って、取得した位置情報を表示してみる。
+
+**サンプルコード**
+
+```
+const App = () => {
+  var lat = 999
+
+  // 非同期の処理
+  window.navigator.geolocation.getCurrentPosition(
+    // callback
+    (pos) => {
+      lat = pos.coords.latitude
+    },
+    (err) => console.log(err),
+  )
+
+  return (
+    <div>
+      Lat: { lat }
+    </div> 
+  )
+
+}
+```
+
+ここで困ったことに。  
+非同期で取得した値って、jsxにどうやって表示するんだろうか。
+
+上記のサンプルコードでは、Latの値は初期値の999になり、非同期処理が終わっても更新されることはない。  
+callback内ででjsxをreturnしたらどうだろうとおもったけど、だめだった。  
+うーむ。
+
+**latの値が更新されたら、その値をもって再描画されればいいのになー** という思いを抱えて、クラスを使った例にうつる。
+
+### SECTION5 ステートをつかう
+
+まずは、ステートの説明。  
+ステートの値が更新されたら、再描画されるのよ！素敵。
+
+コンスラクタでステートの初期設定と非同期処理を呼ぶ。  
+更新をするときはsetStateでとか、コンスラクタで親のコンスラクタを呼び忘れないようにとかは省略。
+
+```
+class App extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      lat: null,
+      errorMessage: ''
+    }
+
+    window.navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.setState({ lat: pos.coords.latitude })
+      },
+      (err) => {
+        this.setState({ errorMessage: err.message })
+      },
+    )
+  }
+```
+
+これで、非同期処理のコールバックでステートの状態を変更することで、再描画され、値が表示される。
+
+ステートの状態によってレンダリング内容を切り替えたい場合、renderメソッド内に式をかけばいいだけ。  
+以下の例だと、レンダリング内容をまるっと分岐して定義してるんだけど、部分的に変える場合はどうしたらいいんだろう。
+
+```
+render() {
+    if(this.state.errorMessage && !this.state.lat) {
+      return (
+        <div>
+          error: { this.state.errorMessage}
+        </div> 
+      )
+    }
+
+    if(!this.state.errorMessage && this.state.lat) {
+      return (
+        <div>
+          Lat: { this.state.lat }
+        </div> 
+      )
+    }
+
+    return (
+      <div>
+        Loading
+      </div> 
+    )
+  }
+```
+
+### SECTION6 ライフサイクルについて
+
+クラスコンポーネントのライフサイクについて。  
+Vue.jsでいう`created`とか`mounted`とかのやつ。
+
+ライフサイクルメソッドとざっくり用途はこんなかんじ。
+
+- constructor :ステートの初期設定
+- redner：jsxの記述
+- componentDidMount：データをとってきて設定するとか
+- componentDidUpdate：描画後にユーザーのアクションによってデータを取得するとか
+- componentWillUnmount：お片づけてきな
+
+`constructor`でAPIを呼んでデータを呼ぶのは間違ってはないんだけど、お作法という点で、`componentDidMount`でやったほうがいいとのこと。
+
+他にも、ライフサイクルメソッドがあるんだけど、使う機会はあまりないので、一旦置いておく。
+
+コンスタントでステートを定義する際には、こう書いてたけど
+
+```
+constructor(props) {
+    super(props)
+    this.state = {
+      lat: null,
+      errorMessage: ''
+    }
+  }
+```
+
+実は、コンスラクタを切らなくても、クラス内にstateを書くだけでいいとのこと。
+
+```
+state = { 
+    lat: null,
+    errorMessage: ''
+  }
+```
+
+Babel公式サイトで、簡単な書き方でコンパイル後のソースをみてみると、当初のコードと同様の結果になることがわかる。 おそろしい。
+
+あと、以前のセクションでrednerの内容を一部だけ変更したい場合は、どうすればいいんだろうなんて思ってたけども、単純に関数として切り出せばいいだけだった。
+
+```
+renderContent() {
+    if(this.state.errorMessage && !this.state.lat) {
+      return (
+        <div>
+          error: { this.state.errorMessage}
+        </div> 
+      )
+    }
+
+    if(!this.state.errorMessage && this.state.lat) {
+      return (
+        <SeasonDisplay lat={ this.state.lat } />
+      )
+    }
+
+    return (
+      <Spinner message="Please accept location request" />
+    )
+  }
+
+  render() {
+    return (
+      <div>
+        { this.renderContent() }
+      </div>
+    )
+  }
+```
+
+Vue.jsをから入ると、`v-if`とかが用意されているので、思考停止してた。  
+このへんでようやくVue.jsはフレームワークで、Reactはライブラリだよという意味がなんとなくわかる。
+
+### SECTION7 イベントを学ぶ
+
+イベントを学ぶ。
+
+inputタグにonChangeを書いてメソッド名を指定するだけ。
+
+```
+class SearchBar extends React.Component {
+  onInputChange(e) {
+    console.log('Change')
+  }
+
+  render() {
+    return (
+      <div className="ui segment">
+        <form className="ui form">
+          <div className="field">
+            <label>Image Search</label>
+            <input type="text" onChange={ this.onInputChange }/>
+          </div>
+        </form>
+      </div>
+    )
+  }
+}
+```
+
+ふと、そもそもonChangeってなんだっけって思って、基本的なコードを書いた。
+
+```
+<input type="text" onChange="test()" />
+
+<script>
+function test() {
+console.log('hello')
+}
+script>
+```
+
+changeイベントは、ブラウザ標準のイベントだから、基本的に上記のように使える。
+
+[イベントリファレンス](https://developer.mozilla.org/ja/docs/Web/Events)<cite class="hatena-citation"><a href="https://developer.mozilla.org/ja/docs/Web/Events">developer.mozilla.org</a></cite>
+
+※話がそれるけど、ピュアなjavascriptを使うのであれば、`addEventLisener`やDOMを取得してjavascript側でイベント定義するほうがHTMLと分離できるので、あんまりタグに書くべきではない。
+
+ReactでonChageって書くとブラウザがそのまま解釈しているように思ったんだけど、違うみたい。
+
+通常のonChangeはフォーカスが外れないと発生しないんだけど、jsxに書いたものって入力があるたびに発火してる。
+
+また、jsxのonChangeに渡すものはcallbackとして関数を渡してる。
+
+あんまりすらすらHTMLをかけるもんだから、ついつい忘れてしまうけど、jsxはHTMLそのものではないってことだよね。
+
+また、イベントハンドラも、ステートに値を設定するだけのシンプルなものであれば、関数として切り出さなくても直接書いちゃう。
+
+```
+<input type="text" 
+     　 value={this.state.term}
+            onChange={e => 
+            this.setState({ term: e.target.value })}/>
+```
+
+かつて、HTMLとjavascriptは分離したほうがいいよねーという流れから、コンポーネントという考え方がでてきて、コンポーネント単位で管理できるなら、直接書いちゃった方が便利だよねという流れなのかしら。
+
+あってるのかはさておき、こういう変化っておもしろいよね。
+
+また、このセクションでは、DOMにデータを持たせるんじゃなくってjavascriptのオブジェクト（ステート）として持たせようということも言ってた。
+
+前もどっかで思ったんだけれども、昔からあるサーバサイドから入力結果とかをHTMLでまるっと返してくるようなシステムだと、Reactのステートみたいな考え方と相性がわるいのかなーなんて思う。
+
+#### thisについて
+
+javascriptの基本的な話
+
+`onSubmit`イベントが実行される`onFormSubmit`メソッドの`this`がundefinedになる。
+
+```
+render() {
+    return (
+      <div className="ui segment">
+        <form className="ui form" onSubmit={this.onFormSubmit}>
+          <div className="field">
+            <label>Image Search</label>
+            <input type="text" 
+            value={this.state.term}
+            onChange={e => 
+            this.setState({ term: e.target.value })}/>
+          </div>
+        </form>
+      </div>
+    )
+  }
+
+  onFormSubmit(e) {
+    e.preventDefault()
+    console.log(this)
+  }
+```
+
+これは、`this`のが指定するものが、実行される文脈(コンテキスト)によってかわるから。
+
+講座では以下のような例をだした。
+
+```
+//てきとうなクラス
+class human {
+ setAge (age) {
+    this.age = age
+ }
+  
+  getAge() {
+    return this.age
+  }
+}
+
+const ayane = new human()
+ayane.setAge(24)
+
+// 24を取得できる
+ayane.getAge()
+
+// メソッドを格納する
+const getAgeFunc = ayane.getAge
+// undefinedになる
+getAgeFunc()
+```
+
+`human`クラスの`getAge'メソッドで使用している`this`が呼び出し元のオブジェクトによってかわっている。
+
+`onSubmit`から呼ばれる`onFormSubmit`のthisがundefinedになるのは、 だから、`onFormSubmit`を定義しているクラスから生成されたオブジェクトではなく、イベントリスナーが`onFormSubmit`を実行していると考えていいのかしら。
+
+コンテキストによって、thisの参照先がかわるのは、こまるということであればthisを固定させる。
+
+方法は2つ。
+
+ES5でも使える`bind`メソッド。
+
+ちょっと不思議だけれども、以下のようにコンスラクタで、メソッドにbind構文をつかったオブジェクトを`getAge`としてセットする。
+
+```
+class human {
+ constructor() {
+   //bindさせた関数をセット
+   this.getAge = this.getAge.bind(this)
+ }
+ setAge (age) {
+    this.age = age
+ }
+  
+  getAge() {
+    return this.age
+  }
+}
+```
+
+もうひとつはES6から使えるアロー関数を使う。  
+getAgeにアロー関数を使ってる。
+
+```
+//てきとうなクラス
+class human {
+ setAge (age) {
+    this.age = age
+ }
+  
+  getAge = () => {
+    return this.age
+  }
+}
+```
+
+これも不思議な気がしたんだけど、そもそもこの構文は、
+
+```
+getAge() {
+      return this.age
+  }
+```
+
+以下構文のショートハンドだから、アロー関数に置き換えるというのもしっくりくるような気もする？
+
+```
+getAge: function () {
+      return this.age
+  }
+```
+
+[メソッド定義](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Functions_and_function_scope/Method_definitions)<cite class="hatena-citation"><a href="https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Functions_and_function_scope/Method_definitions">developer.mozilla.org</a></cite>
+
+とはいえ、classの中にfunction付きのメソッドを定義するとエラーになるのはなぜなのかしら。  
+このへんがいまいちわからない。
+
+冒頭のReactに戻ると、こう書いてしまえばいい。
+
+```
+onFormSubmit(e) {
+    e.preventDefault()
+    console.log(this)
+  }
+
+  render() {
+    return (
+      <div className="ui segment">
+        <form className="ui form" onSubmit={ e => this.onFormSubmit(e) }>
+          <div className="field">
+            <label>Image Search</label>
+            <input type="text" 
+            value={this.state.term}
+            onChange={e => 
+            this.setState({ term: e.target.value })}/>
+          </div>
+        </form>
+      </div>
+    )
+  }
+```
+
+お、アロー関数使ったんだな、でおしまいかとおもいきや冷静に考えるとイベントリスナーが実行する関数そのものを変更してる。
+
+こういうのみると全然javascriptのことわかってないなぁって思う。

@@ -1,0 +1,52 @@
+---
+title: 自分のためのApache設定メモ
+time: 2018-12-11 20:21
+---
+
+# .htaccessとは
+
+あとで書く
+
+# ブラウザの言語に応じてリダイレクトしたい
+
+調べればいくらでもでてくるけど、毎回わけわかんねえってなるので。
+
+**.htaccess**
+
+```
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+# ドメイン名のみ　or ドメイン名/の場合、リダイレクト
+
+RewriteCond %{HTTP:Accept-Language} ^en [NC]
+RewriteRule ^$ jp-en/ [R=301]
+
+RewriteCond %{HTTP:Accept-Language} ^zh [NC]
+RewriteRule ^$ jp-zh/ [R=301]
+
+RewriteRule ^$ jp-ja/ [R=301]
+</IfModule>
+```
+
+- `%{HTTP:Accept-Language}`でApacheがリクエストヘッダから読み込んだ変数を参照できる。
+
+他にどんな変数があるかはぐぐってみよう。きっとリクエストヘッダに書いてあるような情報は大抵あるはず。
+
+- RewriteRule こんな感じにかける。`RewriteCond`が直前にあるけど、一旦置いといていい。
+
+`RewriteRule`だけで、条件にあてはまったら書き換え内容を実行する、となる。
+
+```
+RewriteRule [条件] [書き換え内容] [オプション]
+```
+
+今回のケースでは、正規表現になっている。先頭`^`と行末`$`という指定のコンボで、なんぞとなるんだけれども、これはなんも値がないっていう意味になる。
+
+なんも値がない、つまりドメイン名が指定された場合、と考えちゃう。  
+※www.hogehoge/ でアクセスすると、`/`スラッシュが入ってくんじゃないの？と思うが、.htaccess内ではドメイン直下のスラッシュは勝手に消されるらしい。
+
+書く場所によって違うという恐ろしいこ。
+
+※素敵な記事  
+[ApacheのRewriteを設定する前に知っておくべきこと | WEB ARCH LABO](https://weblabo.oscasierra.net/apache-rewrite-base/)

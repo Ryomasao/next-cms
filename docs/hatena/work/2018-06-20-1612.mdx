@@ -1,0 +1,64 @@
+---
+title: ElasticCacheのmemcacheの挙動メモ
+time: 2018-06-20 16:12
+---
+
+Laravel5.5でAWSのElasticCacheのmemcachedを利用していた。
+
+ElasticCacheのmemcachedにはクラスタとノードというものがあるんだけれども、クラスタのエンドポイントを指定すべきなのかノードのエンドポイントを指定すべきなのかが謎だった。  
+クラスタ用のライブラリを導入すればクラスタ1択なんだけれども、シングルノードであれば、問題ないのかな。
+
+シングルクラスタ：シングルノード シングルクラスタ：マルチノード マルチクラスタ：シングルノード マルチクラスタ：マルチノード
+
+```
+$dynamic_client = new Memcached();
+
+  $server_port = '11211';
+
+  #クラスタのID1
+  #$server_endpoint1 = 'dimpbt-stg-cache00.5zbbua.cfg.apne1.cache.amazonaws.com';
+  #クラスタID1のノード
+  $server_endpoint1 = 'dimpbt-stg-cache00.5zbbua.0001.apne1.cache.amazonaws.com';
+
+  #クラスタのID2
+  #$server_endpoint2 = 'dimpbt-stg-cache01.5zbbua.cfg.apne1.cache.amazonaws.com';
+  #クラスタID2のノード
+  $server_endpoint2 = 'dimpbt-stg-cache01.5zbbua.0001.apne1.cache.amazonaws.com';
+
+  $dynamic_client->addServer($server_endpoint1, $server_port);
+  $dynamic_client->addServer($server_endpoint2, $server_port);
+
+  $sl = $dynamic_client->getServerList();
+  print_r($sl);
+
+  $array = [
+    'shot1' => 'hit',
+    'shot2' => 'hit',
+    'shot3' => 'hit',
+    'shot4' => 'hit',
+    'shot6' => 'hit',
+    'shot7' => 'hit',
+    'shot8' => 'hit',
+    'shot9' => 'hit',
+    'shot10' => 'hit',
+  ];
+
+  if($argv[1] == 'set') {
+    #値を設定する
+    foreach($array as $key => $value){
+
+      if(!$dynamic_client->set($key, $value, 600)){
+        print($key .':'. $value.":set error\n");
+      };
+
+    }
+  }else{
+    #値を取得する
+    foreach($array as $key => $value){
+
+      $memValue = $dynamic_client->get($key);
+```
+
+[Session randomly expiring too early · Issue #15555 · laravel/framework · GitHub](https://github.com/laravel/framework/issues/15555)
+
+Redisの方がいいかもしれない。

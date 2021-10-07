@@ -1,0 +1,103 @@
+---
+title: PyCharmでsudo権限でデバックする方法
+time: 2017-05-28 22:30
+---
+
+# 日記
+
+退職が決まって、怒涛のラストスパートでいろいろ捗らない。
+
+# PyCharmでsudo権限でデバックする方法
+
+前回、pythonでキーボードのイベントを取得する方法を書きました。  
+[Pythonでキーイベントを取得したかったけどできなかった話←できました。←やっぱりだめ。 - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/05/22/002531)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/05/22/002531">tohutokonsome.hatenablog.com</a></cite>
+
+最後にできました！と書いておいて、いろいろ試していたら、キー入力をうまく認識していないことが発覚しました。
+
+どこに問題があるのかを調べたいのですが、使用しているモジュール、pynputはsudo権限で実行しないと、キー入力を検知してくれません。
+
+PyCharmでデバック実行するときは、sudo権限で実行しなければいけなかったので、ここにやったことを記載します。
+
+※参考にさせていただいた記事  
+[Run/Debug as root in PyCharm](https://esmithy.net/2015/05/05/rundebug-as-root-in-pycharm/)
+
+## sudoersを編集する
+
+sudoの設定ファイル、sudoersを編集します。
+
+```
+$ sudo visudo
+```
+
+ファイルを開いたら、以下の一行を追加します。
+
+```
+実行ユーザー名 ALL=NOPASSWD:実行するpythonのpath
+
+(例)
+komoe_mario ALL=NOPASSWD:/Users/konoe_mario/.pyenv/versions/raspberry_3.5.1/bin/python
+```
+
+これを行うことで、指定したpythonはsudoで実行してもパスワードを求められなくなります。
+
+sudoersについては、以下の記事を参考にさせていただきました。  
+[sudo のパスワードを入力なしで使うには - Qiita](http://qiita.com/RyodoTanaka/items/e9b15d579d17651650b7)<cite class="hatena-citation"><a href="http://qiita.com/RyodoTanaka/items/e9b15d579d17651650b7">qiita.com</a></cite>
+
+## python-sudo.shの作成
+
+なぜ、これが必要か？っていうところがあんまりわかってないです。 ここで作ったシェルを、後ほどPycharmのインタプリタに指定します。
+
+```
+#!/bin/bash
+# sudo 実行するpythonのpathを指定
+sudo /Users/konoe_mario/.pyenv/versions/raspberry_3.5.1/bin/python "$@"
+```
+
+インタプリタをsudoで実行しているところがポイントなのかしら。
+
+pythonではなくシェルをインタプリタに指定できるっていうところに驚きです。
+
+時間があるときに検証したいのですが、とりあえず書いちゃいます。
+
+## python-sudo.shに実行権限を付与する
+
+```
+$ chmod +x python-sudo.sh
+```
+
+## PyCharmのインタプリタにptyhon-sudo.shを指定する
+
+PyCharmCommunityEditon-\>Preferences-\>Project:Project名から変更できます。  
+ ![f:id:konoemario:20170528222447p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170528/20170528222447.png "f:id:konoemario:20170528222447p:plain:w500")  
+ちょっと隠れてしまっているけれども、歯車のアイコンを選んで、AddLocalを選択。
+
+![f:id:konoemario:20170528222450p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170528/20170528222450.png "f:id:konoemario:20170528222450p:plain:w500")  
+インタプリタに、作成したpython-sudo.shを選択する。
+
+以上になります。
+
+## 追記(2017.7.12)
+
+久しぶりにPyCharmを起動して、sudo権限で実行しようとしたら以下のエラーメッセージがでた。
+
+```
+sudo: no tty present and no askpass program specified
+```
+
+エラーメッセージがでるあたり、そもそも以前できていたのか不安になった。
+
+とりあえず、シェルそのものについてもsudoersに追加したら使えました。
+
+```
+#!/bin/bash
+# sudo 実行するpythonのpathを指定
+ komoe_mario ALL=NOPASSWD:/Users/konoe_mario/.pyenv/versions/raspberry_3.5.1/bin/python
+#実行するシェルも追加
+ komoe_mario ALL=NOPASSWD:/Users/konoe_mario/PycharmProjects/Basic/keyboard/python-sudo.sh
+```
+
+あと、「python-sudo.sh」をPycharmのインタラプタに指定すると、インストールしたパッケージを認識してくれなくて動かないみたいなこともあった。  
+以前、認識したプロジェクトを開いてみたところ問題なく使用ができた。  
+その後、問題があった別プロジェクトを開くと、今度は「python-sudo.sh」を指定してもパッケージを認識してくれていた。
+
+原因は不明です。。。

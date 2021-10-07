@@ -1,0 +1,173 @@
+---
+title: vuetesting
+time: 2018-01-19 10:53
+---
+
+# vue testing
+
+[Testing Vue: TDD Your First Vue Component From Scratch](https://laracasts.com/series/testing-vue/episodes/1)
+
+[Mocha + webpack による単一ファイルコンポーネントのテスト · vue-test-utils](https://vue-test-utils.vuejs.org/ja/guides/testing-SFCs-with-mocha-webpack.html)
+
+作業ディレクトリ git/testingvue
+
+npmの初期設定
+
+```
+$ npm init -y
+```
+
+何はともあれvue
+
+```
+$ npm install vue
+```
+
+testing-vue
+
+```
+$ npm install vue-test-utils --save-dev
+```
+
+謎のmocha
+
+[Mocha + webpack による単一ファイルコンポーネントのテスト · vue-test-utils](https://vue-test-utils.vuejs.org/ja/guides/testing-SFCs-with-mocha-webpack.html)
+
+```
+$ npm install mocha mocha-webpack --save-dev
+```
+
+サンプルプログラムを作成
+
+```
+$ mkdir -p src/compontents
+$ touch src/components/Counter.js
+```
+
+テストコードっぽいものを同時に作成
+
+```
+$ mkdir test
+$ touch counter.spec.js
+```
+
+テスト実行、エラーっぽくなる。
+
+```
+$ npm test
+> testingvue@1.0.0 test /mnt/c/Users/yamauchi.ryoji/home/tohu/git/ryomasao/testingvue
+> echo "Error: no test specified" && exit 1
+
+Error: no test specified
+npm ERR! Test failed. See above for more
+```
+
+npm test はpackage.jsonのtestを実行してるんだった。
+
+```
+{
+  "name": "testingvue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "mocha": "^5.0.0",
+    "mocha-webpack": "^1.0.1",
+    "vue-test-utils": "^1.0.0-beta.11"
+  }
+}
+```
+
+testの内容を謎のmocha-webpackを使用するように修正**package.json(抜粋)**
+
+```
+{
+   "scripts": {
+    "test": "mocha-webpack --webpack-config webpack.config.js"
+  },
+
+}
+```
+
+webpack.configはないので作成する必要がある。
+
+```
+$ touch webpack.config.js
+```
+
+そもそもwebpackが入ってなかった
+
+```
+$ npm install webpack --save-dev
+```
+
+test対象を追記**package.json(抜粋)**
+
+```
+{
+   "scripts": {
+    "test": "mocha-webpack --webpack-config webpack.config.js test/*.spec.js"
+  },
+
+}
+```
+
+おお、なんか動いた
+
+```
+$ npm test
+  0 passing (0ms)
+
+ MOCHA Tests completed successfully
+```
+
+assert機能みたいなものかしら。expectをインストール。 '''sh npm install expect --save-dev
+
+```
+
+```
+
+import { mount } from 'vue-test-utils'; // let mount = require('vue-test-utils').mount
+
+import Counter from '../src/components/Counter.js'; // let Counter = require('')
+
+import expect from 'expect';
+
+describe('Counter', ()=\>{
+
+```
+it('default to a count of 0', ()=>{
+    let wrapper = mount(Counter);
+    expect(wrapper.vm.count).toBe(0);
+});
+```
+
+});
+
+```
+
+```
+
+$npm test vue-template-compilerがないって怒られる
+
+```
+インストール
+```
+
+$ npm install vue-template-compiler --save-dev
+
+```
+
+```
+
+npm install --save-dev jsdom jsdom-global
+
+```
+ここまでやった
+```

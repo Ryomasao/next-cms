@@ -1,0 +1,352 @@
+---
+title: ちょっと立派なファイルアップロードコンポーネントをつくる
+time: 2018-02-08 21:52
+---
+
+## 前回の状態
+
+**create.html**
+
+```
+<form class="simple-form">
+        <h2>ファイルアップロードh2>
+        <label for="title">タイトルlabel>
+        <input type="text" name="title" v-model="title">
+        <button type="button" @click="onSubmit">投稿するbutton>
+        <drop @send-file="sendFile">drop>
+    form>
+```
+
+**main.js**
+
+```
+//ファイル選択コンポーネント
+const Drop = require('./components/drop');
+
+new Vue({
+    el:'.form',
+    data:{
+        //タイトル
+        title:'',
+        //ファイル
+        files:[]
+    },
+    methods:{
+        //ファイル送信処理
+        onSubmit:function(){
+          //省略
+        },    
+        sendFile(files){
+            this.files = files;
+        }
+    },
+    components:{
+        //コンポーネントを登録する！
+        'drop':Drop
+    }
+```
+
+**drop.vue**
+
+```
+<template>
+    <div class="drop" @dragleave.prevent @dragover.prevent @drop.prevent="onDrop">
+        <div class="drop__default-container">
+            <label> ファイルを選択
+                <input class="drop__input" type="file" multiple="multiple" @change="onDrop">
+            </label>
+        </div>
+    </div>
+</template>
+<script>
+    export default {
+        methods:{
+        //inputタグとドラッグ&ドロップから呼ばれる
+            onDrop:function(event){
+                let fileList = event.target.files ? 
+                               event.target.files:
+                               event.dataTransfer.files;
+
+                let files = [];
+
+                for(let i = 0; i < fileList.length; i++){
+                    files.push(fileList[i]);
+                }
+
+                //イベントsend-fileを発火させて、files変数を渡す
+                this.$emit('send-file', files);
+            }
+        },
+    }
+</script>
+<style lang="scss">
+//スタイルは省略
+</style>
+```
+
+## ファイルがドロップされたら見た目をかえよう
+
+今の状態だと、ファイルをドロップしても、本当にファイルが選ばれているのかまったくわかりません。  
+なので、まずはファイルをドロップしたら、見た目をかえてみます。
+
+テンプレートに、`v-if`と、ファイルが存在しているかどうかを判断する機能`isFileExists`を使って、見た目を切り替えてみます。
+
+**Drop.vue**
+
+```
+<template>
+    <div class="drop" @dragleave.prevent @dragover.prevent @drop.prevent="onDrop">
+        <div class="drop__default-container" v-if="isFileExists">
+            <label> ファイルが選択されているよ </label>
+        </div>
+        <div class="drop__default-container" v-else>
+            <label> ファイルを選択
+                <input class="drop__input" type="file" multiple="multiple" @change="onDrop">
+            </label>
+        </div>
+    </div>
+</template>
+```
+
+肝心の`isFileExists'ですが、methodsで定義してもいいのですが、今回はcomputedに書くことにします。
+
+**Drop.vue**
+
+```
+<script>
+    export default {
+        data:function(){
+            //Fileオブジェクトを格納する
+            return {
+                files:[]
+            }
+        },
+        computed:{
+         //Fileオブジェクトが存在するかどうか   
+         isFileExists:function(){
+                return this.files.length > 0;
+            }
+        },
+        methods:{
+            //ドラッグ & ドロップしたとき
+            onDrop:function(event){
+                let fileList = event.target.files ? 
+                               event.target.files:
+                               event.dataTransfer.files;
+
+                let files = [];
+
+                for(let i = 0; i < fileList.length; i++){
+                    files.push(fileList[i]);
+                }
+
+                 this.files = files;
+
+                //イベントsend-fileを発火させて、files変数を渡す
+                this.$emit('send-file', this.files);
+            },
+        },
+    }
+</script>
+```
+
+computedは、公式によると依存するものが更新されたときのみ再評価される、と書かれていていまいちわかりにくいのですが
+
+- isFileExists内で参照している、this.filesの値に変更があった場合、再評価される
+- this.filesに変更がない場合、isFileExistsの結果はどこかにキャッシュされている（再計算を行わないのでちょっとはやい)
+
+ということでしょうか。
+
+一方、methodsは常に再計算を行うみたいです。
+
+とはいえ、テンプレート内に`v-if="isFileExists" 'と書くとそれがcomputedであれ、methodsであれ、依存している値（参照している値）に変更があればv-ifは再判定してくれるみたい。冷静に考えるとすごい。
+
+<figure class="figure-image figure-image-fotolife" title="ファイルをドロップした図"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180208/20180208215137.png" alt="f:id:konoemario:20180208215137p:plain" title="f:id:konoemario:20180208215137p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>ファイルをドロップした図</figcaption></figure>
+
+## ドロップしたファイルの一覧をつくる
+
+次に、ドロップしたファイルが一覧で見れて、取り消ししたりできるようにします。  
+ようやくVue.jsの真価がでてきます。
+
+### 一覧をベタで書いてみる
+
+とりあえず、一覧をベタで書いてみます。  
+こんな感じですね。
+
+<iframe id="cp_embed_RQgXog" src="https://codepen.io/tohu/embed/preview/RQgXog?height=300&amp;slug-hash=RQgXog&amp;default-tabs=html,result&amp;host=https://codepen.io&amp;embed-version=2" title="画像リストサンプル" scrolling="no" frameborder="0" height="300" allowtransparency="true" class="cp_embed_iframe" style="width: 100%; overflow: hidden;"></iframe><cite class="hatena-citation"><a href="https://codepen.io/tohu/pen/RQgXog">codepen.io</a></cite>
+
+（あれ、Vue.jsもCodepenで全部書いてしまえばいいのでは、、、という疑問は置いておきます。)
+
+### 単一ファイルコンポーネントに置き換える
+
+**DropItem.vueのtemplate**
+
+```
+<template>
+    <div class="item">
+        <img src="https://placehold.jp/150x150.png" alt="" class="item__img">
+            <div class="info">
+                <p class="info__title">ピンちゃんの画像</p>
+                <div class="info__detail">
+                    <span class="info_size">10KB</span>
+                    <span class="info_type">image.png<span/>
+                </div>
+            </div>
+        <span class="item__close">×</span>
+    </div>
+</template>
+```
+
+**DropItem.vueのtemplate**
+
+```
+<template>
+    <div class="item">
+        <img src="https://placehold.jp/150x150.png" alt="" class="item__img">
+            <div class="info">
+                <p class="info__title">ピンちゃんの画像</p>
+                <div class="info__detail">
+                    <span class="info_size">10KB</span>
+                    <span class="info_type">image.png<span/>
+                </div>
+            </div>
+        <span class="item__close">×</span>
+    </div>
+</template>
+```
+
+**DropItem.vueのtemplateを置き換える**
+
+```
+<template>
+    <div class="item">
+        <img src="https://placehold.jp/150x150.png" alt="" class="item__img">
+            <div class="info">
+                <p class="info__title">{{ name }}</p>
+                <div class="info__detail">
+                    <span class="info_size">{{ size }}</span>
+                    <span class="info_type">{{ type }}</span>
+                </div>
+            </div>
+        <span class="item__close">×</span>
+    </div>
+</template>
+```
+
+**DropItem.vueのscriptを追加**
+
+```
+<script>
+    export default {
+        props:{
+            file:File
+        },
+        computed:{
+            name:function(){
+                return this.file.name;
+            },
+            size:function(){
+                return this.file.size;
+            },
+            type:function(){
+                return this.file.type;
+            }
+        },
+    }
+```
+
+## DropItem.vueを使ってみる
+
+前回作ったコンポーネントから、さきほどつくったDropItem.vueを読み込みます。  
+また、前回はコンポーネントの`data`である`files`変数を毎回リセットしていましたが、何度も追加できるようにするため、リセットしないようにしています。
+
+**RichDrop.vueにコンポーネントを追加**
+
+```
+<script>
+//ドロップしたアイテムを表示するコンポーネント
+let dropItem = require('./DropItem');
+
+    export default {
+        data:function(){
+            //Fileオブジェクトを格納する
+            return {
+                files:[]
+            }
+        },
+        computed:{
+            //Fileオブジェクトが存在するかどうか
+            isFileExists:function(){
+                return this.files.length > 0;
+            }
+        },
+        methods:{
+            //ドラッグ & ドロップしたとき
+            onDrop:function(event){
+                let fileList = event.target.files ? 
+                               event.target.files:
+                               event.dataTransfer.files;
+
+                for(let i = 0; i < fileList.length; i++){
+                    this.files.push(fileList[i]);
+                }
+
+                //イベントsend-fileを発火させて、files変数を渡す
+                this.$emit('send-file', this.files);
+
+            },
+        },
+        components:{
+           'drop-item':dropItem
+        }
+    }
+</script>
+```
+
+## ドロップしたアイテムを消せるようにする
+
+**DropItem.vueのtemplateを置き換える**
+
+```
+<template>
+    <div class="item">
+        <img src="https://placehold.jp/150x150.png" alt="" class="item__img">
+            <div class="info">
+                <p class="info__title">{{ name }}</p>
+                <div class="info__detail">
+                    <span class="info_size">{{ size }}</span>
+                    <span class="info_type">{{ type }}</span>
+                </div>
+            </div>
+        <span class="item__close" v-on:click="$emit('delete-item', index)">×</span>
+    </div>
+</template>
+```
+
+**RichDrop.vueにコンポーネントを追加**
+
+```
+<template>
+            <drop-item v-for="(file, index) in files"
+                                          key="index"
+                                          :index="index"
+                                          :file="file"
+                                          v-on:delete-item="deleteItem(index)">
+            </drop-item>
+
+</template>
+<script>
+//ドロップしたアイテムを表示するコンポーネント
+let dropItem = require('./DropItem');
+
+    export default {
+
+            //ドロップしたアイテム削除する
+            deleteItem:function(index){
+               this.files.splice(index, 1);
+            }
+    }
+</script>
+```
+
+## イメージを表示する

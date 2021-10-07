@@ -1,0 +1,109 @@
+---
+title: ラズパイ(RaspberryPi3)を買ってきた：セットアップ編
+time: 2017-02-27 17:06
+---
+
+### 前回からの続き
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/02/26/005009" title="ラズパイ（RaspberyyPi3)を買ってきた - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/02/26/005009">tohutokonsome.hatenablog.com</a></cite>
+
+さっそくセットアップを行なっていきます。
+
+### セットアップ
+
+まず、OSをインスールする必要があります。 RaspberryPi3のOSインストールの選択肢にはいくつかあるみたいなので、以下のようにまとめてみました。   
+※XMind使ってみたんだけれども、思ったより使いにくかった。
+
+![f:id:konoemario:20170429190738p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170429/20170429190738.png "f:id:konoemario:20170429190738p:plain")  
+※GUI版のOSが「RASPBIAN JESSIE WITH PIXEL」になってたので修正
+
+今回は、一番標準っぽいNOOBSを使います。
+
+以下の公式サイトからNOOBSをダウンロードします。
+
+[Raspberry Pi Downloads - Software for the Raspberry Pi](https://www.raspberrypi.org/downloads/)<cite class="hatena-citation"><a href="https://www.raspberrypi.org/downloads/">www.raspberrypi.org</a></cite>
+
+#### microSDカードにOSのファイルを移す
+
+ダウンロードしたOSをmicroSDカード移します。   
+RaspberyyPiはこのmicroSDカードが、そのままメインのストレージになるとのことです。   
+が、ここで問題発生。
+
+microSDにデータってどうやっていれるんだろう。
+
+なんなく本体のRaspberryPiにmicroSDカードを挿せばいいんじゃろう、ぐらいしか考えていませんでした。 OSが既に入っいる状態のmicroSDカードを挿す必要があるのね。
+
+適当に調べてみると、microSDカードリーダーなるものが、100均で売っていることなので、  
+近所のセリアにダッシュしてきました。
+
+![f:id:konoemario:20170226110958j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170226/20170226110958.jpg "f:id:konoemario:20170226110958j:plain:w300")
+
+無事、購入できたのでデスクトップPCからmicroSDにOSを移します。
+
+#### いざ起動
+
+ここでも、問題が二つ発生。
+
+##### Raspberryの専用ケースがない
+
+いろいろなサイトを見ると、Raspberry本体を保護するためのケースに入っている写真ばかり見る。
+
+↓こういうの。　　　
+
+[![Raspberry Pi 3B/2B/B+　専用ケース　（Black）](https://images-fe.ssl-images-amazon.com/images/I/41B-R1rDJxL._SL160_.jpg "Raspberry Pi 3B/2B/B+　専用ケース　（Black）")](http://www.amazon.co.jp/exec/obidos/ASIN/B00NEEA4DM/hatena-blog-22/)
+
+[Raspberry Pi 3B/2B/B+　専用ケース　（Black）](http://www.amazon.co.jp/exec/obidos/ASIN/B00NEEA4DM/hatena-blog-22/)
+
+- 出版社/メーカー: Raspberry Pi
+- メディア: エレクトロニクス
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B00NEEA4DM/hatena-blog-22)
+
+[![Kuman 3.5インチ Raspberry Pi用ディスプレイ タッチパネル 320*480 解析度 保護ケース ヒートシンク タッチパネル+タッチペン+ヒートシンク＋保護ケース 16GB TF SDカード（動作資料を含め、別途に書き込め不要）SDカードで直接挿入 ディスプレイ動作容易 Raspberry Pi 3B 2B B+ A+ A Bに適用 ラズベリーパイ SC11-TF](https://images-fe.ssl-images-amazon.com/images/I/51J8e%2BVm9YL._SL160_.jpg "Kuman 3.5インチ Raspberry Pi用ディスプレイ タッチパネル 320\*480 解析度 保護ケース ヒートシンク タッチパネル+タッチペン+ヒートシンク＋保護ケース 16GB TF SDカード（動作資料を含め、別途に書き込め不要）SDカードで直接挿入 ディスプレイ動作容易 Raspberry Pi 3B 2B B+ A+ A Bに適用 ラズベリーパイ SC11-TF")](http://www.amazon.co.jp/exec/obidos/ASIN/B01I2XLY8S/hatena-blog-22/)
+
+[Kuman 3.5インチ Raspberry Pi用ディスプレイ タッチパネル 320\*480 解析度 保護ケース ヒートシンク タッチパネル+タッチペン+ヒートシンク＋保護ケース 16GB TF SDカード（動作資料を含め、別途に書き込め不要）SDカードで直接挿入 ディスプレイ動作容易 Raspberry Pi 3B 2B B+ A+ A Bに適用 ラズベリーパイ SC11-TF](http://www.amazon.co.jp/exec/obidos/ASIN/B01I2XLY8S/hatena-blog-22/)
+
+- 出版社/メーカー: Kuman
+- メディア: エレクトロニクス
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B01I2XLY8S/hatena-blog-22)
+
+[![本体＋ケース　Raspberry Pi 3 Model B【2016年2月29日発売】RSコンポーネンツ公式 Made in the UK Wales工場生産品　(SB_Clear)](https://images-fe.ssl-images-amazon.com/images/I/51hqubnYjTL._SL160_.jpg "本体＋ケース　Raspberry Pi 3 Model B【2016年2月29日発売】RSコンポーネンツ公式 Made in the UK Wales工場生産品　(SB\_Clear)")](http://www.amazon.co.jp/exec/obidos/ASIN/B01CQH48KC/hatena-blog-22/)
+
+[本体＋ケース　Raspberry Pi 3 Model B【2016年2月29日発売】RSコンポーネンツ公式 Made in the UK Wales工場生産品　(SB\_Clear)](http://www.amazon.co.jp/exec/obidos/ASIN/B01CQH48KC/hatena-blog-22/)
+
+- 出版社/メーカー: きばん本舗
+- メディア: 
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B01CQH48KC/hatena-blog-22)
+
+てっきり、本体を買うと付いてくるものだと思っていたのですが、どうやらそうではなかったみたい。 必須ではないとのことだけれども、万が一ということもあり、適当にケースをつくることにした。
+
+Raspberryの箱をくり抜いただけの代物だが、ファミコンのカセットのパッケージを彷彿とさせるいい感じのものが出来上がった。
+
+防御力はひどいと思われる。　
+
+![f:id:konoemario:20170226111718j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170226/20170226111718.jpg "f:id:konoemario:20170226111718j:plain:w300")
+
+##### ディスプレイが必要なのね
+
+自分の中ではデスクトップPCからWiFIでRaspberryにssh接続して設定を行うイメージをもっていた。  
+なのでディスプレイはいらない、と勝手に思っていた。  
+なんだけれども、そもそもWiFiで接続するためにはRaspberryを起動してsshの設定を行う必要がある。
+
+このことに気づいて、HDMIケーブルをまた買いにいかなくてはいけないのか、と絶望したのだけれども 幸いPS4でHDMIケーブルを使っていたので、そちらを拝借してテレビにつなげることにした。
+
+![f:id:konoemario:20170227165645j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170227/20170227165645.jpg "f:id:konoemario:20170227165645j:plain:w300")
+
+マウスはデスクトップPCのものを拝借し、キーボードは余っているものがあったのでそちらを流用した。 （WindowsのデスクトップPCを買った際に、ちょっと良いキーボードを買おうと思いたち  
+結果Macのキーボードを買ってみるも使いこなせない、という悲しい歴史の遺物が役に立った。)
+
+#### ようやく起動
+
+電源をコンセントに挿すと、無事に起動。  
+特に手の込んだことをはまったくしなかったのに、なぜかえらい感動した。
+
+![f:id:konoemario:20170227170150j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170227/20170227170150.jpg "f:id:konoemario:20170227170150j:plain:w300")
+
+ネットはWiFiトグルを挿して、デスクトップ画面からSSIDを選択したらあっさり繋がった。  
+SSHの設定もとくに難しいこともなかった。
+
+これで普通に使えるようになった。 次回はモーターを動かすというところに挑戦していきたい。  
+（ただパーツを買いに秋葉原にまた行かなきゃいけなそうなので、平日は作業できなそう。)

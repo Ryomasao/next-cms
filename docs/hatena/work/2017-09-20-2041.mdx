@@ -1,0 +1,110 @@
+---
+title: apt-getの基本的なこと
+time: 2017-09-20 20:41
+---
+
+Bash on Ubuntu on Windows環境(以降、Bow環境と略す)に、PHPをapt-getでインストールしようとしたときに、思い浮かんだ疑問を書く。
+
+わりと、とりとめもない。
+
+- [apt-get](#apt-get)
+- [sources.list](#sourceslist)
+- [誰が管理してるの？](#%E8%AA%B0%E3%81%8C%E7%AE%A1%E7%90%86%E3%81%97%E3%81%A6%E3%82%8B%E3%81%AE)
+- [公式に欲しいバージョンがない](#%E5%85%AC%E5%BC%8F%E3%81%AB%E6%AC%B2%E3%81%97%E3%81%84%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3%E3%81%8C%E3%81%AA%E3%81%84)
+- [どうでもよい疑問](#%E3%81%A9%E3%81%86%E3%81%A7%E3%82%82%E3%82%88%E3%81%84%E7%96%91%E5%95%8F)
+
+## apt-get
+
+新しいパッケージをインストールするとき、以下のコマンドを叩くと思う。  
+（そもそもパッケージだったりモジュールだったり、インストールって言葉もよくわからないね）
+
+```
+$ apt-get install パッケージ名
+```
+
+これを行うと、あら簡単、欲しかったコマンドだったり機能だったりが使えるようになる。
+
+ちなみに、欲しい機能をググった時、apt-getじゃなくて、yumだったりすると、そっとブラウザバックするのは自分だけじゃないはずだ。
+
+普段、Windowsを使っている自分からすると、結構不思議なことだったりする。
+
+apt-getとパッケージ名だけでどうして取れてこれるんだろうと。
+
+Windowsだったら、自分で欲しいアプリケーションを検索して、そのサイトにいってダウンロードしていたから。
+
+ということで調べてみる。
+
+## sources.list
+
+以下のディレクトリを見てみよう。
+
+**sources.listを覗く**
+
+```
+$ view /etc/apt/sources.list
+```
+
+ここには、URLが書いてあって、apt-getが叩かれたときに、見に行く場所がちゃんと書かれている。
+
+**sources.list(抜粋)**
+
+```
+# newer versions of the distribution.
+deb http://jp.archive.ubuntu.com/ubuntu/ xenial main restricted
+## Major bug fix updates produced after the final release of the
+## distribution.
+deb http://jp.archive.ubuntu.com/ubuntu/ xenial-updates main restricted
+```
+
+ブラウザで見ると、「sources.list」に書かれているURLにアクセスしてみると、こんな感じのページが表示される。
+
+![f:id:konoemario:20170920181029p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170920/20170920181029.png "f:id:konoemario:20170920181029p:plain:w300")
+
+ちなみに、このパッケージが置いてある場所をリポジトリということがあるみたい。
+
+細かいことはわからないけれども、すこしわかった気がする。
+
+## 誰が管理してるの？
+
+ところで、このリポジトリ、誰が管理しているのだろうか。
+
+実は、こうなんだよ、と言えればいいのですが、残念ながらよくわかってないです。
+
+きっと、Ubuntuを作っているすごい方達が、このパッケージのこのバージョンはリポジトリに追加しても大丈夫！ってやっているんじゃないかと思っている。
+
+ちなみに、公式のリポジトリのURLはミラーサイト含め、世界中にある。
+
+[日本国内のダウンロードサイト | Ubuntu Japanese Team](http://www.ubuntulinux.jp/ubuntu/mirrors)
+
+ここから、落とす分には安全ということなんでしょうかね。
+
+## 公式に欲しいバージョンがない
+
+この記事を書くきっかけになったことなんですが、公式に欲しいバージョンがなかったりすることもあります。
+
+今回でいえば、phpの7.1系がほしかったのですが、7.0までしかありませんでした。
+
+こういうときは、7.1を公開している公式以外のリポジトリを追加することで参照できるようになるとのことです。
+
+[How To Upgrade to PHP 7 on Ubuntu 14.04 | DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-upgrade-to-php-7-on-ubuntu-14-04)<cite class="hatena-citation"><a href="https://www.digitalocean.com/community/tutorials/how-to-upgrade-to-php-7-on-ubuntu-14-04">www.digitalocean.com</a></cite>
+
+**リポジトリを追加**
+
+```
+$ sudo add-apt-repository ppa:ondrej/php
+```
+
+いまいちこのコマンドからURLが読み取れないので、どういう仕組みなのかがわかりませんが、おそらく以下のサイトに置いてあるアプリを落としているように思えます。
+
+[\*\*\*\*\* The main PPA for PHP (5.6, 7.0, 7.1) with many PECL extens... : Ondřej Surý](https://launchpad.net/~ondrej/+archive/ubuntu/php)<cite class="hatena-citation"><a href="https://launchpad.net/~ondrej/+archive/ubuntu/php">launchpad.net</a></cite>
+
+また、コマンド内にある、ppaですが、個人のリポジトリのことをPPAと呼ぶみたいです。
+
+[UbuntuのPPAて何？](https://allabout.co.jp/gm/gc/438675/)<cite class="hatena-citation"><a href="https://allabout.co.jp/gm/gc/438675/">allabout.co.jp</a></cite>
+
+ここまで書いて、AppleのAppleStoreが、Ubuntuの公式リポジトリに似てるなぁと思いました。
+
+## どうでもよい疑問
+
+Ubuntuでインストールするパッケージ名って、皆さんどうやって判断しているのだろうか。   
+phpの古いバージョンのリファレンスを参考に進めていたりすると、名前が変わったりしていて、どれが正しいのかわからないことが多い。

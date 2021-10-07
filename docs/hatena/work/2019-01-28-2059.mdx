@@ -1,0 +1,48 @@
+---
+title: jestで特定のモジュールのみmockにする
+time: 2019-01-28 20:59
+---
+
+こっちでもmockの話を書いた。
+
+[jestのmockを学ぶ - 豆腐とコンソメ](https://www.tohuandkonsome.site/entry/2019/11/20/205130)<cite class="hatena-citation"><a href="https://www.tohuandkonsome.site/entry/2019/11/20/205130">www.tohuandkonsome.site</a></cite>
+
+以下のように、1ファイル内に、複数の関数があり、`login`のみmockにしたい場合。
+
+**firebase.js**
+
+```
+export const login = () => {
+  // login用の何かしらの処理
+};
+
+export const logout = () => {
+  // logout用の何かしらの処理
+};
+```
+
+以下のように`jest.requireActual`を使えばいける。
+
+**テストコード**
+
+```
+import { login as mockLogin } from '../../firebase';
+
+// moduleの特定の関数のみmockにしたい
+jest.mock('../../firebase', () => ({
+  ...jest.requireActual('../../firebase'),
+  login: jest.fn() 
+}));
+
+test('特定のmoduleのみmockにした', () => {
+  // component等は省略
+  fireEvent.click(LoginButton);
+  expect(mockLogin).toHaveBeenCalled();
+})
+```
+
+テスト対象のコンポーネントが、上記`login`と`logout`を両方使っていて、片方だけmockにしない状況ってあんまなさそうだけど。
+
+## 2019/08/07 追記
+
+一部をモックしたいなら`jest.spyon`で対象の関数のみmockの実装をかけばいい。

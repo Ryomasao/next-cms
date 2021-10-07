@@ -1,0 +1,74 @@
+---
+title: ラズパイ（RaspberyyPi3)を買ってきた
+time: 2017-02-26 00:50
+---
+
+### はじめに
+
+前回からの続き、ではないのです。
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/02/23/221944" title="アイドルとのチェキ画像から親密度を図る(2) - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/02/23/221944">tohutokonsome.hatenablog.com</a></cite>
+
+一旦、動くものは作ったので、コードを綺麗にしてあげよう！とかやってる内に  
+こっちに興味が湧いちゃいました。
+
+[ラズパイで動くロボット「GoPiGo」をつかって遠隔見守りロボットを作ろう（1） 開発準備編](https://codezine.jp/article/detail/9829)<cite class="hatena-citation"><a href="https://codezine.jp/article/detail/9829">codezine.jp</a></cite>
+
+記事を見ていただけるとわかるのですが、タイヤとカメラがついた物体が、動くみたいです。  
+それだけならまだしも、Pythonでラジコンみたいに、動きをいろいろとコントロールできるみたいなのです。
+
+私はラジコンに対して、熱い思いを持っております。 というのも、幼きころラジコンがほしくってほしくって、お婆ちゃんに駄々を捏ねて困らせたことがあります。見かねたお婆ちゃんが、おもちゃ屋で買ってきたラジコンは、コントローラーと車が有線で繋がっているという代物で、その結果私はわんわんと泣き腫らし、お婆ちゃんを困らせたという過去があります。
+
+(お婆ちゃんが買ってきたラジコンイメージ)
+
+![f:id:konoemario:20170225235540j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170225/20170225235540.jpg "f:id:konoemario:20170225235540j:plain:w300")
+
+その過去の代償を払うためには私自身がラジコンを作る必要があるのではないのでしょうか。  
+そして完成したラジコンは今は亡き、お婆ちゃんに捧げます。
+
+### GoPiGoちょっと高いし、手に入るのに時間がかかりそう
+
+ごめん、お婆ちゃん。  
+紹介されていた走るロボット「GoPiGo」を買おうと思ったのだけれどもRaspberryPiとGoPiGoがセットになっているものが199ドルぐらいで、かつ通販サイトを見ても在庫なしの状態なんだ。
+
+さて、GoPiGoは諦めて、ピンキーの興味を引くネタでも考えるか、といつもならなるのですが  
+幸運なことに以下の記事を見つけました。
+
+[Raspberry Pi 3でpythonを使いモータードライバーを使いモータを制御する！ - Qiita](http://qiita.com/RyosukeKamei/items/147de58738084826f749)<cite class="hatena-citation"><a href="http://qiita.com/RyosukeKamei/items/147de58738084826f749">qiita.com</a></cite>
+
+GoPiGoなしでも、RaspberryPiだけでモーターを制御しているという素敵な内容です。   
+先人の方がいる、かつモーターが動くのであればいける！と謎の自信が湧いてきたので、とりあえずRassberryPiだけを購入することにしました。
+
+### 秋葉原に行ってきた
+
+購入にあたっては、以下の記事を参考にさせていただきました。
+
+[ラズベリーパイを買いに、勇気を出して秋葉原へ【お買い物編】 | かとえみのRaspberryPiロボット入門](https://liginc.co.jp/250796)<cite class="hatena-citation"><a href="https://liginc.co.jp/250796">liginc.co.jp</a></cite>
+
+参考というか、そっくりそのままお買い物編をなぞりました。 記事に書いてある通り、秋葉原に出向いて、上がっているお店を周ってみました。 ヨドバシカメラとかではない、ローカル感漂う電気屋に入るのってやけに緊張します。
+
+また、いろいろな店舗にいる方たちは何を目的に商品を探しているのか気になりました。 (microSDカードに群がる、50代、60代のおじ様方は、一体何に使うのだろう)
+
+自分のまだ知らない世界がいっぱいあるのでしょう。
+
+### 購入したもの
+
+以下を購入しました。
+
+![f:id:konoemario:20170226002304j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170226/20170226002304.jpg "f:id:konoemario:20170226002304j:plain:w300")
+
+1. RaspberryPi3本体
+2. microSDカード(32GBでクラス10のもの)
+3. 電源ケーブル
+4. WiFiトグル
+5. ラズパイマガジン(たまたま見つけたので購入)
+
+(6.はピンキーのサイン入りWWDベストアルバムだよ！）
+
+お値段は、 ~~こいつ、この値段でこれ買ってやんの、という視線を受けるのがつらくって~~ 書くのが面倒だったのでレシート貼ってます。
+
+![f:id:konoemario:20170226002747j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170226/20170226002747.jpg "f:id:konoemario:20170226002747j:plain:w300")
+
+RaspberryPi3本体だけであれば、5000円ジャストでした。
+
+ながくなったので次回にセットアップ編を書きます。

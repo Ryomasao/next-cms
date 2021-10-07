@@ -1,0 +1,194 @@
+---
+title: Vue.jsで画像スライドコンポーネントをつくる
+time: 2018-02-18 22:28
+---
+
+# 日記
+
+金曜の夜。 リファクタリングの本を買ったから、土日に読むぞ！そういえば最近走ってないから走りたいな！Skyrimもやりこむぞ！
+
+土曜の昼から現在に至るまで。  
+なんだか眠いなぁ。Twitchでも寝ながらみるか。
+
+こうして日々が過ぎていくと思うと悲しい。  
+そして、こうしたことを悲しいと思ってしまうのもまた悲しい。
+
+## 作ったもの
+
+画像とかがスライドしていくUIをカルーセルというみたい。  
+それをVue.jsの単一ファイルコンポーネントで作ってみました。
+
+![f:id:konoemario:20180218222125g:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180218/20180218222125.gif "f:id:konoemario:20180218222125g:plain")
+
+こちらをものすごく参考にさせていただきました。  
+[Vue.jsでカルーセルをつくる - Qiita](https://qiita.com/Wave7KN/items/5a18c9a6ed7d6fac940f)<cite class="hatena-citation"><a href="https://qiita.com/Wave7KN/items/5a18c9a6ed7d6fac940f">qiita.com</a></cite>
+
+## Carousel.vue
+
+テンプレートはこんな感じで。
+
+**Carousel.vue**
+
+```
+<template>
+    <div class="carousel">
+        <div class="carousel__main">
+            <div class="carousel__left">
+                <button class="carousel__button" type="button" @click="prev">prev</button>
+            </div>
+            <div class="carousel__center">
+                <transition-group tag="div" class="carousel__slider" :name="style">
+                    <div v-for="number in [currentImg]" v-bind:key="number">
+                      <img :src="imgList[Math.abs(currentImg) % imgList.length]" class="carousel__img" width="300" height="200"/>
+                    </div>
+                </transition-group>
+            </div>
+            <div class="carousel__right">
+                <button class="carousel__button" type="button" @click="next">next</button>
+            </div>
+        </div>
+        <div class="carousel__footer">
+            <span class="carousel__dot" v-for="(number, index) in imgList.length" v-bind:class="{'is-active':index == (Math.abs(currentImg) % imgList.length)}">●</span>
+        </div>
+    </div>
+</template>
+```
+
+スクリプトがこんな感じ。
+
+**Carousel.vue**
+
+```
+<script>
+    export default {
+        props:{
+            imgList:Array
+        },
+        data: function(){
+                return {
+
+                    currentImg: 0,
+                    style:'',
+                }
+        },
+        methods:{
+            next:function(){
+                this.currentImg++;
+                this.style="slide-next"
+                console.log(Math.abs(this.currentImg) % this.imgList.length);
+            },
+            prev:function(){
+                this.currentImg--;
+                this.style="slide-prev"
+            }
+        }
+    }
+</script>
+```
+
+スタイルはこんな感じ。
+
+**Carousel.vue**
+
+```
+<style lang="scss">
+.slide-next-leave-active,
+.slide-next-enter-active, 
+.slide-prev-leave-active,
+.slide-prev-enter-active {
+  transition: 1s;
+}
+.slide-next-enter, 
+.slide-prev-leave-to {
+  transform: translate(100%, 0);
+}
+.slide-next-leave-to,
+.slide-prev-enter {
+  transform: translate(-100%, 0);
+}
+
+.carousel{
+    width:100%;
+
+    &__main{
+        display:flex;
+        justify-content: center;
+        width:100%;
+    }
+
+    & __left, &__ right{
+        width:25%;
+    }
+
+    &__button{
+        width:100%;
+        height:100%;
+    }
+
+    &__center{
+        width:50%;
+        text-align:center;
+    }
+
+    &__slider{
+        overflow: hidden;
+        position: relative;
+        height:200px;
+        margin:0 auto;
+        background:white;
+    }
+
+    &__img{
+        position:absolute;
+        top:0;
+        bottom:0;
+        left:0;
+    }
+
+    &__footer{
+        text-align:center;
+    }
+
+    &__dot{
+        &.is-active{
+            color:red;
+        }
+    }
+}
+</style>
+```
+
+## コンポーネントを使ってみる
+
+使う側は、さきほどの`Carousel.vue`をコンポーネントとして登録して、表示する画像のURLを`dropImageUrls`に直接定義しています。
+
+ファイルドロップしたときの画像を表示しようとおもったけれども、とりあえず。
+
+**main.js**
+
+```
+window.Vue = require('vue');
+//カルーセルコンポーネント
+const Carousel = require('../components/Carousel');
+
+new Vue({
+    el:'.form',
+    data:{
+        dropImageUrls:[
+            'http://apopidols.org/static/img/CQ-milgUEAAp9g9.jpg',
+            'https://fujisan-marathon.jp/wp-content/uploads/2017/08/%E5%AF%8C%E5%A3%AB%E5%B1%B1.jpg',
+            'http://livedoor.blogimg.jp/oto_soku-densoku/imgs/8/d/8dd76f3f.jpg'
+        ]
+    },
+    components:{
+        'carousel':Carousel
+    }
+})
+```
+
+最後に、使いたい箇所に以下のタグを埋め込むことで使えました。  
+**index.html**
+
+```
+<carousel :img-list="dropImageUrls">carousel>
+```

@@ -1,0 +1,492 @@
+---
+title: Dockerをさわってみる（１）：HelloWorld
+time: 2018-03-21 19:37
+---
+
+# 日記
+
+久々の更新になります。  
+転職後初の案件が少し落ち着いたので、この機会に反省がてらいろいろと試したいと思っております。
+
+わからないことだらけで足元が固まってない中で、自分の書いたコードが実際に運用されていくと思うと恐怖を感じている今日このごろです。
+
+# 本題
+
+![f:id:konoemario:20180321184125p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180321/20180321184125.png "f:id:konoemario:20180321184125p:plain")
+
+と、いうことでdockerをさわってみたいと思います。
+
+- [日記](#%E6%97%A5%E8%A8%98)
+- [本題](#%E6%9C%AC%E9%A1%8C)
+  - [Vagrantで仮想マシーンを作成する](#Vagrant%E3%81%A7%E4%BB%AE%E6%83%B3%E3%83%9E%E3%82%B7%E3%83%BC%E3%83%B3%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B)
+    - [Vagrantの設定をする](#Vagrant%E3%81%AE%E8%A8%AD%E5%AE%9A%E3%82%92%E3%81%99%E3%82%8B)
+  - [WindowsでAWS Linixが起動しないとき](#Windows%E3%81%A7AWS-Linix%E3%81%8C%E8%B5%B7%E5%8B%95%E3%81%97%E3%81%AA%E3%81%84%E3%81%A8%E3%81%8D)
+  - [仮想マシーン上でdockerコンテナを使う](#%E4%BB%AE%E6%83%B3%E3%83%9E%E3%82%B7%E3%83%BC%E3%83%B3%E4%B8%8A%E3%81%A7docker%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A%E3%82%92%E4%BD%BF%E3%81%86)
+    - [dockerをインストールする](#docker%E3%82%92%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E3%81%99%E3%82%8B)
+    - [さっそくためしてみる](#%E3%81%95%E3%81%A3%E3%81%9D%E3%81%8F%E3%81%9F%E3%82%81%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+      - [HelloWorld](#HelloWorld)
+      - [インタラクティブなコンテナ](#%E3%82%A4%E3%83%B3%E3%82%BF%E3%83%A9%E3%82%AF%E3%83%86%E3%82%A3%E3%83%96%E3%81%AA%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A)
+      - [デーモン化したDocker](#%E3%83%87%E3%83%BC%E3%83%A2%E3%83%B3%E5%8C%96%E3%81%97%E3%81%9FDocker)
+        - [追記](#%E8%BF%BD%E8%A8%98)
+    - [ここまでのまとめ](#%E3%81%93%E3%81%93%E3%81%BE%E3%81%A7%E3%81%AE%E3%81%BE%E3%81%A8%E3%82%81)
+
+## Vagrantで仮想マシーンを作成する
+
+あれ、dockerじゃないの？というところですが、お家のPCがMacだったり職場のPCがWindowsだったりとするので、とりあえずVagrantで仮想マシンをひとつ用意した上でdockerを使うことにしました。
+
+イメージはこんな感じです！  
+わかりやすい！
+
+<figure class="figure-image figure-image-fotolife" title="わかりやすいイメージ"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180321/20180321185641.png" alt="f:id:konoemario:20180321185641p:plain" title="f:id:konoemario:20180321185641p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>わかりやすいイメージ</figcaption></figure>
+
+Vagrantはすでに導入済みなので、そのへんは省略するよ！
+
+### Vagrantの設定をする
+
+まずは、母体のホストマシンでの作業になります。  
+Macであればターミナル、WindowsであればPowerShellあたりになるのでしょうか。
+
+お家ではMacなので、以降はMacでの作業になります。
+
+![f:id:konoemario:20180321190334p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180321/20180321190334.png "f:id:konoemario:20180321190334p:plain")
+
+最初に、作業ディレクトリを適当な場所に用意します。
+
+**作業ディレクトリを用意する**
+
+```
+$ mkdir vagrant/aws-linux/vagrant -p
+```
+
+後ほど、記載していますが、使用するOSはaws-linuxにするので、ディレクトリ名につけています。
+
+また、必要になるかわかりませんが、あったら便利なので仮想OSと共有するディレクトリを作成しときます。   
+**仮想OSと共有するディレクトリを作成**
+
+```
+$ mkdir vagrant/aws-linux/data
+```
+
+それでは、`Vagrantfile`を作成していきます。
+
+**Vagrantfileの作成**
+
+```
+$ cd vagrant/aws-linux/vagrant 
+$ vagrant init
+$ ls
+Vagrantfile
+```
+
+`Vagrantfile`が作成されましたかね？  
+このファイルにどのBox(OSみたいなものなのかな？)を使うか等、いろいろ書くことができるみたいです。
+
+この時点でのディレクトリ構成はこんな感じです。
+
+**ディレクトリ構成**
+
+```
+aws-linux/
+├── data
+└── vagrant
+    └── Vagrantfile
+```
+
+では、Vagrantfileを編集していきます。
+
+以下は、修正した箇所のみ抜粋してます。
+
+**Vagrantfileの抜粋**
+
+```
+config.vm.box = "mvbcoding/awslinux"
+config.vm.network "forwarded_port", guest: 80, host: 8000
+config.vm.network "private_network", ip: "192.168.33.34"
+config.vm.synced_folder "../data", "/vagrant_data"
+```
+
+上から適当に見ていきましょう！
+
+まず、使用するboxですが、「AWS Linux」にしています。   
+`mvbcoding/awslinux`ってやつですね。  
+`vm.box`に書いてあげると、`Vagrant Cloud`なるサイトから対応するboxをとってきてくれるみたい。すごい。
+
+[Vagrant box mvbcoding/awslinux - Vagrant Cloud](https://app.vagrantup.com/mvbcoding/boxes/awslinux)
+
+「AWS Linux」にした理由は、今後AWSも使っていきたいなぁという思いだけなので、CentOSでもUbuntuでもなんでもよかったりします。
+
+続いて、「forwarded\_port」ですが、ホストマシン（自分の場合だとMac)からブラウザで「[http://localhost:8000](http://localhost:8000)」とした場合、仮想マシンのポート80を見に行ってね！という設定になります。
+
+「private\_network」は単純に仮想マシーンのIPアドレスになります。あんまり意味があるかはわかりませんが、とりあえず決め打ちで「192.168.33.34」としています。
+
+最後の「vm.synced\_folder 」ですが、ホストマシンと仮想マシンで共有するディレクトリを指定しています。
+
+だいぶ適当ですが、ここまできたら仮想マシンを起動してみます。
+
+**仮想マシンの起動**
+
+```
+$ vagrant up
+Bringing machine 'default' up with 'virtualbox' provider...
+==> default: This machine used to live in /Users/konoe_mario/vagrant/aws-linux but it's now at /Users/konoe_mario/vagrant/aws-linux/vagrant.
+==> default: Depending on your current provider you may need to change the name of
+==> default: the machine to run it as a different machine.
+==> default: Checking if box 'mvbcoding/awslinux' is up to date...
+==> default: Machine already provisioned. Run `vagrant provision` or use the `--provision`
+==> default: flag to force provisioning. Provisioners marked to run always will still run.
+```
+
+何やらいろいろと出てきますが、きっと起動しているはずだ、と信じて仮想マシンに接続してみます。
+
+**仮想マシンに接続**
+
+```
+$ vagrant ssh
+Last login: Wed Mar 21 02:50:33 2018 from 10.0.2.2
+
+       __|__ |_ )
+       _| ( / Amazon Linux AMI
+      ___|\___ |___|
+
+https://aws.amazon.com/amazon-linux-ami/2017.03-release-notes/
+30 package(s) needed for security, out of 39 available
+Run "sudo yum update" to apply all updates.
+Amazon Linux version 2017.09 is available.
+```
+
+おおう、無事接続できました。
+
+Windowsの場合は、`vagrant ssh`できないので別途vagrantのプラグインを導入して`vagrant teraterm`すると便利かと思います。
+
+参考にさせていただいた記事[vagrant teraterm が便利すぎてしょうがない件](https://blog.pg1x.com/2015/10/31/20151031233246/)<cite class="hatena-citation"><a href="https://blog.pg1x.com/2015/10/31/20151031233246/">blog.pg1x.com</a></cite>
+
+とりあえず、これで仮想マシンを用意することができました。
+
+![f:id:konoemario:20180321191110p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180321/20180321191110.png "f:id:konoemario:20180321191110p:plain")
+
+## WindowsでAWS Linixが起動しないとき
+
+そういえば起動しなかったことがあるので、以下を追記するよ！
+
+[mvbcoding/awslinux のvagrant boxがWindowsで起動しない問題 · GitHub](https://gist.github.com/gyohk/fa3deb4e850c697789b785d97bd5f605)
+
+## 仮想マシーン上でdockerコンテナを使う
+
+ようやく本題になります。
+
+### dockerをインストールする
+
+dockerの導入については、AWS公式のドキュメントがあったので、こちらを参考にしました。
+
+[Amazon ECS における Docker の基本 - Amazon Elastic Container Service](https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/docker-basics.html)
+
+**パッケージの更新**
+
+```
+$ sudo yum update -y
+```
+
+**dockerのインストール**
+
+```
+$ sudo yum install -y docker
+```
+
+**dockerのサービスを開始させる**
+
+```
+$ sudo service docker start
+```
+
+**dockerの確認**
+
+```
+$ docker --version
+Docker version 17.03.2-ce, build 7392c3b/17.03.2-ce
+```
+
+また、sudoを毎回打つのも面倒なので、デフォルトのvagrantユーザーをdokerグループに追加してあげることにします。
+
+**vagrantユーザーをdockerグループに追加**
+
+```
+sudo usermod -a -G docker vagrant
+```
+
+グループに追加したら、一度ログアウトして、再度ログインすると反映されます。
+
+ログインしたら、とりあえず`docker ps`と適当なdockerのコマンドを叩いて問題ないか確認します。
+
+反映できてないと、`permission denied`で怒られます。
+
+**だめな例**
+
+```
+$ docker images
+docker: Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Post http://%2Fvar%2Frun%2Fdocker.sock/v1.27/containers/create: dial unix /var/run/docker.sock: connect: permission denied.
+```
+
+### さっそくためしてみる
+
+これでdockerを使う最低限の準備は整ったはず！
+
+いざ！というところで、
+
+<figure class="figure-image figure-image-fotolife" title="顔色が悪い豚"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180321/20180321191543.png" alt="f:id:konoemario:20180321191543p:plain" title="f:id:konoemario:20180321191543p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>顔色が悪い豚</figcaption></figure>
+
+という状態になってしまいます。
+
+本を買おうかな、と思ったりもしたのですが増えていくだけの本に精神的にやられそうになっちゃいます。
+
+なので、ここは公式チュートリアルをやってみることにします。
+
+[コンテナで Hello world — Docker-docs-ja 17.06.Beta ドキュメント](http://docs.docker.jp/engine/tutorials/dockerizing.html)
+
+#### HelloWorld
+
+まずは恒例のHelloWolrdです。  
+いままで挨拶だけして二度とこなかったものはたくさんあるかと思いますが、そんなことは気にしちゃいけません！
+
+公式に解説があるので、ここでは感想だけを述べるという暴挙にでています。
+
+まずは、`docker run`をしてみます。
+
+**HelloWorld**
+
+```
+$ docker run ubuntu:14.04 /bin/echo 'Hello world'
+
+Unable to find image 'ubuntu:14.04' locally
+14.04: Pulling from library/ubuntu
+99ad4e3ced4d: Pull complete 
+ec5a723f4e2a: Pull complete 
+2a175e11567c: Pull complete 
+8d26426e95e0: Pull complete 
+46e451596b7c: Pull complete 
+Digest: sha256:ed49036f63459d6e5ed6c0f238f5e94c3a0c70d24727c793c48fded60f70aa96
+Status: Downloaded newer image for ubuntu:14.04
+Hello world
+```
+
+Ubuntuのimageをとってきて、Ubuntu上でechoコマンドを実行させているイメージですかね。
+
+毎回、OSイメージを落としてくるのかな？なんて思ったのですが、持ってきたイメージはローカルに保存されているみたいです。  
+`docker images`とたたくとイメージを確認することができました。
+
+**存在しているimageを確認する**
+
+```
+$ docker images
+ubuntu 14.04 a35e70164dfb 2 weeks ago 222 MB
+```
+
+試しに、再度`docker run`とやってみるとダウンロードうんたらがなく、さくっと実行できることがわかります。
+
+#### インタラクティブなコンテナ
+
+インタラクティブってなんぞ、ということなんですが自分もよくわからないので公式そのままの表現になっています。
+
+さきほどの`docker run`コマンドに `-t`と`-i`オプションをつけています。
+
+**インタラクティブななにか**
+
+```
+$ docker run -t -i ubuntu:14.04 /bin/bash
+root@b7b5fbe3408e:/#
+```
+
+すると、ターミナルの様子が・・・ ここはもしかして、dockerが立ち上げたUbutunの中ではなかろうか・・・
+
+![f:id:konoemario:20180321192644p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180321/20180321192644.png "f:id:konoemario:20180321192644p:plain")
+
+とはいえ、Vagrantで仮想マシンにログインすることには慣れた身です。  
+勇気を出して、操作してみることにします。
+
+**勇気をだしてみる**
+
+```
+root@b7b5fbe3408e:/# cd ~  
+root@b7b5fbe3408e:~# ls
+root@b7b5fbe3408e:~# pwd
+/root
+root@b7b5fbe3408e:~# touch uhyoooo.txt
+root@b7b5fbe3408e:~# ls
+uhyoooo.txt
+```
+
+適当にrootのホームディレクトリ配下にファイルを置いてみることにました。  
+やることやってやったぜと思ったので、exitして抜けましょう。
+
+**お家に帰る**
+
+```
+root@b7b5fbe3408e:~# exit
+exit
+[vagrant@localhost ~]$
+```
+
+Vagrantが暖かく迎えてくれました。
+
+さて、一度帰れると思ったら、もう平気です。  
+再度、アクセスしてみます。
+
+**再訪問**
+
+```
+$ docker run -t -i ubuntu:14.04 /bin/bash 
+root@eabadc1d22c8:/# cd ~
+root@eabadc1d22c8:~# ls
+```
+
+あれ、`uhyoooo.txt`が消えちゃています。
+
+僕の思い出が、、、という悲しみであふれるのですが、とりあえず悲しみは脇にに置いて続けます。
+
+#### デーモン化したDocker
+
+デーモンと聞くと、こんな感じだけれども、
+
+<figure class="figure-image figure-image-fotolife" title="デーモン"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180322/20180322115837.png" alt="f:id:konoemario:20180322115837p:plain" title="f:id:konoemario:20180322115837p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>デーモン</figcaption></figure>
+
+システムの世界だとバックグラウンドで動くプログラムを指すみたい。
+
+とりあえず実行してみよう。
+
+**デーモンとして動かす**
+
+```
+docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+4ce8869a2d56231998eae86cd339f42c30553f6abd35401f88e6d54ec507cc6a
+```
+
+ポイントは'-d'オプション。これをつけることでバックグラウンドで実行してくれるみたい。  
+実行結果は、謎の文字列が表示されるんだけれども、どうやらコンテナIDみたい。
+
+`docker ps`でもコンテナIDが確認できるんだけれども、こちらのIDは短縮系みたい。
+
+**実行されているコンテナのIDを表示する**
+
+```
+$ docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+4ce8869a2d56 ubuntu:14.04 "/bin/sh -c 'while..." 15 seconds ago Up 15 seconds quizzical_kowalevski
+```
+
+試しに、オラ！オラ！と同じコマンドを叩いてみると、叩いた分だけコンテナがつくられることがわかった。　　
+
+<d>デーモンを3個つくる</d>
+
+```
+[vagrant@localhost docker_test]$ docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+64c6f7dc5fc4b36753973971ceaa7e0b4f90ca7ee41dd0088f11dafc482f323c
+[vagrant@localhost docker_test]$ docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+944b34729fc51c4fd3bfe4c6789edf5ff7f60c4baa8cc4036b16cd4a7ee12975
+[vagrant@localhost docker_test]$ docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+5bc9a22c81a29a3c74af49ec8a445075b90845b1fc6bd91ffd716e462071d137
+[vagrant@localhost docker_test]$ docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+5bc9a22c81a2 ubuntu:14.04 "/bin/sh -c 'while..." 3 seconds ago Up 2 seconds modest_goldwasser
+944b34729fc5 ubuntu:14.04 "/bin/sh -c 'while..." 4 seconds ago Up 3 seconds romantic_wozniak
+64c6f7dc5fc4 ubuntu:14.04 "/bin/sh -c 'while..." 5 seconds ago Up 4 seconds compassionate_visvesvaraya
+4ce8869a2d56 ubuntu:14.04 "/bin/sh -c 'while..." About a minute ago Up About a minute quizzical_kowalevski
+```
+
+さて、たくさんのコンテナが生成されたわけだけれども、各コンテナは以下のシェルスクリプトを実行しているわけだけれども  
+実行結果はどうやってみたらいいんだろう。
+
+**実行されているシェルスクリプト**
+
+```
+#!/bin/sh
+# 延々とhello worldを出力しつづけるシェルスクリプト
+while true;
+do
+        echo hello world;
+        sleep 1;
+done;
+```
+
+どうやら、`docker logs <コンテナ名>` で参照できるみたい。  
+**デーモン化されたdockerコンテナを参照する**
+
+```
+$ docker logs modest_goldwasser
+hello world
+hello world
+hello world
+hello world
+hello world
+....
+```
+
+何かを訴えるような、おびただしい`hello world`を垣間見てしまった。
+
+このままだと、何かがあふれちゃう！と心配になるので止めてあげます。
+
+**デーモンを止める**
+
+```
+$ docker stop modest_goldwasser
+```
+
+`docker stop`で停止したコンテナは、`docker ps`の一覧からはいなくなっていることが確認できた。
+
+**デーモンが消えた(増やしたデーモンも含めstopさせた)**
+
+```
+$ docker ps
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+```
+
+公式のチュートリアルをちゃんと読んでみると、`docker logs`は **コンテナの標準出力を表示する** って書かれている。  
+「標準出力」ってLinuxの標準入力・標準出力・標準エラー出力の標準出力のことだね！   
+端的に説明できないのでこの辺はぐーぐる先生に頼んでみてね！
+
+##### 追記
+
+`docker stop`でコンテナを止めて一安心！としていたんだけれども、`docker ps -l`とすると、停止していたコンテナも表示されることがわかる。
+
+**コンテナの一覧を表示(ver詳細)**
+
+```
+$ docker ps -l
+CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+944b34729fc5 ubuntu:14.04 "/bin/sh -c 'while..." 2 hours ago Exited (137) About an hour ago romantic_wozniak
+```
+
+なので、コンテナが削除されているわけではなく、停止しているだけだったみたい。  
+停止しているだけなので、もう一度動かしたければ、`docker start`で起動できる！
+
+**コンテナの再起動**
+
+```
+$ docker start romantic_wozniak
+```
+
+いらなくなったコンテナは`docker rm`とすることで削除できる。  
+チュートリアルには、
+
+> 常に、最後にコンテナを削除するのを忘れないでください。
+
+と書いてあるけれどもなぜだろう。
+
+**コンテナの削除**
+
+```
+$ docker rm romantic_wozniak
+```
+
+### ここまでのまとめ
+
+- `docker run <イメージ名> <コンテナ内で実行するコマンド>` : イメージをもとにコンテナを起動してコマンドを実行する
+- `docker ps` ：(起動している？)コンテナの一覧を表示する
+- `docker stop <コンテナ名>`：コンテナを停止する
+
+- `-t``-i` ：コンテナと対話する。'-t'オプションがターミナルの割り当て。   
+`-i`オプションがコンテナの標準入力と標準エラー出力を得る。`-t`と`-i`を別々に使うことはあるのだろうか。
+
+- `-d`：コンテナをバックグラウンド(デーモン)として実行する
+
+次回も引き続き公式チュートリアルを進めていこうと思います。
+
+[Dockerをさわってみる（２）：シンプルなWebアプリケーションを実行する - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2018/03/26/101605)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2018/03/26/101605">www.tohuandkonsome.site</a></cite>

@@ -1,0 +1,101 @@
+---
+title: RaspBerryPiでモーターを動かす(5):だいぶ脱線
+time: 2017-04-04 22:00
+---
+
+## 前回からの続き
+
+さて、前回からの続きです。  
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/04/02/174735" title="RaspBerryPiでモーターを動かす(4) - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/04/02/174735">tohutokonsome.hatenablog.com</a></cite>
+
+前回は、蚊取り線香BOXに積んだバッテリーやらRaspBerryPiやら電池やらが重すぎて  
+キャタピラーが走らないという結果に終わりました。
+
+なので、とりあえず蚊取り線香BOXにタイヤをつければ  
+うまいこと引っ張れるのではないかということで、タイヤをつけていく回です。
+
+![f:id:konoemario:20170402174331p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170402/20170402174331.png "f:id:konoemario:20170402174331p:plain:w300")
+
+しかし冷静に考えれば、蚊取り線香BOXにタイヤをつけるのではなく  
+代わりの台車っぽい何かがあればいいのになぁと。
+
+## 運命の出会い
+
+こんなモヤモヤをかかえたまま、新婚旅行に行ってきました。  
+ドイツ・ポーランドの旅行だったのですが、ポーランドでたまたま入ったおもちゃ屋で  
+運命の出会いを果たしました。
+
+**こいつです！**
+
+![f:id:konoemario:20170404205528j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170404/20170404205528.jpg "f:id:konoemario:20170404205528j:plain:w300")
+
+前方の車がなんか引っ張ってます。  
+これだよ！これ！と早速購入しました。(19ズウォティ ≒ 600円)
+
+おもわずポーランドからミュンヘンへの移動機内で組み立てちゃいました。   
+機内でMacBookじゃなくって、ブロック組み立てるのってかなり意識高い気がしませんか！   
+心なしかキャビンアテンドさんの目線が熱かった気がします。
+
+![f:id:konoemario:20170404205531j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170404/20170404205531.jpg "f:id:konoemario:20170404205531j:plain:w300")
+
+ところで、このブロック、巷で話題のLEGOブロックではなく「COBI」というブロックです。  
+LEGOに比べわりとお求め安いお値段になっている気がします。
+
+この「COBI」はミリタリーものをテーマに扱っているみたいで、 Amazonとかで調べると、以下のような戦車のブロックとかいっぱいでてきます。
+
+[![Cobi Small Army ミリタリーブロック WWII 第二次世界大戦 ソビエト軍 T-34/85 中戦車 T-34/85 m 1944 (New Version) #2476 【COBI日本正規総代理店】](https://images-fe.ssl-images-amazon.com/images/I/61AuyiryxSL._SL160_.jpg "Cobi Small Army ミリタリーブロック WWII 第二次世界大戦 ソビエト軍 T-34/85 中戦車 T-34/85 m 1944 (New Version) #2476 【COBI日本正規総代理店】")](http://www.amazon.co.jp/exec/obidos/ASIN/B01MXWBYJ1/hatena-blog-22/)
+
+[Cobi Small Army ミリタリーブロック WWII 第二次世界大戦 ソビエト軍 T-34/85 中戦車 T-34/85 m 1944 (New Version) #2476 【COBI日本正規総代理店】](http://www.amazon.co.jp/exec/obidos/ASIN/B01MXWBYJ1/hatena-blog-22/)
+
+- 出版社/メーカー: DANAR INTERNATIONAL デイナー・インターナショナル
+- メディア: おもちゃ＆ホビー
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B01MXWBYJ1/hatena-blog-22)
+
+ただ、このCOBIブロックを購入する直前に、アウシュビッツ、ビルケナウ収容所に行ってきて  
+つらい戦争の歴史を振り返っていただけに、ポーランドのおもちゃ屋にミリタリーを扱うブロックが たくさん置かれているのは、なんだかな、と思っちゃいました。  
+ミリタリーで遊ぶのと戦争そのものは別っちゃ別ですけれども気持ちの問題ですかね。  
+興奮して買っている自分が言うと本当に意味がないのですが。
+
+※ビルケナウ収容所   
+ ![f:id:konoemario:20170404210730j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170404/20170404210730.jpg "f:id:konoemario:20170404210730j:plain:w300")
+
+※収容された方の靴  
+ ![f:id:konoemario:20170404210716j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170404/20170404210716.jpg "f:id:konoemario:20170404210716j:plain:w300")
+
+## 別れ、そして出会い
+
+さて、ポーランド・ドイツの移動はベルギーを経由したため ６時間かかったのですが、６時間もあれば人は冷静になれます。
+
+COBIブロック買ったはいいけれども、RaspBerryPiとどうやって接続すんだよこれ  
+帰りの荷物増えるじゃねえかと憤っていました。
+
+そんな気持ちもミュンヘンでビールを２杯飲み終わる頃にはすっきりしていましたが。
+
+![f:id:konoemario:20170404214326j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170404/20170404214326.jpg "f:id:konoemario:20170404214326j:plain:w300")
+
+ほろ酔い気分でビアホールから歩いている途中  
+また見つけてしまいました。
+
+**今度こそ運命の相手です！**
+
+![f:id:konoemario:20170404214456j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170404/20170404214456.jpg "f:id:konoemario:20170404214456j:plain:w300")
+
+ごめん。  
+結局レゴブロックなんだ。
+
+買ったのは、レゴブロックの中でもTECHNICシリーズと呼ばれるもので、  
+一個一個のブロックが細かいのが特徴的で細やかな挙動や、いろいろな仕掛けがあるとのことです。
+
+買った決め手としては、なんかかっこよかったから。
+
+帰国して家についてから早速組み立ててみました。
+
+![f:id:konoemario:20170404214459j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170404/20170404214459.jpg "f:id:konoemario:20170404214459j:plain:w300")
+
+ごらんのように、ポーランドで買ったCOBIより、ドイツで買ったLEGOの方が圧倒的です。  
+(他意はないです。)
+
+ただ、COBIだろうがLEGOだろうが、
+
+RasbPerryPiとどうやってつなげるんだろう。  
+という根本的な疑問は解消されないまま次回に行きたいと思います。

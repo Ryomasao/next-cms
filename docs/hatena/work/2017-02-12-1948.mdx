@@ -1,0 +1,88 @@
+---
+title: 流れに乗っかってPythonを始めました
+time: 2017-02-12 19:48
+---
+
+### 日記
+
+YouTubeで音楽を聴いていたら、去年の今頃リリースされていた音楽が流れていました。 もう一年たったんだなぁと。
+
+この一年を振り返った時に、僕は何を得たんだろうかと考えつらくなりました。
+
+仕事面では、進んでるのか進んでないのかさっぱりわからないプロジェクトに ただただ精神と時間をすり減らしました。
+
+残業で唯一得たお金は、為替に突っ込んで、瞬く間に消えました。
+
+人を好きになりました。学生の頃以来の、胸キュンです。
+
+でも相手はアイドルです。
+
+観る映画・読む本は、昔見たものを繰り返し観ることが多くなりました。 安心して見れるからだと思います。
+
+ゲームもFIFAシリーズを毎年少しずつやっている。 うまくなったかなと思うと、次のシリーズが出る。毎年リセットされる。
+
+既に死んでいる気がして仕方がない。
+
+日曜の夜は、どうしても暗くなりますね。とりあえず前に進んでいる感がほしい、今日このごろです。 前っていっても、どこに向かうかわかっていないと、それこそ進んでいるかどうかなんてわからないわけですが とりあえず、ある地点からある地点へ動いたということが大事だ、と思うことにします。
+
+そして、動いた証跡を、人のいる場所に出していくことが大事なんだろうとも思います。
+
+### 本題
+
+前回、機械学習のほんの表面に触れました。
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/02/07/230949" title="機械学習に感動した話。 - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/02/07/230949">tohutokonsome.hatenablog.com</a></cite>
+
+感動しました。
+
+ゴール地点はまったく見えないけれども、自分もPythonを初めてみようと思いました。
+
+#### やったこと
+
+##### とりあえず本を購入
+
+いろんなサイトでおすすめされている、「みんなのPython」を買いました。 「みんなの」部分を、自身の名前に変えてモチベーションをあげたという記事にならい さっそく、「彩音のPython」と書き加えてみましたが、効果は抜群です。
+
+[![みんなのPython 第4版](https://images-fe.ssl-images-amazon.com/images/I/61vpArlxcQL._SL160_.jpg "みんなのPython 第4版")](http://www.amazon.co.jp/exec/obidos/ASIN/479738946X/hatena-blog-22/)
+
+[みんなのPython 第4版](http://www.amazon.co.jp/exec/obidos/ASIN/479738946X/hatena-blog-22/)
+
+- 作者: 柴田淳
+- 出版社/メーカー: SBクリエイティブ
+- 発売日: 2016/12/22
+- メディア: 単行本
+- [この商品を含むブログ (1件) を見る](http://d.hatena.ne.jp/asin/479738946X/hatena-blog-22)
+
+##### 開発環境を導入
+
+[PyCharm](https://www.jetbrains.com/pycharm/)<cite class="hatena-citation"><a href="https://www.jetbrains.com/pycharm/">www.jetbrains.com</a></cite>
+
+PyCharmが書籍でも紹介されていたので、こちらを使っていくことにします。 無料の「CommunityEdition」と有料の「ProfessionalEdition」がありますが 無料の「CommunityEdition」を使っていきます。 Webアプリケーションを作る場合には、「ProfessionalEdition」が良いという記事がありましたが とりあえずは、無料でさわってみて必要に応じて切り替えたいと思います。
+
+また、Pythonですが、こちらも書籍で紹介されている「Anaconda」を使用していくことにします。
+
+PyCharmで新規プロジェクトを作った後に インタプリタを「Anaconda」を選んであげればOKみたいです。
+
+![f:id:konoemario:20170212193502p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170212/20170212193502.png "f:id:konoemario:20170212193502p:plain:w300")
+
+また、キーバインディングをVimにできるみたいなので、こちらも設定します。
+
+PyCharmCommunityEdition-\>Preferences-\>Plugins-\>Install JetBrains pluginから 「Vim」と検索すれば、IdealVimというプラグインが出てくるので選択して、インストールします。
+
+![f:id:konoemario:20170212194710p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170212/20170212194710.png "f:id:konoemario:20170212194710p:plain:w300")
+
+また、PyCharmのプログラムを起動する「Run」のショートカットキーが Vimと競合？したためか、動かないので、キーマップを変更しました。
+
+![f:id:konoemario:20170212194713p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170212/20170212194713.png "f:id:konoemario:20170212194713p:plain:w300")
+
+PyCharmCommunityEdition-\>Preferences-\>Keymap から 「Run」のショートカットキーに alt + Rを追加しました。
+
+![f:id:konoemario:20170212194713p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170212/20170212194713.png "f:id:konoemario:20170212194713p:plain:w300")
+
+##### さらにモチベーションをあげるために
+
+勉強会に初参加することにしました。 勉強会を検索してみると、初心者歓迎とかは多いのですが、20代〜、若手〜とか書いてあると不安になりますね！ とりあえず行ってみることにします。
+
+[2/21開催 「Python」入門講座 ★参加無料★ (2017/02/21 18:30〜)](https://connpass.com/event/50580/)<cite class="hatena-citation"><a href="https://connpass.com/event/50580/">connpass.com</a></cite>
+
+なんとなく機械学習にたどり着く前に、ちがう方向に行きそうな気配が既にありますが、 やっていこうと思います！ (既にPythonでまずWebアプリケーションを作りたいと思っています。)

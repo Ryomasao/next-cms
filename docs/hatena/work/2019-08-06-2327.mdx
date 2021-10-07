@@ -1,0 +1,74 @@
+---
+title: 分割代入で少しハマった
+time: 2019-08-06 23:27
+---
+
+しょうもない話。
+
+Reactにだいぶ慣れて、最近はVueに戻ってVuexを久しぶりさわっていた。  
+Vuexの`mutations`で`name`ステートを更新したい場合は、こんな書き方をすると思う。
+
+```
+state: {
+    name: ""
+  },
+  mutations: {
+    changeName: (state, value) => {
+      state.name = value;
+    }
+  }
+```
+
+これを、ES6にもだいぶ慣れたぜ！という勢いで分割代入を使ったほうがいいっしー的なかんじで使ってみたら、更新されなくてハマったというのが今回の話。
+
+```
+state: {
+    name: ""
+  },
+  mutations: {
+    changeName: ({ name }, value) => {
+      // 更新されない
+      name = value;
+    }
+  }
+```
+
+分割代入は、以下のマーカー部分に書かれている通り、別個の変数に代入する式。
+
+> 分割代入 (Destructuring assignment) 構文は、配列から値を取り出して、あるいはオブジェクトからプロパティを取り出して **別個の変数に代入すること** を可能にする JavaScript の式です。
+
+[分割代入](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment)<cite class="hatena-citation"><a href="https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment">developer.mozilla.org</a></cite>
+
+なので、以下のことが言える。
+
+```
+// こういうオブジェクトがあった場合
+const targetObj = {
+  str: "",
+  array: [],
+  obj: { a: "" }
+};
+
+//この分割代入は
+const { str, array, obj } = targetObj;
+// これと同じ
+const str = targetObj.str;
+const array = targetObj.array;
+const obj = targetObj.obj;
+```
+
+冒頭の分割代入の`name`が更新されない！っていうのは`state`オブジェクトのnameを書き換えているのではなくって、`state.name`をコピーしたname変数の値を変えているから。
+
+```
+state: {
+    name: ""
+  },
+  mutations: {
+    changeName: ({ name }, value) => {
+      // 更新されない
+      name = value;
+    }
+  }
+```
+
+基礎を大事にしたいという教訓。

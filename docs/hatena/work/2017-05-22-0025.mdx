@@ -1,0 +1,222 @@
+---
+title: Pythonでキーイベントを取得したかったけどできなかった話←できました。
+time: 2017-05-22 00:25
+---
+
+[RaspBerryPiでラジコンをつくる(8)：コントローラをつくる - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/05/16/215317)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/05/16/215317">tohutokonsome.hatenablog.com</a></cite>
+
+以前、ラジコンのコントローラーをつくった記事を書きました。
+
+その中で、キーボードから入力した値をもとに操作する機能は、以下の機能を参考にさせていただきました。
+
+[pythonでキー入力を検出する(tty) - Qiita](http://qiita.com/tortuepin/items/e6c72f48115f20744ace)<cite class="hatena-citation"><a href="http://qiita.com/tortuepin/items/e6c72f48115f20744ace">qiita.com</a></cite>
+
+ただ、特定キーを押している状態、特定キーを離した状態というイベントを検出できると、よりコントローラぽくなるので、そんなことができる素敵なpythonモジュールがないかを探してました。
+
+その中で、一番よさそうなpythonモジュールを見つけました。  
+が、 **想定通りの動作ができていないです。**  
+解決策が見つけたら書くぞ！という意気込みを兼ねて、一旦記事に起こします。
+
+- [pynput](#pynput)
+  - [実行環境とインストール](#%E5%AE%9F%E8%A1%8C%E7%92%B0%E5%A2%83%E3%81%A8%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
+  - [サンプルコード](#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%B3%E3%83%BC%E3%83%89)
+  - [動かない](#%E5%8B%95%E3%81%8B%E3%81%AA%E3%81%84)
+  - [sudoが足りなかった](#sudo%E3%81%8C%E8%B6%B3%E3%82%8A%E3%81%AA%E3%81%8B%E3%81%A3%E3%81%9F)
+  - [よくみるとKeyCodeを認識していない](#%E3%82%88%E3%81%8F%E3%81%BF%E3%82%8B%E3%81%A8KeyCode%E3%82%92%E8%AA%8D%E8%AD%98%E3%81%97%E3%81%A6%E3%81%84%E3%81%AA%E3%81%84)
+  - [2017.7.12追記](#2017712%E8%BF%BD%E8%A8%98)
+- [その他候補](#%E3%81%9D%E3%81%AE%E4%BB%96%E5%80%99%E8%A3%9C)
+  - [msvrct](#msvrct)
+  - [keyboard](#keyboard)
+  - [Pygame](#Pygame)
+  - [PySDL2](#PySDL2)
+
+## pynput
+
+キーボードやマウスを制御したり、入力内容の監視がシンプルにできるみたい。  
+キーロガーとかで使ったりするのかしら。  
+[pynput 1.3.5 : Python Package Index](https://pypi.python.org/pypi/pynput)<cite class="hatena-citation"><a href="https://pypi.python.org/pypi/pynput">pypi.python.org</a></cite>
+
+### 実行環境とインストール
+
+```
+(raspberry_3.5.1) masao-3:keyboard konoe_mario$ sw_vers
+ProductName: Mac OS X
+ProductVersion: 10.10.5
+BuildVersion: 14F1713
+
+(raspberry_3.5.1) masao-3:keyboard konoe_mario$ pyenv versions
+  system
+  3.5.1
+  3.5.1/envs/raspberry_3.5.1
+  3.5.2
+  pypy3-2.4.0
+* raspberry_3.5.1 (set by /Users/konoe_mario/.pyenv/version)
+
+(raspberry_3.5.1) masao-3:keyboard konoe_mario$ sudo pip install pynput
+```
+
+### サンプルコード
+
+公式サイトの入力内容の監視を行うmサンプルコードをそのまま使用。  
+キー入力をlistenerがキャッチしてくれて、キー入力が行われると、on\_pressに設定した関数を呼んで、キーが離されるとon\_releaseに設定した関数が呼ばれる。
+
+```
+from pynput.keyboard import Key, Listener
+
+def print_something():
+'''
+デバック用
+'''
+    print('hi tohu!')
+
+def on_press(key):
+    #この関数が呼ばれているかどうかチェックするための処理
+    print_something()
+
+    try:
+        print('alphanumeric key {0} pressed'.format(
+            key.char))
+    except AttributeError:
+        print('special key {0} pressed'.format(
+            key))
+
+def on_release(key):
+    print('{0} released'.format(key))
+
+    if key == Key.esc:
+        # Stop listener
+        return False
+
+if __name__ == ' __main__':
+
+    with Listener(
+        on_press = on_press,
+        on_release= on_release
+    ) as listener:
+        listener.join()
+```
+
+### 動かない
+
+上記サンプルコードを、ターミナルで実行すると、「Command」「Shift」「Control」「option」などの入力は検知するのだけれども、通常の英数字のキー入力は検知してくれていない。
+
+StackOverFlowにすごくそれっぽい質問もあがってたのだけれども、どうも原因が違うのではないかと思う。
+
+[Pynput Keylogger Only Returning Shift, Command, Space and Capslock Keys](http://stackoverflow.com/questions/42603000/pynput-keylogger-only-returning-shift-command-space-and-capslock-keys)<cite class="hatena-citation"><a href="http://stackoverflow.com/questions/42603000/pynput-keylogger-only-returning-shift-command-space-and-capslock-keys">stackoverflow.com</a></cite>
+
+そもそも、on\_press関数内のprint関数が英数字の場合は呼ばれていない。
+
+```
+(raspberry_3.5.1) masao-3:keyboard konoe_mario$ python pynput_sample.py 
+
+(raspberry_3.5.1) masao-3:keyboard konoe_mario$ python pynput_sample.py 
+##キー入力を検知すると、on_press内の「hi tohu」が出力される
+hi tohu!
+special key Key.cmd pressed
+Key.cmd released
+hi tohu!
+special key Key.alt pressed
+Key.alt released
+hi tohu!
+special key Key.shift pressed
+Key.shift released
+hi tohu!
+special key Key.ctrl pressed
+Key.ctrl released
+
+##こっから下は英数字の入力を行ったところ
+1111
+111
+ugokanai
+^[^[^[
+^[[A
+```
+
+英数字の場合、コンソールに普通に入力できてしまうので、スペシャルキーとは挙動が違うのかもしれない。  
+ただ、StackOverFlowの質問を見る限り、特になんの制御もなくできてるっぽいんですよね。。。
+
+### sudoが足りなかった
+
+sudo実行で普通にできました。Kさん、ありがとうございました。
+
+```
+(raspberry_3.5.1) masao-3:keyboard konoe_mario$ sudo python pynput_sample.py 
+Password:
+hi tohu!
+alphanumeric key None pressed
+a<0> released
+hi tohu!
+alphanumeric key None pressed
+s<1> released
+hi tohu!
+alphanumeric key None pressed
+d<2> released
+hi tohu!
+alphanumeric key None pressed
+f<3> released
+```
+
+### よくみるとKeyCodeを認識していない
+
+うまくいってませんでした。。。  
+デバックでいろいろ見ていたのですが、OSXのキー入力のあたりから調べないとちょっと厳しそう。  
+進展がありしだい追記します。
+
+```
+(raspberry_3.5.1) masao-3:keyboard konoe_mario$ sudo python pynput_sample.py 
+Password:
+alphanumeric key None pressed ←押されたキー入力がNoneになっている。
+```
+
+### 2017.7.12追記
+
+久しぶりに別件で起動してたら、KeyCodeを認識していることに気づいた。 なぜだろう。。。
+
+```
+(raspberry_3.5.1) masao-3:keyboard konoe_mario$ sudo python pynput_sample.py 
+alphanumeric key <13> pressed
+w<13> released
+alphanumeric key <1> pressed
+s<1> released
+alphanumeric key <0> pressed
+a<0> released
+alphanumeric key <2> pressed
+d<2> released
+```
+
+## その他候補
+
+すっごい適当だけれども、pynput以外に試したものを、メモがてらに記載しています。
+
+### msvrct
+
+Windowsでしか動かないので、採用しなかった。
+
+### keyboard
+
+ホットキーの設定をしたり、キーイベントの監視をしたりいろいろとできそうだった。
+
+[keyboard 0.9.13 : Python Package Index](https://pypi.python.org/pypi/keyboard)<cite class="hatena-citation"><a href="https://pypi.python.org/pypi/keyboard">pypi.python.org</a></cite>
+
+が実行するとOSErrorになる。
+
+```
+OSError: [Errno 45] Operation not supported: '/dev/uinput'
+```
+
+公式をよく読んでみると、ちゃんと書いてありました。  
+「Hook and simulate keyboard events on Windows and Linux」
+
+### Pygame
+
+pythonのゲーム開発向けのモジュール。  
+導入するだけしてみたけれども、今回やりたいことだけにしては、大掛かりな印象を持った。  
+GUI画面を用いてコントローラーにするのには、いいのかもしれない。  
+でも、python3.5.1では、キー入力のイベント検知が動かなかった。
+
+### PySDL2
+
+Pygameの後継らしい。  
+こっちではpython3.5.1でもキー入力イベントを検知することができた。
+
+----- COMMENT: AUTHOR: ne IP: 106.163.99.120 DATE: 04/17/2019 02:30:09 今更のコメント、大変申し訳ございません。 現在pynputを用いてキーロガーを作成しており、記事を参考にさせていただいております。 一つお伺いしたいのですが、 入力文字のあとに\<\>で括られたキーコードの表示は、どのようにコーディングされていますでしょうか？ お手数ですが、ご回答いただけたら有難いです。 よろしくお願い致します。 ----- COMMENT: AUTHOR: konoemario IP: 126.212.249.10 DATE: 07/26/2017 14:18:22 コメントありがとうございます！モチベーションあげる材料をいただきました。 mindstormいいですね！お値段が結構するのでなかなか手が出せないです。 コントローラーに関してはスマホから操作するとかを想定して、ブラウザでの操作を試している最中なので、そちらも記事があがりましたら、よろしくお願いします。 ----- COMMENT: AUTHOR: tsu-nera IP: 60.67.161.131 DATE: 07/25/2017 22:12:36 LEGO mindstormsで、同じようにキーボードからロボットカーをリモート操作をしたいと思い、記事を参考にさせてもらいました。ありがとうございます。

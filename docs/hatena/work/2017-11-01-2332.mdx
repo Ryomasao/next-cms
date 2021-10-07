@@ -1,0 +1,291 @@
+---
+title: LaravelのBladeをPugで書くときに困ったこと
+time: 2017-11-01 23:32
+---
+
+ヘロー！久しぶりの更新です。  
+わからないことが多すぎて、何から整理すればいいやらという状態で、ろくに記事も書いていませんでした。
+
+このままフェードアウトするのも悲しいので、ピンポイントでかつあまり役に立たさなそうなことを書くことにしたよ！
+
+もし同じ状況の人がいて、こうしているよ、っていうのがあればぜひ教えてください！
+
+- [LaravelのBladeとPug](#Laravel%E3%81%AEBlade%E3%81%A8Pug)
+  - [簡単なForm画面](#%E7%B0%A1%E5%8D%98%E3%81%AAForm%E7%94%BB%E9%9D%A2)
+  - [コンパイルしよう](#%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%97%E3%82%88%E3%81%86)
+    - [gulpを使ってpugをコンパイルする](#gulp%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6pug%E3%82%92%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%99%E3%82%8B)
+  - [こんな画面とHTMLが出力されるよ](#%E3%81%93%E3%82%93%E3%81%AA%E7%94%BB%E9%9D%A2%E3%81%A8HTML%E3%81%8C%E5%87%BA%E5%8A%9B%E3%81%95%E3%82%8C%E3%82%8B%E3%82%88)
+- [本題](#%E6%9C%AC%E9%A1%8C)
+  - [blade構文をpugで書いてみる](#blade%E6%A7%8B%E6%96%87%E3%82%92pug%E3%81%A7%E6%9B%B8%E3%81%84%E3%81%A6%E3%81%BF%E3%82%8B)
+    - [@if構文を書いてみる](#if%E6%A7%8B%E6%96%87%E3%82%92%E6%9B%B8%E3%81%84%E3%81%A6%E3%81%BF%E3%82%8B)
+
+# LaravelのBladeとPug
+
+最近、Laravelを触っています。  
+Laravelには便利なテンプレートエンジンBladeがついていて、コントローラーから渡す変数を展開したり、テンプレートを継承したり、インクルードしたりできたりします。
+
+node.jsのフレームワークexpressとpugの関係にそっくりですね。
+
+今回は、そんなBladeをpugで書いて、Bladeファイルに変換して〜みたいなときに自分が苦労したことを書きます。
+
+そもそも、Bladeに変換するなら、pugじゃなくって最初からBlade使えばいいんじゃない？っていう考えもあるかと思います。
+
+pugで書くメリットとしては、
+
+- コーディングがPugの方が若干早い
+- Bladeで継承だったりインクルードするのはリクエストがあるごとに行われる。  
+ pugで事前に変換しといた方がパフォーマンスがいいかもしれない。
+
+という理由があるかと思います。  
+1点目に関しては、エディタがemmetに対応していれば、あんまかわらなかったりするのかな？と思ったりもします。  
+とりあえずpugを使っていけば戻れない何かがある気がしています。
+
+2点目に関しては、想像です。。。
+
+といまいち、説得力がないかもしれませんが、続けます。
+
+## 簡単なForm画面
+
+まずはLaravelでこんな感じでpugファイルを置いてみます。  
+中身はシンプルなフォーム画面です。
+
+**ディレクトリ構成**
+
+```
+├── components
+│   └── _head.pug
+├── index.pug
+└── template
+    └── _layout.pug
+```
+
+**\_head.pug**
+
+<script src="https://gist.github.com/Ryomasao/817d77bb7683cc71d24816f0ae02b1e8.js"></script>
+
+**\_layout.pug**
+
+<script src="https://gist.github.com/Ryomasao/29db20265d3a2875d447117c0ab4f792.js"></script>
+
+**index.pug**
+
+<script src="https://gist.github.com/Ryomasao/8f7586e8bf8b8c4aac0ea1e007e76e12.js"></script>
+
+## コンパイルしよう
+
+Laravelに標準で用意されているlaravel-mixと、別途laravel-pug-mixを使って、pugからblade.phpにコンパイルしていきます。  
+コンパイルに関しては、こちらの記事を参考にさせていただきました！
+
+[【Laravel5.5】Laravel Mix でPugを.blade.phpにコンパイルする方法 - Qiita](https://qiita.com/mastar_3104/items/994bad6335fa5c9783f1)<cite class="hatena-citation"><a href="https://qiita.com/mastar_3104/items/994bad6335fa5c9783f1">qiita.com</a></cite>
+
+**webpack.mix.js**
+
+```
+let mix = require('laravel-mix');
+mix.pug = require('laravel-mix-pug');
+
+mix.pug('resources/assets/pug/form_sample/index.pug', 'resources/views/form_sample',{});
+```
+
+**コンパイル**
+
+```
+$ npm run dev
+```
+
+ただ、私のWindowsのVagrant環境でlaravel-pug-mixを使ってると、コンパイルに結構な時間が掛かってちょっとしんどいです。
+
+ただ遅いだけならいいんですが、私は大抵何かしらミスをしているので、時間がかかったあげくコンパイルエラーが頻発すると、作業効率がものすごく落ちます。
+
+同じぐらいのスペックのMacのVagrantだと、そこまで気にならないのでちょっと不思議です。
+
+### gulpを使ってpugをコンパイルする
+
+参考までに、gulpを使って、コンパイルもしてみたので、書いておきます。
+
+コンパイルについては、こちらを参考にさせていただきました。
+
+[【Jade/Pug】gulpでJade / Pugをコンパイルする](https://blog.mismithportfolio.com/web/20160618gulpjadepug#c)<cite class="hatena-citation"><a href="https://blog.mismithportfolio.com/web/20160618gulpjadepug#c">blog.mismithportfolio.com</a></cite>
+
+まずは、gulpをインストールします。  
+グローバル環境にインストールしちゃいます。
+
+**gulpのインストール**
+
+```
+$npm install gulp -g
+```
+
+また、pugにコンパイルするためのモジュール、gulp-pagもインストールします。
+
+**gulp-pugのインストール**
+
+```
+$npm install gulp-pug
+```
+
+さらにデフォルトでは、拡張子がhtmlになってしまうので、renameできるgulp-renameもインストールします。
+
+**gulp-renameのインストール**
+
+```
+$npm install gulp-rename
+```
+
+最後にgulpfile.jsを作成します。
+
+**gulpfile.js**
+
+```
+var gulp = require('gulp');
+var pug = require('gulp-pug');
+var rename = require('gulp-rename');
+
+gulp.task('pug', () => {
+ return gulp.src(['./resources/assets/pug/form_sample/ **/*.pug', '!./resources/assets/pug/form_sample/** /_*.pug'])
+ .pipe(pug({
+   pretty: true
+ }))
+ .pipe(rename({
+     extname: ".blade.php"
+ }))
+ .pipe(gulp.dest('./resources/views/form_sample'));
+});
+```
+
+上記を終えたらgulpでコンパイルタスクを実行します。
+
+**コンパイル**
+
+```
+$gulp pug
+```
+
+## こんな画面とHTMLが出力されるよ
+
+bladeファイルにコンパイルされると、こんな感じのhtmlが出力されます。  
+bladeといっても、bladeの構文を使ってないので、ただのHTMLとかわりません。
+
+```
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <meta name="viewport" content="width=device-width">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>form_sampletitle>
+  head>
+  <body>
+    <form method="post" action="/form_sample">
+      <h1>シンプルなPOST h1><br>
+      <input type="text" name="food_name">
+      <button>PushMebutton>
+    form>
+  body>
+html>
+```
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171101/20171101212420.png" alt="f:id:konoemario:20171101212420p:plain:w500" title="f:id:konoemario:20171101212420p:plain:w500" class="hatena-fotolife" style="width:500px" itemprop="image"></span><figcaption>表示される画面</figcaption></figure>
+
+# 本題
+
+## blade構文をpugで書いてみる
+
+ようやく本題です。
+
+blade構文をpug上で書いてみます。
+
+LaravelでFormを作るときに必ず？使うであろう「csrf\_field()」で試してみます。
+
+**blade構文の例**
+
+```
+<form method="post" action="/form_sample">
+        {{ csrf_field() }} ←こいつ
+      <h1>シンプルなPOST h1><br>
+      <input type="text" name="food_name">
+      <button>PushMebutton>
+    form>
+```
+
+このcsrf\_filed()は、Larabelが用意してくれているメソッドで、bladeからhtmlに展開されると、以下のようにCSRF攻撃を防ぐトークンを埋め込んでくれます。
+
+**csrf\_filed()がhtmlに展開された**
+
+```
+<form method="post" action="/form_sample">
+       
+       <input type="hidden" name="_token" value="krHTyotnNw9KA3NCMVNck1qZ3X8B8xCn7Qj3tATu">
+      <h1>シンプルなPOST h1><br>
+      <input type="text" name="food_name">
+      <button>PushMebutton>
+    form>
+```
+
+では、まずは無邪気に書いてみましょう。
+
+**無邪気にindex.pugに追加**
+
+<script src="https://gist.github.com/Ryomasao/651ddeff5d87c88c5014bad8d39f9121.js"></script>
+
+これをコンパイルしてみると、{{csrなんて構文は知らんよと怒られちゃいます。
+
+**怒られる**
+
+```
+unexpected text "{{csr"
+```
+
+と、いろいろ書こうと試していたんですが、 結論から書くと
+
+```
+span {{csrf_field()}}
+```
+
+で問題なくいけちゃいました。
+
+### @if構文を書いてみる
+
+内容が微妙になってしまったので、こちらも試してみました。  
+フォームのバリデーションを表示する際によくやる？やつです。
+
+**よくあるエラーを表示するやつ**
+
+```
+<form method="post" action="/form_sample"><span>{{csrf_field()}}span>
+      <h1>シンプルなPOST h1><br>
+      <input type="text" name="food_name">
+      <button>PushMebutton>
+      @if(count($errors))
+        <ul>
+        @foreach($errors->all() as $error)
+          <li style="color:red">{{ $error }}li>
+        @endforeach
+        ul>
+      @endif
+    form>
+```
+
+**空っぽで送信するとエラーを表示してくれる** <figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171101/20171101225726.png" alt="f:id:konoemario:20171101225726p:plain:w500" title="f:id:konoemario:20171101225726p:plain:w500" class="hatena-fotolife" style="width:500px" itemprop="image"></span><figcaption>@ifを使う例</figcaption></figure>
+
+こちらもいろいろと試してみたところ、 とりあえずできたのがこちらに書いてある、「.の後のインデントは文字列として評価される」というものです。
+
+[Pugと仲良くする方法 - Qiita](https://qiita.com/garakuta/items/c83548c74e45838e3fe0)<cite class="hatena-citation"><a href="https://qiita.com/garakuta/items/c83548c74e45838e3fe0">qiita.com</a></cite>
+
+最初は公式を見てたんですが、どこに書いてあるんですかね。
+
+ひどくわかりにくいのですが、こんな形で書いてみました。
+
+**\_erros.pug**
+
+<script src="https://gist.github.com/Ryomasao/b59552cf64e63ee09b262ed20f5629cb.js"></script>
+
+\_errors.pugとして別ファイルで再利用可能なようにしておきます。
+
+使う側は、こんな感じで使いたい箇所でincludeします。
+
+**index.pug**
+
+<script src="https://gist.github.com/Ryomasao/b529ae513493e7543c963bb989c76594.js"></script>
+
+これで、無事bladeに展開することができました。

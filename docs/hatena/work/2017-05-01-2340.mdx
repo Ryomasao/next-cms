@@ -1,0 +1,156 @@
+---
+title: WiringPiでエラーになった場合のメモ
+time: 2017-05-01 23:40
+---
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/04/30/163148" title="ラズパイZeroでWringPiが使えるまでメモ - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/04/30/163148">tohutokonsome.hatenablog.com</a></cite>
+
+前回、ラズパイZeroの初期セットアップした結果、問題になった部分をメモ
+
+- [WiringPiが使用できない](#WiringPi%E3%81%8C%E4%BD%BF%E7%94%A8%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%84)
+  - [ファームウェアをダウングレードする](#%E3%83%95%E3%82%A1%E3%83%BC%E3%83%A0%E3%82%A6%E3%82%A7%E3%82%A2%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%82%B0%E3%83%AC%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B)
+- [WiringPiがpython nomodule named](#WiringPi%E3%81%8Cpython-nomodule-named)
+
+## WiringPiが使用できない
+
+pythonで「import wiringpi」しているプログラムを実行すると、以下のエラーが出た。
+
+```
+pi@raspberrypi:~/myproduct $ sudo python servo.py 
+Unable to determine hardware version. I see: Hardware : BCM2835
+,
+ - expecting BCM2708 or BCM2709.
+If this is a genuine Raspberry Pi then please report this
+to projects@drogon.net. If this is not a Raspberry Pi then you
+are on your own as wiringPi is designed to support the
+Raspberry Pi ONLY.
+```
+
+どうも前回「sudo ape-get upgrade」を行った際に、ファームウェアが最新になったことが原因みたい。
+
+※参考URL  
+[https://www.domoticz.com/forum/viewtopic.php?t=16852](https://www.domoticz.com/forum/viewtopic.php?t=16852)  
+[Raspberry Pi のファームウェアのアップデート | Raspberry Pi](https://raspberrypi.akaneiro.jp/archives/1431)
+
+### ファームウェアをダウングレードする
+
+rpi-updateをインストールする。
+
+```
+pi@raspberrypi:~/myproduct $ sudo apt-get install rpi-update
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+The following NEW packages will be installed:
+  rpi-update
+0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Need to get 4408 B of archives.
+After this operation, 45.1 kB of additional disk space will be used.
+Get:1 http://archive.raspberrypi.org/debian/ jessie/main rpi-update all 20140705 [4408 B]
+Fetched 4408 B in 0s (5263 B/s)                           
+Selecting previously unselected package rpi-update.
+(Reading database ... 38765 files and directories currently installed.)
+Preparing to unpack .../rpi-update_20140705_all.deb ...
+Unpacking rpi-update (20140705) ...
+Setting up rpi-update (20140705) ...
+```
+
+[参考URL](https://www.domoticz.com/forum/viewtopic.php?t=16852)そのままのバージョンを取得する。  
+再起動後、wiringpiが使用できた。
+
+```
+pi@raspberrypi:~/myproduct $ sudo rpi-update 52241088c1da59a359110d39c1875cda56496764
+ *** Raspberry Pi firmware updater by Hexxeh, enhanced by AndrewS and Dom
+ *** Performing self-update
+  % Total % Received % Xferd Average Speed Time Time Time Current
+                                 Dload Upload Total Spent Left Speed
+100 12762 100 12762 0 0 51628 0 --:--:-- --:--:-- --:--:-- 51878
+ *** Relaunching after update
+ *** Raspberry Pi firmware updater by Hexxeh, enhanced by AndrewS and Dom
+ *** We're running for the first time
+ *** Backing up files (this will take a few minutes)
+ *** Backing up firmware
+ *** Backing up modules 4.9.24+
+This update bumps to rpi-4.4.y linux tree
+Be aware there could be compatibility issues with some drivers
+Discussion here:
+https://www.raspberrypi.org/forums/viewtopic.php?f=29&t=144087
+##############################################################
+ *** Downloading specific firmware revision (this will take a few minutes)
+  % Total % Received % Xferd Average Speed Time Time Time Current
+                                 Dload Upload Total Spent Left Speed
+100 168 0 168 0 0 316 0 --:--:-- --:--:-- --:--:-- 317
+100 52.3M 100 52.3M 0 0 454k 0 0:01:57 0:01:57 --:--:-- 293k
+ *** Updating firmware
+ *** Updating kernel modules
+ *** depmod 4.4.50-v7+
+ *** depmod 4.4.50+
+ *** Updating VideoCore libraries
+ *** Using HardFP libraries
+ *** Updating SDK
+ *** Running ldconfig
+ *** Storing current firmware revision
+ *** Deleting downloaded files
+ *** Syncing changes to disk
+ *** If no errors appeared, your firmware was successfully updated to 52241088c1da59a359110d39c1875cda56496764
+ *** A reboot is needed to activate the new firmware
+```
+
+## WiringPiがpython nomodule named
+
+こっちもはまった。
+
+前回、このコマンドでwiringpiの設定を行った。 これが、よくなかった。
+
+```
+pi@raspberrypi:~ $sudo pip install wiringpi2
+```
+
+問題となるのは、「sudo」の部分。  
+何気なくルート権限でやろうぐらいの気持ちだったが、sudoで実行すると環境変数が引き継がれない。
+
+コマンドのパスを調べる便利なコマンド「which」を使うと、わかりやすい。
+
+**・sudoを使用した場合**
+
+```
+pi@raspberrypi:/usr/local/lib/python2.7/site-packages $ sudo which pip
+/usr/bin/pip
+
+sudoの環境変数で定義してあるPATHのpipが使われる。
+```
+
+**・sudoを使用しない場合**
+
+```
+pi@raspberrypi:/usr/local/lib/python2.7/site-packages $ which pip
+/home/pi/.pyenv/shims/pip
+
+個別に定義したPATHのpipが使われる。
+```
+
+なので、sudo pip　で　wiringpiをインストールすると、以下のディレクトリにパッケージがインストールされることになる。
+
+```
+/usr/local/lib/python2.7/site-packages
+```
+
+sudoをつけないでpipを使えば、pyenv配下のバージョンごとのsite-packagesにインストールされる。
+
+```
+~/.pyenv/versions/3.5.1/lib/python3.5/site-packages $
+```
+
+とにかくsudo使わなきゃいいんじゃない？ってなるんだけれども、wiringpiをimportしているpythonプログラムを実行する場合、sudo権限で実行しなきゃいけないっていう部分で、これにはまった。
+
+以下のような場合、実行しているpythonはどれだろうってなります。
+
+```
+sudo python xxxxx.py
+```
+
+簡単な解決策として以下を参考に、sudoersにenv\_keepを追加しました。
+
+[sudo時にPATHを引き継ぐ方法 - Qiita](http://qiita.com/akito1986/items/e9ca48cfcd56fdbf4c9d)<cite class="hatena-citation"><a href="http://qiita.com/akito1986/items/e9ca48cfcd56fdbf4c9d">qiita.com</a></cite>
+
+以上。

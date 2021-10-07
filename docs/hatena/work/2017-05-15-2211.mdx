@@ -1,0 +1,86 @@
+---
+title: RaspBerryPiでラジコンをつくる(7)：少し改善
+time: 2017-05-15 22:11
+---
+
+前回、作成したレゴカーに少しだけ改善を行ったのでまとめます。
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/05/06/210309" title="RaspBerryPiでラジコンをつくる(6)：とりあえず動くものができました - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/05/06/210309">tohutokonsome.hatenablog.com</a></cite>
+
+- [レゴの電池ボックスを使用する](#%E3%83%AC%E3%82%B4%E3%81%AE%E9%9B%BB%E6%B1%A0%E3%83%9C%E3%83%83%E3%82%AF%E3%82%B9%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B)
+- [ラズパイZeroのケースをレゴに固定する](#%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4Zero%E3%81%AE%E3%82%B1%E3%83%BC%E3%82%B9%E3%82%92%E3%83%AC%E3%82%B4%E3%81%AB%E5%9B%BA%E5%AE%9A%E3%81%99%E3%82%8B)
+- [改善後](#%E6%94%B9%E5%96%84%E5%BE%8C)
+
+## レゴの電池ボックスを使用する
+
+今までは、単三電池\*4の電池ボックスを使用していました。
+
+![f:id:konoemario:20170506195209j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506195209.jpg "f:id:konoemario:20170506195209j:plain:w500")
+
+しかし、手元にはレゴの電池ケースがあったので、こちらを使用してみることにしました。
+
+![f:id:konoemario:20170515214612j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515214612.jpg "f:id:konoemario:20170515214612j:plain:w500")
+
+これは、単三電池６本を格納することができるので、合計で9Vになります。
+
+ただ、残念なことにこのレゴ電池ケースは、以下のようにレシーバにブロックで接続できる便利仕様となっています。
+
+![f:id:konoemario:20170515214833j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515214833.jpg "f:id:konoemario:20170515214833j:plain:w500")
+
+ラズパイに接続する際はブレッドボードで使いたいので、このままでは使うことができません。
+
+もっといい方法があるかもしれませんが、ここでは思い切って、コードを切ってしまいました。
+
+![f:id:konoemario:20170515215242j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515215242.jpg "f:id:konoemario:20170515215242j:plain:w500")
+
+線は4本あるのですが、こちらの動画の1:35、およびQuitaの記載内容を信じて真ん中２本を使用しましたが、問題なく動いています。
+
+<iframe width="480" height="270" src="https://www.youtube.com/embed/uw3exu_3qD0?feature=oembed" frameborder="0" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://www.youtube.com/watch?v=uw3exu_3qD0">www.youtube.com</a></cite>
+
+[レゴ パワーファンクション 8881 バッテリーボックスの電極の極性 - Qiita](http://qiita.com/chi9rin/items/0c01c18c5048c64ffb0c)<cite class="hatena-citation"><a href="http://qiita.com/chi9rin/items/0c01c18c5048c64ffb0c">qiita.com</a></cite>
+
+最終的にはブレッドボートとこんな感じでセットにすることができました。
+
+![f:id:konoemario:20170515220935j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515220935.jpg "f:id:konoemario:20170515220935j:plain:w500")
+
+## ラズパイZeroのケースをレゴに固定する
+
+こちらは、定番ですが、フリスクのケースを買ってきて、プラスチックカッターで適当に切り抜きました。
+
+![f:id:konoemario:20170515215738j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515215738.jpg "f:id:konoemario:20170515215738j:plain:w500")
+
+100均のプラスチックカッターだと、結構な力を必要として手がいたくなったので、大きいものがあるとよさそうです。  
+ただ、あまり力をいれすぎてもケースが割れるということも起こります。
+
+簡単なケースを作成したら、レゴに固定していきます。
+
+ここでは、ネジを使って固定することにしました。
+
+![f:id:konoemario:20170515220038j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515220038.jpg "f:id:konoemario:20170515220038j:plain:w500")
+
+このネジを使ってフリスクにネジ穴をぐりぐりとあけます。
+
+マイナスドライバーとドリルネジみないたものを使ってむりやりあけました。
+
+その後、こんな感じで穴を通します。  
+これでラズパイZeroとフリスクのケースが固定されます。
+
+![f:id:konoemario:20170515220311j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515220311.jpg "f:id:konoemario:20170515220311j:plain:w500")
+
+ここからさらにレゴのブロックとネジについている付属の六角ナットとシャーシ？（っていうんですかね）を用いて、ネジを固定すると、いい感じにレゴブロックにくっつくけることができます。
+
+![f:id:konoemario:20170515220321j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515220321.jpg "f:id:konoemario:20170515220321j:plain:w500")
+
+フリスクのふたがものすごく雑ですが、こんな感じで取り付けてます。
+
+![f:id:konoemario:20170515220755j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515220755.jpg "f:id:konoemario:20170515220755j:plain:w500")
+
+## 改善後
+
+少しだけすっきりしました。
+
+![f:id:konoemario:20170515221008j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170515/20170515221008.jpg "f:id:konoemario:20170515221008j:plain:w500")
+
+次回は、コントローラーの作成を行います。
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/05/16/215317" title="RaspBerryPiでラジコンをつくる(8)：コントローラをつくる - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/05/16/215317">tohutokonsome.hatenablog.com</a></cite>

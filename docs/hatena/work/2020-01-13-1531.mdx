@@ -1,0 +1,142 @@
+---
+title: VSCode の Prettier の設定を理解する
+time: 2020-01-13 15:31
+---
+
+# VSCode の Prettier の設定を理解する
+
+VSCode で prettier を使う際に、なんとなくで設定していてたまに困るので整理する。 prettier の vscode 用拡張機能のページをちゃんと読めば、いろいろと書いてあったのでメモ。[https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+
+### どの言語に対応してるんだっけ
+
+以下の言語(FrameWork)に対応している。
+
+```
+JavaScript · TypeScript · Flow · JSX · JSON
+CSS · SCSS · Less
+HTML · Vue · Angular
+GraphQL · Markdown · YAML
+```
+
+プラグインを使うことで、`php`とか`ruby`とかもいけるっぽい。[https://prettier.io/docs/en/plugins.html](https://prettier.io/docs/en/plugins.html)
+
+### VSCode で prettier を使う場合って何が必要なんだっけ
+
+1.拡張機能を入れる。`cmd`+ `shift` + `P`で以下を実行 or VSCode の拡張機能で prettier を検索してインストールする。
+
+```
+ext install esbenp.prettier-vscode
+```
+
+2.VSCode で最小限の設定をする。 他のドキュメントフォーマット用の拡張機能を導入しているのであれば、`cmd` + `,`で設定を開き、右上の JSON 編集画面から以下の設定を行う。(※後述のユーザー or ワークスペースを参照) 特に他のドキュメントフォーマット用の拡張機能を入れてなければ、この設定もいらない。
+
+```
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // 特定の言語だけデフォルトのドキュメントのフォーマットを設定する場合
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
+```
+
+この状態で、編集したいファイルを開いて、`cmd` + `shift` + `P` -\> Format Document を実行 or ファイルを開いた状態で右クリックで、ドキュメントのフォーマットを選択すると prettier を実行することができる。
+
+#### ユーザー or ワークスペース
+
+ワークスペースは、VSCode で現在開いているディレクトリを指している。特定のプロジェクトのみ適用させたい場合は、ワークスペースに書く。ワークスペースに書くと、`.vscode`ディレクトリの`settings.json`に設定が記載される。`.vscode`で管理するのであれば、git の管理対象に含めておきたい。 一方、プロジェクトを横断する形で全体に適用させたい場合は、ユーザーに書く。 適当に VSCode でマークダウンでメモ書くときも prettier 適用させたい場合とかに便利だね。 優先順位は、ワークスペース \> ユーザー設定。
+
+### ファイル保存時に prettier を実行したい
+
+VSCode で以下の設定を追加する。
+
+```
+// prettierに対応している言語は保存時にprettierを行う
+    "editor.formatOnSave": true,
+    // 一部の言語について対象外にしたい場合は、個別で設定を切る
+    // または editor.formatOnSave:trueを必要な言語のみ設定する
+    // ex) 以下はmarkdownは保存時にprettierを実行しない
+    "[markdown]": {
+        "editor.formatOnSave": false
+    },
+```
+
+、`editor.fortmatOnSave`は prettier ではなく、eslint の VSCode 拡張機能のためのオプションっぽい？
+
+### VSCode で prettier と、node\_modules の prettier ってどんな関係？
+
+ややこしいので、前者を VSCode 用 prettier、後者を prettier とここでは呼ぶ。 前述の通り、VSCode で prettier を実行するには VSCode 用 prettier を入れるだけでよいので、  
+`yarn add -D prettier`等で **prettier をローカルの node\_modules にインストールする必要はない。** これは、VSCode 用 prettier に、prettier そのものが含まれているから。 しかし、これだと VSCode だけの設定になってしまい、他のエディタや CLI で prettier を実行したい場合不都合がある。 なので、VScode 拡張用の prettier は、node\_modules に prettier がインストールされていれば、そちらを実行するようになっている。 プロジェクトとして管理するのであれば、別途 node\_modules にインストールしておいたほうがいい。
+
+### フォーマットの設定を変更したい
+
+以下の 3 つの方法がある。 ・prettier がサポートしている設定ファイルを書く ・`.editorconfig`を使う ・VSCode の設定に直接書く
+
+#### prettier がサポートしている設定ファイルを書く
+
+推奨。 プロジェクトの直下に`prettierrc`を JSON or YAML 形式で書く、`.prettierrc.js`にオブジェクト形式で書く、`package.json`に書く等、好みの方法を選ぶ。[https://prettier.io/docs/en/configuration.html](https://prettier.io/docs/en/configuration.html)
+
+```
+module.exports = {
+  // prettier.config.js or .prettierrc.jsに書く場合の例
+  // 行末のセミコロンはいらない
+  semi: false
+}
+```
+
+#### .editconfig を使う
+
+EditConfig は、これまた prettier と別のコードフォーマッターで、その設定ファイルが`.editconfig`になる。 EditConfig 用の VSCode 拡張機能を入れて、`.editconfig`に設定を書くと、ファイル編集中にコード整形をしてくれる。 この`.editconfig`に書いた設定の一部を prettier と連携させることができるみたい。 今回、EditConfig は使わないので詳細は割愛。 尚、過去に EditConfig を導入していて、それを忘れたあとに prettier を導入し、ファイル編集中に整形が走り、さらに保存時に別の結果に整形されるという事象に悩まされた。 これは、親ディレクトリに、`.editconfig`があるから起こることにこのメモを書くことで気づけた。やったね。
+
+#### VSCode の設定に直接書く
+
+非推奨だけど書ける。 尚、prettier の設定ファイル(.editconfig 含む)を探しにいく場合、 **対象のプロジェクトだけではなく、ユーザーのルートディレクトリまで遡ってファイルを探しに行く。** それでもファイルが見つからなかった場合に、VSCode の設定が使われる。
+
+# VSCode の ESLint の設定を理解する。
+
+eslint は prettier と異なり、VSCode 拡張機能とは別に別途 node\_modules に eslint をインストールする必要がある。 v2 になってから設定方法がかわったみたい。VSCode の設定方法はこちらに記事を参考にさせていただく。[https://qiita.com/mysticatea/items/3f306470e8262e50bb70](https://qiita.com/mysticatea/items/3f306470e8262e50bb70)保存時に eslint --fix を走らせる設定例。
+
+```
+"editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+```
+
+# VSCode で prettier と eslint を連携させる
+
+[https://prettier.io/docs/en/integrating-with-linters.html](https://prettier.io/docs/en/integrating-with-linters.html)1. `eslint-config-prettier`を追加して、Prettier のルールと衝突するものは ESlint のルールから無効にしておく。 ex) `.prettierrc`でセミコロン不要って書いとくと、eslint のデフォルト設定でセミコロンが必要になってたとしても、エラーにはならない。 2. `eslint-plugin-prettier`を追加して、`eslint --fix`時に prettier も走らせる。 上記は eslint の設定ファイルに、以下を追加するだけでいい。
+
+```
+{
+  "extends": ["plugin:prettier/recommended"]
+}
+```
+
+前述の保存時に VSCode で`eslint --fix`を行う例の設定により、prettier の整形処理も行われるようになる。
+
+```
+"editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+```
+
+## 補足
+
+eslint を prettier を連携させるのであれば、VSCode 保存時に prettier を走らせる必要がなくなるので、個別で設定をオフにしとくといい。
+
+```
+"editor.formatOnSave": true,
+    // 以下はeslint --fixで行う。
+    "[javascript]": {
+      "editor.formatOnSave": false
+    },
+    "[typescript]": {
+      "editor.formatOnSave": false
+    },
+    "[javascriptreact]": {
+      "editor.formatOnSave": false
+    },
+    "[typescriptreact]": {
+      "editor.formatOnSave": false
+    },
+```

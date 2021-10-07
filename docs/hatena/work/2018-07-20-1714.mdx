@@ -1,0 +1,177 @@
+---
+title: Vue.jsから入りReactを触ったときの気づき
+time: 2018-07-20 17:14
+---
+
+[最短で学ぶReactとReduxの基礎から実践まで | Udemy](https://www.udemy.com/react-redux-from-beginning/)<cite class="hatena-citation"><a href="https://www.udemy.com/react-redux-from-beginning/">www.udemy.com</a></cite>
+
+こちらのReactの講座途中まで終わって、あーVue.jsでもこうすればいいんだなぁという点があったので書く。 　
+
+※書いているコードは、直接この記事で書いちゃったのでtypoミスなどなにかしらのミスがあるかもしれません。
+
+### 今まで
+
+こんなふうに、メンバー登録ができて、かつ登録済のメンバーの一覧が下部に表示されるようなページがあたっとします。
+
+<figure class="figure-image figure-image-fotolife" title="こんなページ"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180720/20180720163708.png" alt="f:id:konoemario:20180720163708p:plain" title="f:id:konoemario:20180720163708p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>こんなページ</figcaption></figure>
+
+こんなとき、Vueで以下のような構成でつくってました。
+
+<figure class="figure-image figure-image-fotolife" title="Vueの構成"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180720/20180720163604.png" alt="f:id:konoemario:20180720163604p:plain" title="f:id:konoemario:20180720163604p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Vueの構成</figcaption></figure>
+
+- フォームの内容を登録するコンポーネントである、CreateFormComponent
+- 登録済の内容を表示する、MemberListComponent
+- 上記二つを束ねる、index.js
+
+CreateFormComponentには、こんな感じでaxiosでデータを登録する箇所を実装しています。  
+データを登録した際の結果として、登録済のメンバーの一覧すべてが返却されてきます。  
+なので、この結果をメンバーリストを表示するSearchComponentに渡したい、という要望がでてきます。
+
+**CreateFormComponent.vue**
+
+```
+onSubmit() {
+      axios.post(ENTORY_POINT, {
+        name: name,
+        color: color,
+      })
+      .then((res) => {
+        //ここで返ってきた結果をリストコンポーネントに渡したい！
+        console.log(res.data);
+      })
+      .catch((error) => console.log(error));
+  }
+```
+
+CreateFormComponentからSearchComponentに値を渡すときは、直接渡すことはできない？のでVueの親コンポーネントに情報を渡す、でおなじみのemitを使って一度親にデータを渡して、そこからSerachComponentに渡すかと思います。
+
+**CreateFormComponent.vue**
+
+```
+onSubmit() {
+      axios.post(ENTORY_POINT, {
+        name: name,
+        color: color,
+      })
+      .then((res) => {
+        //emitを使って親コンポーネントに渡す
+        this.$emit('data', res,data);
+      })
+      .catch((error) => console.log(error));
+  }
+```
+
+こんなかんじに`emit`で指定したイベント名を`create-fom`に定義して、
+
+**index.html**
+
+```
+<div class="app">
+    <create-fom @data="setData">create-fom>
+     <search-form >search-form>
+div>
+<srcipt src="index.js">script>
+```
+
+`index.js`でデータを同期するようのメソッド`setData`を定義してあげたりしていました。
+
+**index.js**
+
+```
+new Vue({
+  el:'.app',
+  components:{
+  //省略 
+  },
+  data:{
+      members: [],
+  }
+  methods:{
+     setData(data) {
+       this.members = data; 
+    }
+ }
+);
+```
+
+最終的に、SerachFormComponentにはプロパティとして、`members`を渡せばやりたいことはできますね。  
+**index.html**
+
+```
+<div class="app">
+    <create-fom @data="setData">create-fom>
+     <search-form :members="members">search-form>
+div>
+<srcipt src="index.js">script>
+```
+
+コンポーネント同士でデータを共有したい場合は、その値を親にまでもってくる、というところはVueだろうがReactだろうか一緒ですね。
+
+[Captcha](https://mae.chab.in/archives/2943)  
+上記より引用
+
+> 複数の子コンポーネントからデータを集めたい時や、2つの子コンポーネント同士でやりとりを行わせたい時は、状態（state）を親コンポーネントまで渡すようにします。親コンポーネントはその後、状態（state）をpropsを通して子コンポーネントに渡します。そのため子コンポーネントは常に互いに同期するようになっています。また同様に親コンポーネントとも同期するようになっています。
+
+### Reactを学習した際の気づき
+
+気になったのは、親コンポーネントにデータをもってきたときに、そのデータの変更を行う処理も親にもってきている点です。
+
+さきほどのコードを変更するとこんな感じになります。
+
+まず、大本の`index.js`に`members`更新するaxiosの処理をCreateFormComponentよりもってきて、`crreateMember`という関数で作成します。   
+CreateFormComponent内にあるnameとcolorは、引数としてもらうようにします。
+
+**index.js**
+
+```
+new Vue({
+  el:'.app',
+  components:{
+  //省略 
+  },
+  data:{
+      members: [],
+  }
+  methods:{
+     //CreateFormComponentのAPI処理を親に書く
+     createMember(props) {
+       axios.post(ENTORY_POINT, {
+        name: props.name,
+        color: props.color,
+      })
+      .then((res) => {
+        //親のデータに直接セット
+        this.members = res.data;
+      })
+      .catch((error) => console.log(error));
+     }
+ }
+);
+```
+
+そして、さきほどつくった`createMember`関数を、CreateFormComponentにプロパティとして渡してあげます。
+
+**index.html**
+
+```
+<div class="app">
+    <create-fom :handleSubmit="createMember">create-fom>
+     <search-form :members="members">search-form>
+div>
+<srcipt src="index.js">script>
+```
+
+最後にもともとあったボタンをおしたときの処理は、バインドしたデータを親からもらった関数に渡して実行するだけです。
+
+**CreateFormComponent.vue**
+
+```
+//省略
+   props:handleSubmit
+   //省略
+   onSubmit() {
+　　this.handleSubmit({name:this.name, color:this.color});
+  }
+```
+
+こうすることで、emitがいらなくなり、またデータ更新処理があちこちに散らばらなくなりました。

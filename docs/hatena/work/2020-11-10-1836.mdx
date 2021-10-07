@@ -1,0 +1,30 @@
+---
+title: Vueのメモ
+time: 2020-11-10 18:36
+tag: ['vue']
+status: draft
+---
+
+# Vuexの初期データとdataとcreatedの関係
+
+- createdのタイミングでは、data()は実行されており、アクセスできる
+- Vuexの初期データは、data()実行時には投入されている ※なお、mapGetters経由だととれないかも。this.$store.getters['storeName/getterName']でいける
+
+なので以下の順になる。
+
+VuexのinitialState data() created
+
+# 勘違いしてた ライフサイクルとawait
+
+ライフサイクルメソッドでawaitすると、Promiseが解決されないと、次のライフサイクルに行かないとなぜか勘違いしてた。 created()を呼んであるであろう、VueのFWでawaitしてないと、そういう挙動にならないないじゃんと気づいた。 また非同期中にローディングを出すとかもできなくなる。
+
+```js
+async created(){
+ const response = await someApiCall()
+ console.log(response)
+},
+
+mounted(){
+console.log(''mounted)
+}
+```

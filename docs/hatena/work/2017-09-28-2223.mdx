@@ -1,0 +1,407 @@
+---
+title: ラズパイで大人のモーターを操作する
+time: 2017-09-28 22:23
+---
+
+この記事は、Raspberry Pi Advent Calendar 2017 25日目の記事として、いろいろと手直しを行いました。
+
+メリークリスマス！
+
+クリスマス当日の今日 25日、みなさんいかがお過ごしでしょうか。
+
+今年のクリスマスは、残念ながら25日が平日で、イブの日になんか次の日仕事じゃねえか！と悲しんだ方もきっと多かったはず。
+
+そこで今回は、時間がなくて会えないカップルや、まだクリスマスプレゼントあげてない！という人にぴったりな電子工作に挑戦します。
+
+何ができるかは最後のお楽しみだよ！
+
+![f:id:konoemario:20170928222240p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170928/20170928222240.png "f:id:konoemario:20170928222240p:plain:w500")
+
+- [購入するもの](#%E8%B3%BC%E5%85%A5%E3%81%99%E3%82%8B%E3%82%82%E3%81%AE)
+- [ラズペリーパイZeroの設定をしよう](#%E3%83%A9%E3%82%BA%E3%83%9A%E3%83%AA%E3%83%BC%E3%83%91%E3%82%A4Zero%E3%81%AE%E8%A8%AD%E5%AE%9A%E3%82%92%E3%81%97%E3%82%88%E3%81%86)
+- [大人のモーターを電子工作に使えるようにする](#%E5%A4%A7%E4%BA%BA%E3%81%AE%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC%E3%82%92%E9%9B%BB%E5%AD%90%E5%B7%A5%E4%BD%9C%E3%81%AB%E4%BD%BF%E3%81%88%E3%82%8B%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B)
+- [ラズパイと大人のモーターをつなげる](#%E3%83%A9%E3%82%BA%E3%83%91%E3%82%A4%E3%81%A8%E5%A4%A7%E4%BA%BA%E3%81%AE%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC%E3%82%92%E3%81%A4%E3%81%AA%E3%81%92%E3%82%8B)
+- [モーターを動かすシンプルなコード](#%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC%E3%82%92%E5%8B%95%E3%81%8B%E3%81%99%E3%82%B7%E3%83%B3%E3%83%97%E3%83%AB%E3%81%AA%E3%82%B3%E3%83%BC%E3%83%89)
+- [操作画面を作成する](#%E6%93%8D%E4%BD%9C%E7%94%BB%E9%9D%A2%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B)
+  - [Flaskを準備する](#Flask%E3%82%92%E6%BA%96%E5%82%99%E3%81%99%E3%82%8B)
+  - [さきほどのdc\_motor.pyを呼ぶ処理を書こう](#%E3%81%95%E3%81%8D%E3%81%BB%E3%81%A9%E3%81%AEdc_motorpy%E3%82%92%E5%91%BC%E3%81%B6%E5%87%A6%E7%90%86%E3%82%92%E6%9B%B8%E3%81%93%E3%81%86)
+  - [画面をつくろう](#%E7%94%BB%E9%9D%A2%E3%82%92%E3%81%A4%E3%81%8F%E3%82%8D%E3%81%86)
+- [最後に](#%E6%9C%80%E5%BE%8C%E3%81%AB)
+
+### 購入するもの
+
+今回、使うものは以下の通りです。
+
+- ラズペリーパイZeroセット
+- モータードライバー(DRV8835)
+- ジャンパワイヤ数本
+- ブレッドボード
+- 電池ケース（4本入るやつ)と単三電池4本
+- 大人のモーター
+
+ラズパイZeroから、電池ケースについては、モーターを動かす際に必要となる一般的なキットだね。  
+詳しく知りたい！っていう方は、以前、DCモーターを動かした記事があるのでこちらを見てね。
+
+[RaspBerryPiでモーターを動かす(1) - 豆腐とコンソメ](https://www.tohuandkonsome.site/entry/2017/03/05/200409)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/03/05/200409">www.tohuandkonsome.site</a></cite>
+
+大人のモーターについては、好きなものを購入しよう！  
+自分はこんな感じのやつを購入しました。
+
+![f:id:konoemario:20170927225900j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170927/20170927225900.jpg "f:id:konoemario:20170927225900j:plain:w500")
+
+さあ、何ができるのかな！
+
+### ラズペリーパイZeroの設定をしよう
+
+何はともあれ、まずはラズパイを用意しよう。  
+とはいえ、ラズパイの初期設定については、こちらの記事にも書いたので、ここでは省略しちゃうよ。
+
+[RaspBerry Pi Zeroの初期設定メモ - 豆腐とコンソメ](https://www.tohuandkonsome.site/entry/2017/04/29/223718)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/04/29/223718">www.tohuandkonsome.site</a></cite>
+
+PythonとラズパイのGPIOをコントロールするWiringPiまで使えるようなれば大丈夫！
+
+### 大人のモーターを電子工作に使えるようにする
+
+ブレッドボードに接続しやすいように、ハサミでケーブルを途中で切っちゃうよ。
+
+カッターでビニール部分を削ると、プラスとマイナスの導線がでてきた。
+
+ちなみに行き当たりばったりでやってるから、ここでどうしよもなかったらこの企画は、ここで中止だったよ！
+
+![f:id:konoemario:20170927230234j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170927/20170927230234.jpg "f:id:konoemario:20170927230234j:plain:w500")
+
+### ラズパイと大人のモーターをつなげる
+
+そしたら、ラズパイと大人のモーター、電池、モータードライバたちをブレッドボード上でつなげます。  
+なんだかごちゃごちゃしているけれども、こんな感じでつなげてみたよ！
+
+![f:id:konoemario:20170927231758j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170927/20170927231758.jpg "f:id:konoemario:20170927231758j:plain:w500")
+
+写真には、DRV8835以外のモータードライバと、普通のDCモーターが写っているけれども、これは気にしないで大丈夫！
+
+最初にいろんなモータードライバーと、DCモーターでテストしてたんだ。
+
+モータードライバーの制御は、以下のサイトが一番わかりやすいです！   
+英語なのでなんとなくしかわからないのですが、それでもなんとなくわかる、わかりやすさです！
+
+[Pololu - DRV8835 Dual Motor Driver Carrier](https://www.pololu.com/product/2135)<cite class="hatena-citation"><a href="https://www.pololu.com/product/2135">www.pololu.com</a></cite>
+
+今回は、シンプルなPHASE/ENABLEモードで設定を行っているよ！
+
+余談ですが、同じDRV8835でもピンの数が少ないやつがあったりして混乱したことがあります。
+
+### モーターを動かすシンプルなコード
+
+とりあえずモーターが動くか確認します。
+
+<script src="https://gist.github.com/1db63b77f6037df39147be6aba43ff55.js"> </script>
+
+[DRV8835を使ったモータ制御](https://gist.github.com/1db63b77f6037df39147be6aba43ff55)
+
+うまくいけば、激しく動くはずです。
+
+![f:id:konoemario:20170928212140j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170928/20170928212140.jpg "f:id:konoemario:20170928212140j:plain:w500")
+
+### 操作画面を作成する
+
+コマンドラインからも動かせるのですが、せっかくなので、操作画面を用意しましょう。
+
+そのほうがきっと盛り上がるはずです！
+
+#### Flaskを準備する
+
+操作画面は、一番シンプルなpythonのWebフレームワーク「Flask」を使用します。
+
+ラズパイにさっそくFlaskをインストールします。
+
+**Flaskをインストールするよ**
+
+```
+pi@raspberrypi:~ $ sudo pip install Flask
+Collecting Flask
+```
+
+インストールが終わったら、小さいWebアプリであるapp.pyを書こう。
+
+**最小限のFlaskアプリケーション app.py**
+
+```
+from flask import Flask
+app = Flask( __name__ )
+
+@app.route('/')
+def hello_world():
+    return "Hello World!"
+
+if __name__ == ' __main__':
+    app.run(host='0.0.0.0')
+```
+
+書き終わったら、さっそく起動してみよう。
+
+```
+$ python app.py
+python app.py
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+```
+
+無事、起動したかな？
+
+起動したら、PCで「http://ラズパイのIP:5000」にアクセスしてみよう。  
+こんな画面が見れるはず。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170924/20170924112442.png" alt="f:id:konoemario:20170924112442p:plain:w300" title="f:id:konoemario:20170924112442p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><figcaption>こんな画面</figcaption></figure>
+
+無事見れたら、Webアプリケーションを止める。  
+コマンドライン上で、「Crtl + c 」で終了させよう。
+
+#### さきほどのdc\_motor.pyを呼ぶ処理を書こう
+
+それでは、さきほどのdc\_motor.pyを、app.pyと同じディレクトリに置こう。
+
+**app.pyとdc.motorを同じところに**
+
+```
+$ tree
+.
+├── app.py
+├── dc_motor.py
+```
+
+次にapp.pyを修正します。
+
+**app.py**
+
+```
+from flask import Flask
+from flask import render_template
+#dc_motorを使えるように
+import dc_motor
+
+app = Flask( __name__ )
+
+@app.route('/')
+def hello_world():
+    return "Hello World!"
+
+#URL「http://ラズパイのIP:5000/start」にアクセスがあった場合の処理
+@app.route('/start')
+def start_motor():
+    dcmotor = dc_motor.DC_Motor_DRV8835(a_phase=14, a_enbl=15)
+    dcmotor.start()
+    return "start"
+
+#URL「http://ラズパイのIP:5000/stop」にアクセスがあった場合の処理
+@app.route('/stop')
+def stop_motor():
+    dcmotor = dc_motor.DC_Motor_DRV8835(a_phase=14, a_enbl=15)
+    dcmotor.stop()
+    return "stop"
+
+if __name__ == ' __main__':
+    app.run(host='0.0.0.0')
+```
+
+ここでは、「/start」「/stop」それぞれにアクセスがあった場合、さきほどのクラス「DC\_Motor\_DRV8835」のモーターを回転させるstartメソッドと、止めるstopメソッドを呼ぶようにします。
+
+試しにこの段階で、「http://ラズパイのIP:5000/start」にアクセスすると、モーターが動きます。
+
+#### 画面をつくろう
+
+最後に、シンプルな操作画面をhtml、css、javascriptでつくっちゃいましょう。
+
+完成イメージはこんな感じです。
+
+![f:id:konoemario:20170928221402p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170928/20170928221402.png "f:id:konoemario:20170928221402p:plain:w300")
+
+せっかくなのでHerokuにもデプロイしました。
+
+[https://sample-basic-css.herokuapp.com/sample/2/toggle3](https://sample-basic-css.herokuapp.com/sample/2/toggle3)
+
+ただですね、スマホとかの小さい画面でみることを一切考慮していない残念な画面になってます。
+
+まず、リソースを置くディレクトリをそれぞれ作成します。
+
+**ディレクトリを新規につくる**
+
+```
+$ mkdir templates static
+```
+
+ディレクトリ構成はこんな感じになるよ。
+
+**こんな感じになる**
+
+```
+$ tree
+.
+├── app.py
+├── dc_motor.py
+├── static
+└── templates
+```
+
+そうしたら、htmlファイルをtemplates配下に、cssとjavascriptをstatic配下に置きます。  
+ついでにapp.pyのルートディレクトリにアクセスがあった場合（つまりトップ画面)の処理を以下のように修正します。
+
+**app.py**
+
+```
+@app.route('/')
+def hello_world():
+    #テンプレートエンジンを使うよ。デフォルトでtemplates配下を探しに行くよ。  
+    return render_template('index.html', title="大人のモーター")
+```
+
+それぞれのファイルはこんな感じにしました。
+
+**index.html**
+
+```
+<head>
+   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+   <script type="text/javascript" src="{{ url_for('static', filename='motor.js') }}">script>
+   <link rel="stylesheet" href="https://fonts.googleapis.com/earlyaccess/hannari.css">
+   <title> {{ title }} title>
+head>
+
+<div class="container">
+    <input class="toggle" id="left-toggle" type="radio" name="toggle" >
+    <label for="left-toggle" id="left-label">うごくlabel>
+    <input class="toggle" id="right-toggle" type="radio" name="toggle" checked>
+    <label for="right-toggle" id="right-label">とまるlabel>
+div>
+```
+
+また、以下のcssファイルもstaticディレクトリ配下に置きます。
+
+**style.css**
+
+```
+*,*:before,*:after{
+  box-sizing: border-box;
+}
+
+html,body{
+  height: 100%;
+  font-family: "Hannari";
+}
+.container{
+  position:relative;
+  z-index:0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+input[type="radio"]{
+  display: none;
+}
+
+label{
+  border:3px solid #ff99cc;
+  padding:10px;
+  width: 50%;
+  max-width:500px;
+  max-height:300px;
+  min-width: 100px;
+  min-height: 60px;
+  height: 50%;
+  /*
+  font-size:4.375 vw;
+  */
+  font-size:150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 600ms ease, color 600ms ease;
+  min-width:61px;
+  cursor:pointer;
+}
+
+#left-label:after{
+  top:0;
+  left:0;
+  position:absolute;
+  content:"";
+  height: 100%;
+  width: 100%;
+  background-color:#ff99cc;
+  transition: left 200ms cubic-bezier(0.77, 0, 0.175, 1);
+  z-index: -1;
+}
+
+#left-label{
+  border-right:0;
+}
+
+/*疑似要素afterを右のラベルの上にかぶせる。*/
+#left-label:after{
+  left:100%;
+}
+
+input[type="radio"]:checked + label{
+  color: #fff;
+  transition: color 200ms;
+}
+
+input[type="radio"]:checked + label:after{
+  left:0% !important;
+}
+```
+
+**motor.js**
+
+```
+console.log("motor.js");
+
+function requestMotorControll(message){
+    const request = new XMLHttpRequest();
+    request.open("GET", "http://localhost:5000/" + message);
+
+    request.addEventListener("load", (event) => {
+        console.log(event.target.status);
+        console.log(event.target.responseText);
+    });
+
+    request.send();
+}
+
+//DOMの解析が全部終わってからじゃないと、要素が取得できないことがあるんだねぇ
+document.addEventListener("DOMContentLoaded", function(event) {
+    console.log("DOM fully loaded and parsed");
+
+        
+    var leftToggle = document.querySelector("#left-toggle");
+    leftToggle.addEventListener("click", function( event ){
+        //console.log("left toggle");
+        requestMotorControll("start");
+
+    });
+    
+    var rightToggle = document.querySelector("#right-toggle");
+    rightToggle.addEventListener("click", function( event ){
+        //console.log("right toggle");
+        requestMotorControll("stop");
+    });
+    
+});
+```
+
+画面に関しては、CodePenで素敵なトグルボタンを探していたのですが、シンプルなトグルという言葉を信じて見てたのですが、ある程度理解するのにものすごく時間がかかりました。  
+HTMLとCSSになんだかとても苦手意識があります。
+
+See the Pen [Simple Toggle](https://codepen.io/magnificode/pen/ojYJJP/) by Dominic Magnifico ([@magnificode](https://codepen.io/magnificode)) on [CodePen](https://codepen.io).
+
+<script async src="https://production-assets.codepen.io/assets/embed/ei.js"></script>
+### 最後に
+
+ここまできたら、あとはラッピングしてプレゼントするだけです！
+
+あれ、プレゼント相手の家でラズパイのWifiの設定しないといけないとか、外部からアクセスするときはルーターの設定しなきゃとかあるんですが、二人の愛の間にはきっとささいな問題です！
+
+僕には何に使うかわかりませんが、カメラをつけてボタンの画面からみても面白いかもしれませんね！
+
+それでは、素敵なクリスマスを！

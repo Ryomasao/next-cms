@@ -1,0 +1,49 @@
+---
+title: dockerコンテナでcomposerのinstallに失敗する
+time: 2018-11-01 19:34
+---
+
+## 日記
+
+Vue.jsの本を読んでて、Vue.jsをつかってるとデータ駆動的になる～っていう記載があった。  
+なんとか駆動とかって使うと、とてもかっこいい感じがして、こういうことが言えるようになりたいなぁなんて思ってた。
+
+先日、Vue.jsを使って、入力フォームの値をサーバーにPOSTするってことをした。  
+Ajaxじゃなくって普通のPOST。  
+このとき、サーバー側のバリデーションエラーになった場合、その結果をどうやって画面に表示させようかって悩んでた。
+
+というのも、VueはDOMを直接制御して表示させるのではなくって、DOMとバインドしているデータを変更してあげるべきだから。(べき、というのは、データを変更したほうが設計として、とてもわかりやすいもになるということ)
+
+このときようやく、あーデータ駆動ってこういうことなんだなって実感した。  
+優秀な人は理論だけですんなりいけるんだろうけど、頭が悪い自分は、1年近くVueを触ってようやくこのことが実感できた。
+
+うん、Vue.jsはデータ駆動だよ。
+
+また、今回みたいなAjaxではなくって普通にPOSTするケースの場合、Vue.jsじゃなくってもいい、もしくはVue.jsじゃないほうがいいのかなーなんて気もした。
+
+流行りだし、便利だってことで、Vue.jsだったりReactをさわってるけれども、クライアントに状態をもたせる必要があるアプリケーションだからこそ生きる気がします。
+
+## 本題
+
+しょうもない話。
+
+以前につくったPHPベースのコンテナを久しぶりに作成～起動しようと、`docker-compose build`をしたら、composeでの導入部分でエラーになった。
+
+**エラーの内容**
+
+```
+Step 7/13 : RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php -r "if (hash_file('SHA384', 'composer-setup.php') === '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" && php composer-setup.php && php -r "unlink('composer-setup.php');" && mv composer.phar /usr/local/bin/composer
+ ---> Running in f17c38d91481
+Installer corrupt
+Could not open input file: composer-setup.php
+ERROR: Service 'admin' failed to build: The command '/bin/sh -c php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php -r "if (hash_file('SHA384', 'composer-setup.php') === '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" && php composer-setup.php && php -r "unlink('composer-setup.php');" && mv composer.phar /usr/local/bin/composer' returned a non-zero code: 1
+```
+
+`composer-setup.php`がないよっていわてて、あれーって思って悩んでたんだけど、よくみるとファイルのハッシュチェックでエラーになってることに気づく。 ('Installer corrupt'←これね)
+
+composerのサイトで確認してみると、案の定ハッシュの値がかわっていた。
+
+[Composer](https://getcomposer.org/download/)<cite class="hatena-citation"><a href="https://getcomposer.org/download/">getcomposer.org</a></cite>
+
+composerが新しくなる度に、ハッシュの値を書き換えなきゃいけないのかしら。  
+`docker build`でけっこう時間かかって、途中でこけると悲しいので、バージョンを固定させる的ななにかがあればいいのかな。

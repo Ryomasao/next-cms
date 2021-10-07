@@ -1,0 +1,190 @@
+---
+title: RaspBerryPiで録音と再生
+time: 2017-06-11 01:27
+---
+
+この記事は検索すれば、いくらでもでてくる内容を、自分の環境用にメモしたものです。
+
+ラズパイの環境は以下の通り。
+
+```
+pi@raspberrypi:~ $ lsb_release -a
+No LSB modules are available.
+Distributor ID: Raspbian
+Description: Raspbian GNU/Linux 8.0 (jessie)
+Release: 8.0
+Codename: jessie
+```
+
+- [録音](#%E9%8C%B2%E9%9F%B3)
+  - [デバイス認識しているかどうか](#%E3%83%87%E3%83%90%E3%82%A4%E3%82%B9%E8%AA%8D%E8%AD%98%E3%81%97%E3%81%A6%E3%81%84%E3%82%8B%E3%81%8B%E3%81%A9%E3%81%86%E3%81%8B)
+  - [現在の優先度確認](#%E7%8F%BE%E5%9C%A8%E3%81%AE%E5%84%AA%E5%85%88%E5%BA%A6%E7%A2%BA%E8%AA%8D)
+  - [優先順位の変更](#%E5%84%AA%E5%85%88%E9%A0%86%E4%BD%8D%E3%81%AE%E5%A4%89%E6%9B%B4)
+  - [優先順位の変更がうまくいかない](#%E5%84%AA%E5%85%88%E9%A0%86%E4%BD%8D%E3%81%AE%E5%A4%89%E6%9B%B4%E3%81%8C%E3%81%86%E3%81%BE%E3%81%8F%E3%81%84%E3%81%8B%E3%81%AA%E3%81%84)
+  - [録音テスト](#%E9%8C%B2%E9%9F%B3%E3%83%86%E3%82%B9%E3%83%88)
+- [再生](#%E5%86%8D%E7%94%9F)
+  - [基本設定](#%E5%9F%BA%E6%9C%AC%E8%A8%AD%E5%AE%9A)
+  - [音量調整](#%E9%9F%B3%E9%87%8F%E8%AA%BF%E6%95%B4)
+  - [テスト](#%E3%83%86%E3%82%B9%E3%83%88)
+
+# 録音
+
+基本的に以下内容を参考にした。[Raspberry Piで音声認識してカメラで写真を撮ってメールで送ってみた - 俺の備忘録](http://magayengineer.hatenablog.com/entry/2016/07/06/231533)<cite class="hatena-citation"><a href="http://magayengineer.hatenablog.com/entry/2016/07/06/231533">magayengineer.hatenablog.com</a></cite>
+
+#### デバイス認識しているかどうか
+
+```
+pi@raspberrypi:~ $ lsusb
+Bus 001 Device 005: ID 8086:0808 Intel Corp. 
+Bus 001 Device 003: ID 0424:ec00 Standard Microsystems Corp. SMSC9512/9514 Fast Ethernet Adapter
+Bus 001 Device 002: ID 0424:9514 Standard Microsystems Corp. 
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+```
+
+たぶんこれ。  
+「Bus 001 Device 005: ID 8086:0808 Intel Corp. 」
+
+#### 現在の優先度確認
+
+```
+pi@raspberrypi:~ $ sudo cat /proc/asound/modules
+ 0 snd_bcm2835
+ 1 snd_usb_audio
+```
+
+#### 優先順位の変更
+
+「alsa-base.conf」を新規に作成して、viで2行追加。
+
+```
+pi@raspberrypi:~ $ sudo vi /etc/modprobe.d/alsa-base.conf
+options snd_usb_audio index=0
+options snd_bcm2835 index=1
+```
+
+終わったらリブート。
+
+#### 優先順位の変更がうまくいかない
+
+再起動前は認識できていたのに、認識してくれなくなる。
+
+```
+pi@raspberrypi:~ $ arecord -l
+****ハードウェアデバイス CAPTURE のリスト****
+```
+
+「alsa-base.conf」が怪しいと思ったので、一旦削除。  
+リブートしたら認識してくれた。
+
+```
+pi@raspberrypi:~ $ arecord -l
+****ハードウェアデバイス CAPTURE のリスト****
+カード 1: Device [USB PnP Sound Device], デバイス 0: USB Audio [USB Audio]
+  サブデバイス: 1/1
+  サブデバイス #0: subdevice #0
+```
+
+優先度変更って必須なのかいまいちわかってないので、この作業は保留にした。   
+というのも、後続の録音テストで、録音デバイスをオプションで指定できるので。
+
+以下は、優先度変更が必要になったときに、見る記事。
+
+「alsa-base.conf」ではなく、環境変数に優先度を定義。  
+ 手軽だったので、.bashrcに追加したのだけれども、arecordのDオプションなしでは、エラーのまま。  
+[Raspbianで/etc/modprobe.d/alsa-base.confがないとき - Qiita](http://qiita.com/fumisoro/items/a110ca2c0899fa63516a)<cite class="hatena-citation"><a href="http://qiita.com/fumisoro/items/a110ca2c0899fa63516a">qiita.com</a></cite>
+
+「alsa-base.conf」を使用。3行追加してる。  
+[Raspberry pi 2で音声認識してみる - Qiita](http://qiita.com/lutecia16v/items/9f60b01770f6262b1d5d)<cite class="hatena-citation"><a href="http://qiita.com/lutecia16v/items/9f60b01770f6262b1d5d">qiita.com</a></cite>
+
+#### 録音テスト
+
+```
+arecord -D plughw:1,0 -f cd test.wav
+```
+
+オプションについては「arecord -h」でヘルプを見ればいいだけれども、調べたことを記載。
+
+- -D 使用するデバイスを指定
+- -f サンプルフォーマットを指定
+
+サンプルフォーマットの一覧は、「arecord -h」としたときに最下部にでるんだけれども「cd」というフォーマットは見当たらない。
+
+ググったら素敵な内容が書かれていました。
+
+[マイク入力の録音 - へにゃぺんて＠日々勉強のまとめ](http://d.hatena.ne.jp/cupnes/20130331/1364709523)
+
+> よく見る例では、 「-f cd」 としている例が多いけれども、 これは、「-f S16\_LE -c2 -r44100」の短縮形で、 「-f dat」 の時よりも、サンプリング周波数が低いです。
+
+ちなみに、Dオプションをつけないで実行すると、エラーになる。  
+優先度を変更するとうまくいくのだろうか。
+
+```
+pi@raspberrypi:~ $ arecord -f cd test2.wav
+arecord: main:722: audio open error: そのようなファイルやディレクトリはありません
+```
+
+とりあえず録音はできるようになりました。
+
+# 再生
+
+## 基本設定
+
+HDMIをさしてなければ、自動判別でもうまくいったので、特にこのへんの設定は必要なし。
+
+音の出力先を、ライン出力に固定する。
+
+```
+sudo amixer cset numid=3 1
+```
+
+ライン出力ではなく、HDMIもある。
+
+```
+sudo amixer cset numid=3 2
+```
+
+自動判別はこれ。
+
+```
+sudo amixer cset numid=3 0
+```
+
+設定確認
+
+最終行のvaluesの値。ここでは0になってるので、自動判別になっていることがわかる。
+
+```
+pi@raspberrypi:~ $ amixer cget numid=3
+numid=3,iface=MIXER,name='PCM Playback Route'
+  ; type=INTEGER,access=rw------,values=1,min=0,max=2,step=0
+  : values=0
+pi@raspberrypi:
+```
+
+## 音量調整
+
+```
+pi@raspberrypi:~ $ amixer controls
+numid=3,iface=MIXER,name='PCM Playback Route'
+numid=2,iface=MIXER,name='PCM Playback Switch'
+numid=1,iface=MIXER,name='PCM Playback Volume'
+numid=5,iface=PCM,name='IEC958 Playback Con Mask'
+numid=4,iface=PCM,name='IEC958 Playback Default'
+```
+
+Volumeと書かれている行のnumidを覚えておく。 ここでは、numid = 1。
+
+```
+sudo amixer cset numid=1 100%
+```
+
+さきほどのnumidに対して音量を指定する。  
+100均一のスピーカーを使用しているので、100%でも音量はかなり小さい。
+
+## テスト
+
+デフォルトで用意されている音声を再生する。
+
+```
+aplay /usr/share/sounds/alsa/Front_Center.wav
+```

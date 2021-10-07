@@ -1,0 +1,104 @@
+---
+title: 
+time: 2017-12-27 20:09
+---
+
+[JavaScriptは如何にしてAsync/Awaitを獲得したのか Qiita版 - Qiita](https://qiita.com/gaogao_9/items/5417d01b4641357900c7)<cite class="hatena-citation"><a href="https://qiita.com/gaogao_9/items/5417d01b4641357900c7">qiita.com</a></cite>
+
+```
+//すぐに動く!
+console.log('hello');
+
+//2秒後に動く これは非同期
+setTimeout(function(){
+    console.log('ugoita?')
+},2000);
+
+console.log('hello again!');
+```
+
+```
+$ node test.js
+hello
+hello again!
+ugoita?
+```
+
+apiでやろう XMLhttprequestを用意
+
+[Node.jsでXMLHttpRequestを使う](http://itemy.net/?p=386)<cite class="hatena-citation"><a href="http://itemy.net/?p=386">itemy.net</a></cite>
+
+[XMLHttpRequest についてのメモ - Qiita](https://qiita.com/sirone/items/412b2a171dccb11e1bb6)<cite class="hatena-citation"><a href="https://qiita.com/sirone/items/412b2a171dccb11e1bb6">qiita.com</a></cite>
+
+```
+module.exports = function({file, _chunk_size = 1024, callback}){
+        return new Promise(function(resolve, reject){
+            let offset = 0;
+            let chunk_size = _chunk_size;
+            console.log('chunk:'+chunk_size);
+            console.log('file:'+file);
+            let reader = new FileReader();
+            let text = '';
+
+            //file.slice(開始位置、終了位置)でファイルの指定バイト位置のデータを取得する
+            slice = file.slice(offset, offset + chunk_size)
+
+            //取得したデータを読みこむ
+            reader.readAsArrayBuffer(slice);
+
+            //読込が成功した場合のイベント
+            reader.onload = (event) =>{
+                //reader.resultはArrayBufferでバイナリデータが並んでいる
+                //最後まで読み込むと、ファイルのデータを示すArrayBufferが格納されるとあるが謎。
+
+                //console.log('readerResult'+this.toHex(reader.result));
+
+                //Uint8Arrayは、8bit単位の配列をつくってくれる。
+                let view = new Uint8Array(reader.result)
+            
+                //console.log('viewLength'+view.length);
+                
+                //view.lengthは、8bit単位の要素数の数になるので、バイト数と同じになる。
+                for(let i = 0; i < view.length; i++ ){
+                    console.log('HEX:'+toHex(view[i]));
+                    console.log('toString:'+view[i].toString(16));
+                    console.log('number:'+view[i]);
+
+                    //改行コードLFを探す
+                    if(view[i] === 10){
+                        break;
+                    }else{
+                        text += String.fromCharCode(view[i]);
+                    }
+                }
+
+                console.log('text:'+ text);
+
+                result = callback.validate(text);
+
+                if(result){
+                    resolve('finish!')
+                }else{
+                    reject('ファイルの内容がおかしい')
+                }
+            }
+
+            reader.onerror = ()=>{
+                console.log('fail');
+                reject('ファイル読み込みに失敗した');
+            }
+
+            //読込が成功・失敗にかかわらず終了したときのイベント
+            reader.onloadend = () =>{
+            }
+
+            //16進数で表示用 普通にやると10進数で表示されてしまう。
+            function
+            toHex(v) {
+                return '0x' + (('0000' + v.toString(16).toUpperCase()).substr(-4));
+            }
+
+        });
+
+}
+```

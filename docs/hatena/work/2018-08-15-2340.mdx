@@ -1,0 +1,85 @@
+---
+title: SPAの認証がわからない + JWTのデコードでエラー
+time: 2018-08-15 23:40
+---
+
+# 日記
+
+SPAをつくることにしたんだけれども、APIの認証をどうしていいのかがいまいちわからない。
+
+APIに状態を持たせるのは良くないということで、セッションを使った認証ではなくJWTを使った認証にチャレンジしてみることにした。 （とはいえ、あんまりそのメリットもよくわかってない。APIで認証のためにセッションを使うのと、tokenを使うのでなんか違いがあるのだろうか。認証以外の情報がtokenとしてどんどん増えていくことを想定してのtokenなのかな。何かの記事でAPIだとセッションが使えないみたいなことが書いてあったんだけれども、なんで使えないのかもよくわからない。)
+
+ユーザー登録をして、IDとパスワードを入力を含めたサイトであれば、
+
+1. 自分のサイトでログイン画面でIDとパスワードを入力
+2. IDとパスワードで該当のユーザーが登録されていたら、ユーザーの情報をもとにtokenを生成しクライアントに渡す
+3. 以降、サーバー側にAPIを投げる際にはtokenを付加して投げる
+4. サーバー側はtokenをデコードして、ユーザーが存在するかとか、不正なtokenじゃないかとかをチェックする
+
+みたいな感じなんだと思う、
+
+これが、GitHubとかTwitterとかの外部認証を用いた場合がいまいちよくわからない。  
+なんとなくこんな感じだと思う。
+
+1. 外部のサイト(GitHub)にリダイレクト
+2. 外部のサイト(GitHub)で ログイン画面でIDとパスワードを入力
+3. 外部のサイトから、自分のサイトにtoken付きでリダイレクト
+4. 自分のサイトでtokenを受け取り、ログイン用のAPIにtokenを渡してAPIを叩く。
+5. ログイン用のAPIで外部サイト(Githubとか)のユーザー情報を取得するようなAPIを叩く。
+6. 取得したユーザー情報を自分のサイトのDBに登録して、さらにユーザー情報をもとにしたtokenを生成する
+7. 以降は、自サイトのときと同じ。
+
+ただ、いろいろ調べると、アクセストークンは、認証（誰か)ではなく認可（〜をしてよい)しかわからないので、そのまま認証に使うのはよくないよ的な記事がたくさんある。
+
+[OAuth2をそのまま認証に使ってはいけない理由 〜 雑なまとめ · GitHub](https://gist.github.com/j5ik2o/7ce9686a82aee5caaef258f98d9b4b36)
+
+誰が、がわかるのは前述のアクセストークンを発行する使用のOAuthではなくOpenIDConnectなんだよ、とかもあるんだけれども、Githubを利用した認証と、OpneIDConnectの関係もよくわからない。GithubからIDトークンってもらえるのかしら。
+
+[[前編] IDトークンが分かれば OpenID Connect が分かる](https://qiita.com/TakahikoKawasaki/items/8f0e422c7edd2d220e06)
+
+また、OpenIDConnectなのかOAuthの話なのかわからないけれども、自サイトから外部サイトにリダイレクトするときにstateっていうパラメータを発行しておいて、外部サイトから自サイトに戻るときにstateに変更がないかを調べていると思う。
+
+[OAuthやOpenID Connectで使われるstateパラメーターについて](https://tech-lab.sios.jp/archives/8492)<cite class="hatena-citation"><a href="https://tech-lab.sios.jp/archives/8492">tech-lab.sios.jp</a></cite>
+
+上記のサイトで、stateの意味をわかりやすく書いてくれているんだけれども、APIでセッションを使わない場合、どう実装するのかが謎。
+
+Laravelの外部認証のライブラリを眺めてたんだけれども、セッションを使う場合と使わない場合で(stateless)で処理がわかれていて、使わない場合は、stateのチェックをしていないように見える。
+
+[laravel/socialite](https://github.com/laravel/socialite)<cite class="hatena-citation"><a href="https://github.com/laravel/socialite">github.com</a></cite>
+
+ちゃんと確認できてないのであれなんだけれども、仮にしてないとしたら、それでいいのだろうか。
+
+いろいろ整理したいんだけれども、なかなか時間と気持ちがなく更新をさぼっていたのでしょうもないので、最後にしょうもない記事を書くことにした。
+
+# JWTのtokenのデコードでエラー
+
+とあるAPIを叩く際の認証にJWTを使うことにした。
+
+環境はPHPで、以下のライブラリを使っていた。  
+[tymondesigns/jwt-auth](https://github.com/tymondesigns/jwt-auth)<cite class="hatena-citation"><a href="https://github.com/tymondesigns/jwt-auth">github.com</a></cite>
+
+四苦八苦してtokenを発行することに成功し、今度はそれをデコードして検証する機能を実装して、curlで検証していた。
+
+**curlでヘッダにtokenをつけて検証**
+
+```
+$ curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxM…lOIn0.d0NPptNDHzoFFG2gL8WffARAOxnnnjDk-7qMsKc19nM" http://localhost:8000/api/1/users
+```
+
+しかし、コピペし忘れてたんだけれども、こんなエラーがでてしまった。   
+**エラーメッセージ**
+
+```
+Could not decode token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxM…lOIn0.d0NPptNDHzoFFG2gL8WffARAOxnnnjDk-7qMsKc19nM" is an invalid JWS
+```
+
+あれーと、JWTの中身をいろいろと見ていて、1時間ほど経過した際に気づきました。  
+あれ、エラーメッセージのtokenの内容、途中で省略されてんじゃねえか！と。
+
+というのも、Chormeのコンソールにtokenを出力して、確認してたんですが、長い文字列は省略されていたみたいです。
+
+<figure class="figure-image figure-image-fotolife" title="コピペ元"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180815/20180815205456.png" alt="f:id:konoemario:20180815205456p:plain" title="f:id:konoemario:20180815205456p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>コピペ元</figcaption></figure>
+
+ちゃんと、JSONオブジェクトを展開したものを使いましょうというしょうもない話でした。
+
+<figure class="figure-image figure-image-fotolife" title="正しいtoken"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180815/20180815205557.png" alt="f:id:konoemario:20180815205557p:plain" title="f:id:konoemario:20180815205557p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>正しいtoken</figcaption></figure>

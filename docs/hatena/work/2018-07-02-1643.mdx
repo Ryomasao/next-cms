@@ -1,0 +1,97 @@
+---
+title: LaravelのModelのcreateでハマった件
+time: 2018-07-02 16:43
+---
+
+## 日記
+
+前の会社をやめて一年が経ってしまった。
+
+## 起きたこと
+
+Laravelなんとなく使えるようになったかなと思ったけれども、未だにフレームワークがちゃんと読めない。  
+というかPHPの基本的なところがわかってないんじゃないか疑惑。
+
+こんな平凡な`Product`モデルがあって、
+
+**Productモデル**
+
+```
+namespace App;
+
+class Product extends Models
+{
+   $fillable = ['product_id'];
+
+    public function __construct() {
+        parent::__construct();
+        //以降に個別の設定処理
+    }
+}
+```
+
+tinkerでProductレコードを新規に作成するメソッド`create()'を実行したら、エラーになった。
+
+**実行した処理**
+
+```
+$ php artisan tinker
+Psy Shell v0.8.12 (PHP 7.1.11 ― cli) by Justin Hileman
+>>> $product = new App\Product
+>>> $product->create(['product_id' => 1]);
+```
+
+エラーメッセージに表示されているSQLをみると、`create()`の引数に指定している、`product_id`が無視されているではありませんか。
+
+**エラーメッセージ**
+
+```
+Illuminate\Database\QueryException with message 'SQLSTATE[HY000]: General error: 1364 Field 'product_id' doesn't have a default value (SQL: insert into `products` (`updated_at`, `created_at`) values (2018-07-02 15:52:14, 2018-07-02 15:52:14))'
+```
+
+あれ、モデルに`fillable`もちゃんと書いてるよな、、、と1時間ぐらいハマってたんですが、 原因はコンストラクタでした。
+
+[A \_\_construct on an Eloquent Laravel Model](https://stackoverflow.com/questions/30502922/a-construct-on-an-eloquent-laravel-model)<cite class="hatena-citation"><a href="https://stackoverflow.com/questions/30502922/a-construct-on-an-eloquent-laravel-model">stackoverflow.com</a></cite>
+
+以下にようにモデルのコンストラクタに、`arrtibutes`の引数を設定してあげます。
+
+**修正後のProductモデル**
+
+```
+namespace App;
+
+class Product extends Models
+{
+   $fillable = ['product_id'];
+
+    public function __construct(array $attributes = []) {
+        parent::__construct($attributes);
+        //以降に個別の設定処理
+    }
+}
+```
+
+フレームワーク内のModel.phpのコンストラクタをみると、`attributes`の引数があり、これは`create()`で渡している配列の値っぽいです。
+
+**Model.php**
+
+```
+/**
+     * Create a new Eloquent model instance.
+     *
+     * @param array $attributes
+     * @return void
+     */
+    public function __construct(array $attributes = [])
+    {
+        $this->bootIfNotBooted();
+
+        $this->syncOriginal();;
+
+        $this->fill($attributes);
+    }
+```
+
+`create()`でProductのインスタンスをつくるという基本的なことを忘れていて、`attributes`って、tinkerでnewしたときに設定してないよな、、、どっからくるんだ、と思ってました。
+
+そもそもModelクラス内にもトレイトにもcreateメソッドはないんだけれども、どう呼んでるんだろうという新たな謎を胸に秘め生きていこうと思います。

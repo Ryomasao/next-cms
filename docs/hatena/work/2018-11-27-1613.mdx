@@ -1,0 +1,389 @@
+---
+title: 受託案件のWeb系の納品物ってビルド後のソースとソース一式、どっちを渡してる？
+time: 2018-11-27 16:13
+---
+
+# 前置き
+
+Web案件の受託開発をしていてふと思った疑問。
+
+納品するときって、ソースコード一式 or Webpackでビルド後のソースのどっちを納品してますか？
+
+大抵はソースコード一式を納品しているような気もするんだけれども、わりとビルド後のソースだけを納品してOKっていうパターンもあったりする。
+
+これで問題になったことはそんない。  
+でも、たまに納品後にお客さん側でCSSやHTML、もしくはjavascriptをちょっと修正する、みたいなことがあったりする。
+
+その際に、リソースをminifyしてたりすると、なんぞこれ！と言われてしまうわけです。
+
+コンパイル型言語であれば、納品先でちょっと修正するなんていう発想はそもそもないんだろうけれども、javascriptのようなスクリプト言語だったり、HTML・CSSだったら、お客さん側でも、俺わかるから！って人が修正するみたいなケースがあるんじゃないかと思う。
+
+そもそも、そっちで修正するケースなんて想定してねえよ！といったり、ではソースコード一式渡すんで、Node.jsいれてビルドしてね！！！って言うだけの話っちゃ話なんですが、なんでビルドなんかしてるのか説明しろ！といわれた場合に備え、ちゃんと答えられるようにしときたいと思った今日このごろ。
+
+# 本題
+
+ということで、やっぱりWebpackとかの話になる。  
+以前も↓の記事でぜんぜんわかねえという感想だけを書いた記事に引き続き再整理。  
+ちょっとわかってきた気がする。
+
+[やっぱり、WebpackもBabelもよくわからない - 豆腐とコンソメ](https://www.tohuandkonsome.site/entry/2018/07/13/182057)<cite class="hatena-citation"><a href="https://www.tohuandkonsome.site/entry/2018/07/13/182057">www.tohuandkonsome.site</a></cite>
+
+- [前置き](#%E5%89%8D%E7%BD%AE%E3%81%8D)
+- [本題](#%E6%9C%AC%E9%A1%8C)
+  - [検証環境とメモ](#%E6%A4%9C%E8%A8%BC%E7%92%B0%E5%A2%83%E3%81%A8%E3%83%A1%E3%83%A2)
+- [そもそもなんでビルドしてんの？](#%E3%81%9D%E3%82%82%E3%81%9D%E3%82%82%E3%81%AA%E3%82%93%E3%81%A7%E3%83%93%E3%83%AB%E3%83%89%E3%81%97%E3%81%A6%E3%82%93%E3%81%AE)
+- [開発効率をあげるって？](#%E9%96%8B%E7%99%BA%E5%8A%B9%E7%8E%87%E3%82%92%E3%81%82%E3%81%92%E3%82%8B%E3%81%A3%E3%81%A6)
+  - [機能ごとにファイルを分割するって？](#%E6%A9%9F%E8%83%BD%E3%81%94%E3%81%A8%E3%81%AB%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E5%88%86%E5%89%B2%E3%81%99%E3%82%8B%E3%81%A3%E3%81%A6)
+    - [さらに分割する](#%E3%81%95%E3%82%89%E3%81%AB%E5%88%86%E5%89%B2%E3%81%99%E3%82%8B)
+    - [ファイルを分割したけれども](#%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E5%88%86%E5%89%B2%E3%81%97%E3%81%9F%E3%81%91%E3%82%8C%E3%81%A9%E3%82%82)
+    - [importとexportを使う](#import%E3%81%A8export%E3%82%92%E4%BD%BF%E3%81%86)
+    - [結局どうすんのよ](#%E7%B5%90%E5%B1%80%E3%81%A9%E3%81%86%E3%81%99%E3%82%93%E3%81%AE%E3%82%88)
+
+#### 検証環境とメモ
+
+- Chromeで実行
+- webpack-dev-serverとhttp-serverで確認
+
+## そもそもなんでビルドしてんの？
+
+いろいろ考えたんですが、 **開発効率をあげるために、ビルドしてます** ってことだと思う。
+
+## 開発効率をあげるって？
+
+なんでビルドすると開発効率があがんの？って話です。
+
+突き詰めると、このへんでしょうか。
+
+- 機能ごとにファイルを分割して管理したい。そのほうが開発作業がスムーズ。
+- ES6構文やTypeScriptを使って効率よくコードを書きたい。
+- 使用したいフレームワーク・ライブラリがビルド前提。
+
+以降では、1点目のファイル分割に注力して記載することにします。  
+※他も整理しようかとおもったけれども、心が折れた。
+
+### 機能ごとにファイルを分割するって？
+
+さて、ここに簡単なHTML + javascriptを用意してみました。
+
+以下の通り、ユーザー名を投稿するだけのシンプルなフォームです。  
+唯一の特徴があるとすると、ボタンを押したときに、ユーザー名が未入力だとエラーメッセージをクライアント側で出力しているぐらいです。
+
+<figure class="figure-image figure-image-fotolife" title="かんたんなフォーム"><div class="images-row mceNonEditable">
+<span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20181122/20181122174429.png" alt="f:id:konoemario:20181122174429p:plain" title="f:id:konoemario:20181122174429p:plain" class="hatena-fotolife" itemprop="image"></span><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20181122/20181122174452.png" alt="f:id:konoemario:20181122174452p:plain" title="f:id:konoemario:20181122174452p:plain" class="hatena-fotolife" itemprop="image"></span>
+</div>
+<figcaption>かんたんなフォーム</figcaption></figure>
+
+実際のコードは以下の通りになります。
+
+**index.html**
+
+```
+<form id="form" action="/hoge">
+    <div class='input'>
+      <label for="user-name">ユーザー名label>
+      <input id="user-name" type="text">
+    div>
+    <div class='error'>
+      <label id="user-name-error" style="color: red">label>
+    div>
+    <button id="submit">Submitbutton>
+  form>
+  <script>
+    //formのsubmitボタンを押したときのイベント
+    document.getElementById('form').addEventListener('submit', function(event) {
+      //ユーザー名をとってきて
+      var userName = document.getElementById('user-name').value
+
+      //ユーザー名がからっぽなら、エラーメッセージを出す
+      if(userName === '') {
+        document.getElementById('user-name-error').innerHTML = 'ユーザーネームを入力してください'
+        event.preventDefault()
+      }
+    })
+  script>
+```
+
+現在、ひとつのファイルにHTMLとjavascriptとが一緒になっています。  
+これぐらいの規模であれば、HTMLとjavascriptが一緒になってても特段問題ないのですが、
+
+- ユーザー名だけではなく、生年月日やEメール等、入力項目が増えるたびにどんどんコードが増えていく
+- 複数人で編集するときに`index.html'のコンフリクトが半端ない
+
+と問題が増えていくことが考えられます。
+
+そもそもファイル内のコードが長いと、コード間を移動するのもめんどくさいし、差分も取りづらい、とデメリットがいっぱいありますよね。
+
+なので、ファイルをHTMLとjavascriptをちゃんとわけることにします。
+
+**index.html**
+
+```
+<form id="form" action="/hoge">
+    <div class='input'>
+      <label for="user-name">ユーザー名label>
+      <input id="user-name" type="text">
+    div>
+    <div class='error'>
+      <label id="user-name-error" style="color: red">label>
+    div>
+    <button id="submit">Submitbutton>
+  form>
+  <script src="main.js">script>
+```
+
+**main.js**
+
+```
+//formのsubmitボタンを押したときのイベント
+document.getElementById('form').addEventListener('submit', function(event) {
+  //ユーザー名をとってきて
+  var userName = document.getElementById('user-name').value
+
+  //ユーザー名がからっぽなら、エラーメッセージを出す
+  if(userName === '') {
+    document.getElementById('user-name-error').innerHTML = 'ユーザーネームを入力してください'
+    event.preventDefault()
+  }
+})
+```
+
+単純に、javascriptの内容を`main.js`に切り出して、`index.html`側から参照しているだけですね。  
+ちょっとしたjavascriptを書く場合は、こんなふうにしていることが一般的かと思います。
+
+※とはいえ、Googleアナリティクスとかのガジェット系の埋め込みはHTMLに直接書いちゃいますが。
+
+#### さらに分割する
+
+さて、さきほどhtmlとjavascriptを分割しました。
+
+ですが、`main.js`もチェック内容やらなんやらが増えていくと、コードが肥大化していきます。
+
+例えば、Eメールアドレスの項目が増えたので、こちらのバリデーションチェックも追加することにしました。
+
+**Eメールアドレスが増えた**
+
+```
+//formのsubmitボタンを押したときのイベント
+document.getElementById('form').addEventListener('submit', function(event) {
+  //
+  var userName = document.getElementById('user-name').value
+  var email = document.getElementById('email').value
+
+  //ユーザー名がからっぽなら、エラーメッセージを出す
+  if(userName === '') {
+    document.getElementById('user-name-error').innerHTML = 'ユーザーネームを入力してください'
+  }
+
+  //Eメールが空っぽ
+  if(email === '') {
+    document.getElementById('email-error').innerHTML = 'Eメールアドレスを入力してください'
+  }
+
+  //Eメールの形式が不正
+  if(!email.match( /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)) {
+    document.getElementById('email-error').innerHTML = 'Eメールアドレスの形式がおかしいです'
+  }
+})
+```
+
+そもそもの設計が～とかはあるんですが、この状態では項目が増えていく度にコードが増えていくことが考えられます。
+
+なので、ちょっと構成を見直してみます。 あんまりいい例ではないのですが、項目が正しいかどうかをチェックする機能を汎用的に考え、別の関数として切り出します。
+
+ここでは、空っぽかどうかを判定する`isEmpty`関数と、Eメールアドレスが正しいかを確認する、`isEmail`関数をつくることにしました。
+
+**チェック内容を関数として切り出す**
+
+```
+//formのsubmitボタンを押したときのイベント
+document.getElementById('form').addEventListener('submit', function(event) {
+  //
+  var userName = document.getElementById('user-name').value
+  var email = document.getElementById('email').value
+
+  if(isEmpty(userName)) {
+    document.getElementById('user-name-error').innerHTML = 'ユーザーネームを入力してください'
+    event.preventDefault()
+  }
+
+  if(isEmpty(email)) {
+    document.getElementById('email-error').innerHTML = 'Eメールアドレスを入力してください'
+    event.preventDefault()
+  }
+
+  if(!isEmail(email)) {
+    document.getElementById('email-error').innerHTML = 'Eメールアドレスの形式がおかしいです'
+    event.preventDefault()
+  }
+
+})
+
+// Eメールアドレスの形式チェック
+function isEmail(value) {
+  if(value.match( /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)) {
+    return true
+  }
+  return false
+}
+
+// 空っぽかどうか
+function isEmpty(value) {
+  return value === ''
+}
+```
+
+さて関数化することで、別の箇所でEメールの項目がでてきたとしても、この関数を使うことでチェックができるようになりましたね。  
+ただ、関数を`main.js`に書いちゃうと、コードが肥大化していくという問題は解消されません。
+
+であれば、関数は別のファイル`validate.js`に切り出すことにします。
+
+**validate.js**
+
+```
+// Eメールアドレスの形式チェック
+function isEmail(value) {
+  if(value.match( /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)) {
+    return true
+  }
+  return false
+}
+
+// 空っぽかどうか
+function isEmpty(value) {
+  return value === ''
+}
+```
+
+#### ファイルを分割したけれども
+
+切り出したはいいのですが、このままだと`main.js`内から`isEmpty`関数や`isEmail`関数を参照することはできません。  
+なので、`index.html`にて、`validate.js'も読み込んでおくようにしておきます。
+
+**index.html**
+
+```
+<script src="validate.js">script>
+  <script src="main.js">script>
+body>
+html>
+```
+
+これでも、大丈夫といえば大丈夫なんですが、気になる点がいくつかあります。
+
+- `main.js`と`validate.js`の読み込み順を意識する必要がある。  
+`main.js`内が`isEmpty`等の関数を呼び出すタイミングで、`validate.js`の読み込みが終わっていないと、そんな関数ねえよと怒られてしまいます。  
+今回は、画面のボタンを押さない限り、関数が呼び出されないので、読み込み順を逆にしても大きな問題はないのですが、あまりいい状態とはいえません。
+
+- サーバーに対してのリクエスト数が増える 性能とかを気にしない環境であれば、そこまで問題はないのですが、`validate.js`と`main.js`とでわかれている場合、サーバに対するリクエストは以下のように2回リクエストが発生します。
+
+<figure class="figure-image figure-image-fotolife" title="一言でおわる話を図式化した"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20181127/20181127152901.png" alt="f:id:konoemario:20181127152901p:plain" title="f:id:konoemario:20181127152901p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>一言でおわる話を図式化した</figcaption></figure>
+
+だから何よ？ってなるかもしれませんが、このリクエスト数っていうのが性能を考えるにあたって、結構大きな影響を与えます。
+
+なので、できれば1回のリクエストでまとめてとってこれたほうがサーバーにとってはうれしかったりします。
+
+※といいつつ、あんまりわかってない。Apacheのpreforkタイプだったら、リクエストがある度にプロセスをforkしちゃうからやべえんだよってことなのかな？Nginxとかだったらそこまででもなかったり？とはいえファイルオープンとかのシステムコールの発生回数は増えるんだからってことなのかしら。TCPのコネクションは使いまわすからだいじょうぶ？
+
+この他にも変数のスコープの話とかもありそうなんですが、ちょっと理解が足りてないんで割愛します。
+
+#### importとexportを使う
+
+さて、ちょっと話がそれます。
+
+さきほど、ファイルを分割したあとに、`main.js`から`validate.js`を参照できるように読み込み順を意識して`index.html`に記載しました。
+
+**index.html**
+
+```
+<script src="validate.js">script>
+  <script src="main.js">script>
+body>
+html>
+```
+
+しかし、こんなことをしなくてもjavascriptには`import/export`という構文があります。  
+正確には、javascriptのES6構文から使えるようなりました。
+
+さきほどの`validate.js`の関数に`export`を付与してあげます。
+
+**validate.js**
+
+```
+// Eメールアドレスの形式チェック
+export function isEmail(value) {
+  if(value.match( /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)) {
+    return true
+  }
+  return false
+}
+
+// 空っぽかどうか
+export function isEmpty(value) {
+  return value === ''
+}
+```
+
+そして、`main.js`には`validate.js`の関数を参照するという`import`分を追加してあげます。
+
+**main.js**
+
+```
+import { isEmpty, isEmail } from './validate.js'
+
+//formのsubmitボタンを押したときのイベント
+document.getElementById('form').addEventListener('submit', function(event) {
+  //
+  var userName = document.getElementById('user-name').value
+  var email = document.getElementById('email').value
+
+  if(isEmpty(userName)) {
+    document.getElementById('user-name-error').innerHTML = 'ユーザーネームを入力してください'
+    event.preventDefault()
+  }
+
+  if(isEmpty(email)) {
+    document.getElementById('email-error').innerHTML = 'Eメールアドレスを入力してください'
+    event.preventDefault()
+  }
+
+  if(!isEmail(email)) {
+    document.getElementById('email-error').innerHTML = 'Eメールアドレスの形式がおかしいです'
+    event.preventDefault()
+  }
+
+})
+```
+
+この上で、`index.html`のscriptタグのtypeを`module`に変更すると、`validate.js`を`index.html`に書かなくとも、関数を参照することができるようになります！
+
+**index.html**
+
+```
+<script type="module" src="main.js">script>
+```
+
+この方法で、先ほどの
+
+- 読み込み順を意識しなきゃいけない
+- リクエスト数が増える
+
+の問題が解決されたかのように思えますが、後者のリクエスト数が増えるという問題は解決されていません。  
+というのも、結局のところ`main.js`と`validate.js`をそれぞれとってきた後に、`import/export`でうまいことブラウザがやってくれているからです。
+
+しかし、ES6構文の話にもなりますが、この`import/export`はIE11だと動かないです。
+
+#### 結局どうすんのよ
+
+開発時にファイルは分割して管理したいけれども、ブラウザが使うときは一個にまとめちゃいなよ！という発想になります。
+
+![f:id:konoemario:20181127155541p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20181127/20181127155541.png "f:id:konoemario:20181127155541p:plain")
+
+さて、これを実現することができるのが`Webpack`になります。
+
+Webpackを通すことで、分割されたファイルをひとつのファイル(ここでは`index.js')にまとめることができます。  
+まとめることができた半面、作成された`index.js`は一見するとなにがなんだかわからないコードになってしまいます。
+
+開発者はうれしい！  
+サーバーの性能という観点からもうれしい！
+
+ただ、`index.js`を直接修正するのはやめたほうがいいですね。

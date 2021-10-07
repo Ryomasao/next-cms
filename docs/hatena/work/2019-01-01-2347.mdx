@@ -1,0 +1,122 @@
+---
+title: 年始だしReactに入門する(2)
+time: 2019-01-01 23:47
+---
+
+# 日記
+
+2019年になったので、どこかで去年の目標を見返してみようと思う。
+
+# 本題
+
+横道にずれたり、なにかしながらやったりとあんまり進んでない。  
+正月休みのうちにReactの講座を終わらせたい。
+
+前回からの続き
+
+[年末だしReactに入門する(1) - 豆腐とコンソメ](https://www.tohuandkonsome.site/entry/2018/12/29/103133)<cite class="hatena-citation"><a href="https://www.tohuandkonsome.site/entry/2018/12/29/103133">www.tohuandkonsome.site</a></cite>
+
+### SECTION8 APIを呼び出す
+
+綺麗な画像を提供してくれるunsplashのAPIを使う。
+
+fetctとaxiosどっちを使うのかという解説があった。  
+fetchって名前だけ聞いたことあって、なんだろうなーぐらいだったんだけど、ブラウザ標準のHTTPリクエストを行う機能なのね。   
+ブラウザ標準というと`XMLHttpRequest`を使ってたんだけど、fetchはそれとりも新しい。   
+とはいえ、axiosで大抵の機能はそろってるので、axiosじゃ対応できないエッジケースでなければfetchを使う理由はなさそう。 (パフォーマンスとか、jsのサイズをもっと小さくしたいとか？)   
+もちろん、axiosがカバーしてくれているレイヤーをきちんと理解するという目的ではfetchを使ったほうがいい。
+
+講座ではaxiosを使う。
+
+axiosを使う際も関心が異なる箇所については、別ファイルに切り出して`axios.create`を使うという何気ないところがとても参考になる。
+
+### SECTION9 APIで取得した結果をレンダリングする
+
+リストレンダリングをやった。  
+注意事項は、Vue.jsとおなじで、リストの要素にユニークとなるidをふろうねってぐらい。
+
+また、ちょっとしたときに不思議になるんだけど、`import react from 'React'`を書くだけで、以下のコードが通るようになるのは、babelががんばってくれているから。
+
+```
+const func1 = () => <div>aaaa</div>
+```
+
+あと、Vue.jsだとv-forでぶんまわせ！っていう箇所もReactはmap構文を使って、javascriptを書いている印象が強い。
+
+### SECION10 リストレンダリングの結果をきれいにする
+
+CSSのgrid機能とjavascriptで取得した結果をきれいにする。
+
+gridについてはかんたんにさわったことわあるんだけど、今回の講座の内容で使われるプロパティがさっぱりなので、もっかいかんたんに理解することにした。   
+Reactの学習という点からはずれるから、スルーしてもいいんだけど、講座のレイアウトが素敵だったので。  
+しかし、flexboxもそれとり前のfloatもなんとなくしか理解してないなかgridか、とcssがますます苦手になりそう。
+
+#### grid をさくっとおさらい
+
+以下の記事を参考にさせていただき、今回の講座の内容を理解する。
+
+[グリッドレイアウトの基本概念](https://developer.mozilla.org/ja/docs/Web/CSS/CSS_Grid_Layout/Basic_Concepts_of_Grid_Layout)<cite class="hatena-citation"><a href="https://developer.mozilla.org/ja/docs/Web/CSS/CSS_Grid_Layout/Basic_Concepts_of_Grid_Layout">developer.mozilla.org</a></cite>
+
+[CSS Grid Layout を極める！（場面別編） - Qiita](https://qiita.com/kura07/items/486c19045aab8090d6d9#%E8%87%AA%E5%8B%95%E7%9A%84%E3%81%AB%E9%85%8D%E7%BD%AEspan%E4%BD%BF%E7%94%A8)<cite class="hatena-citation"><a href="https://qiita.com/kura07/items/486c19045aab8090d6d9#%E8%87%AA%E5%8B%95%E7%9A%84%E3%81%AB%E9%85%8D%E7%BD%AEspan%E4%BD%BF%E7%94%A8">qiita.com</a></cite>
+
+埋め込みにすると重いので、練習用Codepenを貼っておく。
+
+[https://codepen.io/tohu/pen/WLXjYW](https://codepen.io/tohu/pen/WLXjYW)
+
+講座の内容を通して見ると、グリッドアイテムの中にひとつの画像をおくのではなくって、100x100みたいなグリッドアイテムをたくさん用意して、画像のサイズ分グリッドアイテムを用意するって手法だった。
+
+結構べんりなので覚えておきたい。
+
+#### DOMにアクセスする
+
+本題のReactに戻る。  
+グリッドアイテムを画像のサイズにあわせて用意するために、画像の高さを取得してから、高さに合わせたCSSをあてる必要がある。  
+※正確には、grid-row-endでgrid spanの数を指定している。grid spanでなんで余白になるんだろう。
+
+CSSについてはさておき、DOM要素にアクセスするには`ref`属性を使う。 このへんはVue.jsと同じ。
+
+ただ、コンスラクタでref用のプロパティをつくるんだと思った。
+
+抜粋するとこんな感じ。
+
+```
+class ImageCard extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.state = { spans: 0 }
+    this.imageRef = React.createRef()
+  }
+
+  render() {
+    const { description, urls} = this.props.image
+    return (
+      <div style={{gridRowEnd: `span ${this.state.spans}`}}>
+        <img 
+          ref={this.imageRef} 
+          src={urls.regular} 
+          alt={description}
+        />
+      </div>
+    )
+  }
+```
+
+また、画像の高さはレンダリングが終わってからわかるので、`componentDidMount`のタイミングで参照しても、高さがまだ取得できない。   
+なので、リソースのロードが終わったことを表すイベント`load`にコールバック関数を渡すことで、画像の高さを取得した処理を行うことができる。
+
+このへんからはアロー関数を当たり前のように渡すという感覚が必要になりそう。
+
+```
+componentDidMount() {
+    this.imageRef.current.addEventListener('load', this.setSpans)
+  }
+
+  setSpans = () => {
+    const height = this.imageRef.current.clientHeight  
+    const spans = Math.ceil(height / 10)
+    this.setState({ spans })
+  }
+```
+
+次回からテストを書く内容に移るので楽しみ。

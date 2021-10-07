@@ -1,0 +1,119 @@
+---
+title: Laravelで始めるTDD開発：準備
+time: 2017-11-20 23:33
+---
+
+やっちまったぜ。
+
+タイトルでTDDと謳っていますが、書いてる人はテストコードもろくに書いたことがない人です。
+
+さらにいえば、Laravelも今回初挑戦です。
+
+もっといえば、PHPをちゃんと始めたのも2ヶ月ぐらいです。
+
+でも、今年で30歳になるの。
+
+さて、そんな私がこの記事を書くにあたっての拠り所にするのは、例のごとくLaracastの動画になります。
+
+[Let's Build A Forum with Laravel and TDD](https://laracasts.com/series/lets-build-a-forum-with-laravel)<cite class="hatena-citation"><a href="https://laracasts.com/series/lets-build-a-forum-with-laravel">laracasts.com</a></cite>
+
+今回参考にする動画は有料になりますが、Laravelであれば以下のスクラッチ動画がとても為になります。
+
+[Laravel 5.4 From Scratch](https://laracasts.com/series/laravel-from-scratch-2017)<cite class="hatena-citation"><a href="https://laracasts.com/series/laravel-from-scratch-2017">laracasts.com</a></cite>
+
+また、以前書きましたVue.jsの動画もおすすめです。
+
+[3連休だしVue.jsをはじめよう：コンポーネントを使ってみる - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/10/09/004525)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/10/09/004525">www.tohuandkonsome.site</a></cite>
+
+TDDの動画のボリュームがかなりありますが、最後まで完走を目指したいと思います！
+
+- [さっそくはじめてみる](#%E3%81%95%E3%81%A3%E3%81%9D%E3%81%8F%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%BF%E3%82%8B)
+  - [つくっていくもの](#%E3%81%A4%E3%81%8F%E3%81%A3%E3%81%A6%E3%81%84%E3%81%8F%E3%82%82%E3%81%AE)
+  - [プロジェクトを作成する](#%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B)
+    - [作業メモ：Homestead環境でドメイン名でアクセスする](#%E4%BD%9C%E6%A5%AD%E3%83%A1%E3%83%A2Homestead%E7%92%B0%E5%A2%83%E3%81%A7%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E5%90%8D%E3%81%A7%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E3%81%99%E3%82%8B)
+- [テストコードを実行する](#%E3%83%86%E3%82%B9%E3%83%88%E3%82%B3%E3%83%BC%E3%83%89%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%99%E3%82%8B)
+
+# さっそくはじめてみる
+
+2017年11月現在、最新であるLaravel5.5を使っていきます。  
+また、環境はLaravel Homesteadを使用しています。
+
+[Laravel Homestead - Laravel - The PHP Framework For Web Artisans](https://laravel.com/docs/5.5/homestead)<cite class="hatena-citation"><a href="https://laravel.com/docs/5.5/homestead">laravel.com</a></cite>
+
+Laravelの環境構築自体はいろいろな記事がありますので、そちらを参照いただければと思います。自分もお世話になりました。
+
+また、本題と関係ないIDEの話ですが、Laracastの動画ではphpStromを使っていたので、真似して使ってみることにしました。
+
+普段はVsCodeを使っています。
+
+## つくっていくもの
+
+と、その前になにをつくるかですよね。
+
+今回は、「掲示板」をつくっていきます。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171120/20171120221352.png" alt="f:id:konoemario:20171120221352p:plain" title="f:id:konoemario:20171120221352p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>掲示板をつくる</figcaption></figure>
+
+この掲示板は、だれでも見れます。
+
+でも、ログインしなきゃ新しいトピックの掲示板を立てることも、それに対する書き込みもできません。
+
+また、掲示板の一覧を見るページだったり、掲示板を作成するページだったりもあります。
+
+とりあえずは以上です。
+
+他にも機能がでてきそうですが、動画を消化しつつ、必要なエッセンスを入れていきたいと思います。
+
+## プロジェクトを作成する
+
+「forum」という名前でlaravelのプロジェクトを作成します。
+
+**新規プロジェクトの作成**
+
+```
+$ laravel new forum
+```
+
+作成したらとりあえずブラウザで見れるかぐらいは確認しておきます。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171120/20171120230923.png" alt="f:id:konoemario:20171120230923p:plain" title="f:id:konoemario:20171120230923p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Laravelが見れるか確認する</figcaption></figure>
+
+##### 作業メモ：Homestead環境でドメイン名でアクセスする
+
+vagrantで立ち上げているHomesteadにドメイン名「homestead.app」でアクセスできるようにした。
+
+普段は、以下のようにLaravelをビルトインサーバーで動していたけど、せっかくなので。
+
+**ビルトインサーバー例**
+
+```
+php -S 0.0.0.0:8000 -t public
+```
+
+作業にあたっては、以下の記事を参考にさせていただいた。
+
+[HomesteadをつかってLaravel5を動かしてみる - Qiita](https://qiita.com/kz_morita/items/799aaf7440c496f2379b)
+
+Homestead.yamlの内容が、「/etc/nginx/sites-available/homestead.app」に反映されてnginxのドキュメントルートの設定うんたらかんたらを見た気がしたんだけれども、うまくいかなくって、「/etc/nginx/sites-available/homestead.app」を直接編集して、nginxの再起動したら見れるようになった。
+
+## テストコードを実行する
+
+初めてのテストコードを実行します。
+
+プロジェクトのルートディレクトリで以下のコマンドを実行すると、何かが動きます。
+
+**テストコードを実行**
+
+```
+phpunit
+```
+
+phpunitなんかねえよ！ってなった場合、pathが通ってないので、こんな感じで実行しましょう。
+
+**テストコードを実行**
+
+```
+./vendor/bin/phpunit
+```
+
+このペースで大丈夫か、と不安になったので次回に続きます。

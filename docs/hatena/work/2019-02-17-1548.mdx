@@ -1,0 +1,256 @@
+---
+title: react-reduxを学ぶ
+time: 2019-02-17 15:48
+---
+
+ReduxをReactで使うときは、`react-redux`を使うんだよ！と講座で教わり、以降何も考えずに`react-redux`を使ってきた。  
+`connect()`の書き方がよくわかんねえよ！とか、Reduxの非同期処理がわかんないよ！とか、いろいろありつつも、今回はそもそも`react-redux`ってなんで必要なんだっけ？みたいなところを改めて整理しようと思う。
+
+- [react-reduxがある世界](#react-redux%E3%81%8C%E3%81%82%E3%82%8B%E4%B8%96%E7%95%8C)
+- [react-reduxがない世界](#react-redux%E3%81%8C%E3%81%AA%E3%81%84%E4%B8%96%E7%95%8C)
+  - [storeを渡す](#store%E3%82%92%E6%B8%A1%E3%81%99)
+
+## react-reduxがある世界
+
+まずはいつも通り、`react-redux`を使ってTodoリストをつくってみる。
+
+最低限の機能でこんなかんじに。
+
+<iframe width="1000" height="500" src="https://codesandbox.io/embed/w2mw69mpx5" style="width:1000px; height:500px; border:0; border-radius: 4px; overflow:hidden;" sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin"></iframe><cite class="hatena-citation"><a href="https://codesandbox.io/s/w2mw69mpx5">codesandbox.io</a></cite>
+
+Todoリストは、Todoを追加する`AddTodo`とTodoの一覧を表示する`TodoList`のコンポーネントの二つのコンポーネントで構成されている。
+
+**index.js**
+
+```
+const store = createStore(todoReducer);
+
+const App = () => (
+  <div>
+    <AddTodo />
+    <TodoList />
+  </div>
+);
+
+ReactDOM.render(
+  <Provider store={store}>
+    <App />
+  </Provider>,
+  document.getElementById("root")
+);
+```
+
+いずれも、`react-redux`を用いて、コンポーネント内で、Reduxの`dispatch`や、Reduxの`state`を参照してる。
+
+**TodoList.js**
+
+```
+import React from "react";
+import { connect } from "react-redux";
+
+const TodoList = ({ todos }) => (
+  <ul>
+    {todos.map((todo, index) => (
+      <li key={index}>{todo}</li>
+    ))}
+  </ul>
+);
+
+export default connect(state => ({
+  todos: state
+}))(TodoList);
+```
+
+## react-reduxがない世界
+
+次に、`react-redux`を使わないで、Reduxをつかってみる。
+
+### storeを渡す
+
+`createStore`でstoreをつくったところで、早速手が止まります。  
+あれ、コンポーネントからstoreをどうやって参照すればいいのかな、と。
+
+**index.js**
+
+```
+// storeをつくったけど、コンポーネントからどうやって参照すればいいのかしら
+const store = createStore(todoReducer);
+
+const App = () => (
+  <div>
+    <AddTodo />
+    <TodoList />
+  </div>
+);
+
+ReactDOM.render(
+    <App />
+  document.getElementById("root")
+);
+```
+
+`react-redux`のコードを眺めて見ると、ReactのContextの機能をつかっていることがわかりました。
+
+なので、Contextを使ってコンポーネントにstoreを渡すことにします。  
+Contextはほとんどつかったことがないのであんまりよくわかってないので説明は割愛します。
+
+まずは、コンテキスト作成します。
+
+**MyContext.js**
+
+```
+import React from "react";
+export default React.createContext();
+```
+
+作成したコンテキストを読み込み、`Provider`で配下のコンポーネントに渡すようにします。
+
+**index.js(抜粋)**
+
+```
+// つくったContextをImport
+import MyContext from "./context/MyContext";
+
+const store = createStore(todoReducer);
+
+// Contextでstoreを渡す
+ReactDOM.render(
+  <MyContext.Provider value={store}>
+    <App />
+  </MyContext.Provider>,
+  rootElement
+);
+```
+
+そしたら、コンテキストを参照するコンポーネントから、コンテキスト経由でstoreを受け取ります。
+
+**index.js(抜粋)**
+
+```
+// つくったContextをImport
+import MyContext from "./context/MyContext";
+
+class App extends React.Component {
+  // MyContext.Consumerでstoreを受け取る
+  render() {
+    return (
+      <div>
+        <MyContext.Consumer>
+          {store => (
+            <div>
+              <AddTodo store={store} />
+              <TodoList store={store} />
+            </div>
+          )}
+        </MyContext.Consumer>
+      </div>
+    );
+  }
+}
+```
+
+`AddTodo`、`TodoList`コンポーネントでは、プロパティ経由でstoreを渡すので、`store.dispatch`が使えます。
+
+**AddTodo.js**
+
+```
+import React from "react";
+import { addTodo } from "../actions";
+
+const AddTodo = ({ store }) => {
+  let input;
+  return (
+    <form
+      onSubmit={e => {
+        e.preventDefault();
+        store.dispatch(addTodo(input.value));
+      }}
+    >
+      <input type="text" ref={node => (input = node)} />
+      <button type="submit">Add Todo</button>
+    </form>
+  );
+};
+
+export default AddTodo;
+```
+
+`TodoList`のほうも、`store.getState()`でReduxのステートを取得することができますね。
+
+**TodoList.js**
+
+```
+import React from "react";
+
+const TodoList = ({ store }) => {
+  const todos = store.getState();
+  return (
+    <ul>
+      {todos.map((todo, index) => (
+        <li key={index}>{todo}</li>
+      ))}
+      <button onClick={() => debugState(store)}>Debug</button>
+    </ul>
+  );
+};
+
+export default TodoList;
+```
+
+ここまでのコードを参考までに貼っておきます。
+
+<iframe width="1000" height="500" src="https://codesandbox.io/embed/5kmj67mx8x" style="width:1000px; height:500px; border:0; border-radius: 4px; overflow:hidden;" sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin"></iframe><cite class="hatena-citation"><a href="https://codesandbox.io/s/5kmj67mx8x">codesandbox.io</a></cite>
+
+が、このままではテキストボックスからTodoを追加しても、画面に表示されません。
+
+というもの、Reactはstateかpropsの更新があった場合にコンポーネントが再レンダリングされます。  
+`store.dispatch`をすることで、ステートの状態がかわってはいるのですが、storeオブジェクトの中身がかわったかどうかをReactは検知することができません。  
+immutable原則ってやつですね。
+
+なので、`dispatch`をしたら、Reactに再レンダリングをしてねという仕組みを実装する必要があります。
+
+まずdispatchをしたら、という部分ですが、Reduxに標準で用意されている`store.subscribe`を利用することができます。
+
+[Store · Redux](https://redux.js.org/api/store#subscribe)<cite class="hatena-citation"><a href="https://redux.js.org/api/store#subscribe">redux.js.org</a></cite>
+
+続いて、Reactに再レンダリングさせるために、propsやstateを用意して、更新させてもよさそうなのですが、ここでは明示的に再レンダリングさせる`forceUpdate`を使うことにします。　　
+
+**index.js(抜粋)**
+
+```
+// つくったContextをImport
+import MyContext from "./context/MyContext";
+
+class App extends React.Component {
+  // MyContext.Consumerでstoreを受け取る
+  render() {
+    return (
+      <div>
+        <MyContext.Consumer>
+          {store => {
+            // dispatchされたら
+            store.subscribe(() => {
+              // Appコンポーネントを再レンダリングする
+             // ※ Appコンポーネントが再レンリングされると、配下のコンポーネントも再レンダリングされる
+              this.forceUpdate()
+            })
+            return (
+              <div>
+                <AddTodo store={store} />
+                <TodoList store={store} />
+              </div>
+            )
+          }}
+        </MyContext.Consumer>
+
+      </div>
+    );
+  }
+}
+```
+
+これで、やりたいことができました。　　　
+
+コンポーネントを受け取って`MyContext.Consumer`の部分をつけて返すような関数を使うと`react-redux`の`connect`のようなイメージになりそうですね。
+
+実際の`react-redux`では、パフォーマンス等いろいろな点が考慮されているとのことなので、今回のような実装は行うことはないかと思いますが、すこしだけ`react-redux`がやっていることをイメージできるようになりました。

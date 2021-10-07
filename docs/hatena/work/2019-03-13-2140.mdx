@@ -1,0 +1,57 @@
+---
+title: chrome-extensionをReactでさくっとつくる
+time: 2019-03-13 21:40
+---
+
+Reactの公式ドキュメントが日本語化されて改めて読み直してる。  
+英語で読んだ時によくわからなかったりしていた部分もちゃんとわかるようになって、翻訳をしてくださった方には感謝でいっぱい。
+
+とはいえ、英語でドキュメントを読めた方がなにかと便利なのは間違いない。  
+読む際に、わからない単語とかは検索してたりしてたんだけど、同じ単語を検索してたりして、あんま覚えられないなと。
+
+紙に書いたり、なんかのアプリをつかってももちろんいいんだけど、chorme-extensionが若干気になっていたので、chrome-extensionでつくってみることにした。
+
+**ものすごく味気ない英単語ノート** <figure class="figure-image figure-image-fotolife" title="拡張機能のpopup"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20190313/20190313205601.png" alt="f:id:konoemario:20190313205601p:plain" title="f:id:konoemario:20190313205601p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>拡張機能のpopup</figcaption></figure>
+
+書いた内容をFirebaseに送るだけ。  
+肝心の書いた内容をTodoListっぽく参照するアプリはつくってない。  
+ReactNativeに入門したらつくるんだ！
+
+## 実装
+
+**Reactのプロジェクトを作る**
+
+```
+$ create-react-app
+```
+
+public配下に、chorme-extensionだとchromeに認識させるための`manifest.json`を作る。
+
+**manifest.json**
+
+```
+{
+  "manifest_version": 2,
+  "version": "1.0",
+  "name": "Note",
+  "description": "simple note",
+  "browser_action": {
+    "default_title": "Note",
+    "default_popup": "index.html"
+  }
+}
+```
+
+記載内容はchrome-extensionのチュートリアルを見るべし。 今回は、Chromeの右上のアイコンをクリックすると、popupで表示されるやつの設定。 popupにReactで書かれたjsを読み込む`index.html`を指定している。
+
+最後に`.env`に以下を追加するだけ。
+
+**.env**
+
+```
+INLINE_RUNTIME_CHUNK=false
+```
+
+これは、chrome-extensionが、HTMLにjsを直接書く`inline script`を許容していないので、こちらを出力しないように設定する`create-react-app`のオプション。
+
+あとは好きなように、開発して、`build`してできた`dist`フォルダをchrome-extensionとして読み込ませるだけ。

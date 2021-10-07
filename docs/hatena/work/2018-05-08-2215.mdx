@@ -1,0 +1,211 @@
+---
+title: ansibleメモ
+time: 2018-05-08 22:15
+---
+
+なにはともあれ、今回のgitリポジトリを任意のディレクトリに置きます。
+
+**リポジトリをとってくる**
+
+```
+git clone -b develop https://repos.m-field.mobi/pokemon/pokemon.git
+```
+
+**Vagrantを起動する**
+
+```
+cd pokemon\vagrant
+vagrant up
+```
+
+Vagrantを起動すると、仮想マシン`controller`と`target'の2台が立ち上がります。  
+実際に開発でがりがりつかっていくのは`target`の方になります。
+
+`controller`の方は、`target`の環境を整えるだけの仮想マシンになります。
+
+今回、仮想マシンを作成するにあたっては、Ansibleというものを使っています。
+
+Ansibleは、指示を出すマシンが一台いて、そいつが何台ものマシンに対してこういうコマンドを実行してねと命令をするような感じで動くみたいです。   
+ホストマシンが`controller`の役割を担うことができれば、Vagrantで`controller`を立ち上げる必要もないのですが、ホストマシンがWindowsだと動かないみたいなので、こういったことをしています。
+
+一度、環境構築が完了したら、`controller`は不要になるので、以下のコマンドで停止させちゃいましょう。
+
+**指定した仮想OSを停止させる**
+
+```
+$ vagrant halt controller
+```
+
+また、Windowsをシャットダウン等して、再度仮想OSを立ち上げる時は、  
+**指定した仮想OSを停止させる**
+
+```
+$ vagrant up target
+```
+
+とすると、`target`のみ起動します。
+
+## ansibleを実行する
+
+早速、ansibleを実行します。
+
+あれ、`vagant up`したら全部やってくれるんじゃないの？と思った方、すみません、私のスキル不足で対応できていません。
+
+とりあえず、`controller`にsshで接続しましょう。
+
+**コントローラーに接続する**
+
+```
+$ vagrant teraterm controller
+$ vagrant ssh controller
+
+       __|__ |_ )
+       _| ( / Amazon Linux AMI
+      ___|\___ |___|
+
+https://aws.amazon.com/amazon-linux-ami/2017.03-release-notes/
+30 package(s) needed for security, out of 39 available
+Run "sudo yum update" to apply all updates.
+Amazon Linux version 2017.09 is available.
+[vagrant@controller ~]$
+```
+
+無事、接続できましたかね。
+
+参考記事
+
+[Ansibleをはじめる人に。 - Qiita](https://qiita.com/t_nakayama0714/items/fe55ee56d6446f67113c)<cite class="hatena-citation"><a href="https://qiita.com/t_nakayama0714/items/fe55ee56d6446f67113c">qiita.com</a></cite>
+
+# 
+
+```
+$ python -V
+Python 2.7.12
+```
+
+```
+$ sudo yum install ansible
+Loaded plugins: priorities, update-motd, upgrade-helper
+No package ansible available.
+```
+
+[Ansible 最初の一歩 @ AWS EC2 - Qiita](https://qiita.com/hitomatagi/items/9c21d53066c9c6e5357f)
+
+**パッケージリポジトリを追加**
+
+```
+$ yum --enablerepo=epel install ansible
+```
+
+**確認**
+
+```
+$ ansible --version
+ansible 2.4.2.0
+```
+
+**ディレクトリ構成**
+
+```
+.
+|-- ansible
+| |-- group_vars
+| | `-- targets.yml
+| |-- inventory
+| | `-- hosts
+| `-- test.yml
+|-- ssh_config
+`-- Vagrantfile
+```
+
+**gitをインストールしてみる**
+
+```
+- hosts: targets
+  user: vagrant
+  tasks:
+    - name: output message.
+      debug: msg="{{ message }}"
+
+    - name: output fruits
+      debug: msg="We want {{ item.value.amount }} {{ item.key }} !" 
+      with_dict: "{{ fruits }}"
+
+    - name: install packages from yum
+      debug: msg="We want {{ item.value.amount }} {{ item.key }} !" 
+      with_dict: "{{ fruits }}"
+
+    - name: install packages from yum
+      become: yes
+      yum: name={{ item }} state=latest
+      with_items:
+        - git
+```
+
+sudoで実行する場合、'become: yes`を設定
+
+**playbookを実行**
+
+```
+$ ansible-playbook -i inventory/hosts test.yml
+```
+
+**checkモードで!**
+
+```
+ansible-playbook --check -i inventory/hosts main.yml
+```
+
+**checkモードで!詳細！**
+
+```
+ansible-playbook --check -v -i inventory/hosts main.yml
+```
+
+`-vvv`まであるとのこと。
+
+## ApacheとPHP
+
+[PHPのCGI方式/Module方式の違い](https://www.fumi.org/neta/201205sv.html)
+
+## php7.1系の最新版
+
+```
+$ sudo yum install http://rpms.famillecollet.com/enterprise/remi-release-6.rpm
+$ sudo yum install --enablerepo=remi-php71 --disablerepo=amzn-main php
+```
+
+## php-fpmのインストール
+
+```
+sudo yum install --enablerepo=remi-php71 --disablerepo=amzn-main php
+```
+
+### memo
+
+[php-fpm + apache2.4.10(mod\_proxy\_fcgi) at softelメモ](https://www.softel.co.jp/blogs/tech/archives/4991)
+
+[php-fpm + apache2.4.10(mod\_proxy\_fcgi) at softelメモ](https://www.softel.co.jp/blogs/tech/archives/4991)
+
+## #
+
+**apr-util**
+
+```
+cd apr-util-1.6.1
+sudo ./configure --prefix=/opt/apr-util-1.6.3 --with-apr=/opt/apr-1.6.3
+make
+make install
+```
+
+**apache**
+
+```
+sudo wget https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz   
+sudo tar xvzf pcre-8.42.tar.gz
+cd pcre-8.42
+```
+
+とりあえずうまくいった。[Apache httpd 2.4.33 + HTTP/2 + Brotli インストールメモ | あぱーブログ](https://blog.apar.jp/linux/9730/)
+
+ansible ver[ansibleでApache httpdをソースからコンパイルしてインストールするPlaybookメモ - Qiita](https://qiita.com/myaaaaa_chan/items/a9740ba66f9a5c50594b)

@@ -1,0 +1,73 @@
+---
+title: RaspBerryPiでモーターを動かす(4)
+time: 2017-04-02 17:47
+---
+
+## 前回の続き
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/03/11/001512" title="RaspBerryPiでモーターを動かす(3):圧倒的力不足 - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/03/11/001512">tohutokonsome.hatenablog.com</a></cite>
+
+だいぶ日が空いてしまいましたが、前回からの続きです。
+
+前回は、タミヤの楽しい工作シリーズを使ってRaspBerryPiと無理やり接続し、走らせるところまで進めました。
+
+![f:id:konoemario:20170311000933j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170311/20170311000933.jpg "f:id:konoemario:20170311000933j:plain:w300")
+
+しかし、モーターは回るものの、バッテリーやら、電池やら荷物が重すぎてタイヤが回らないという残念な結果になってしまいました。
+
+これについては、単純にモーターを回すパワーが足りないのでないか、ということで今回は電池を増やしてみたいと思います。
+
+## モータードライバーという存在
+
+電池を増やす際にふと気になったことがあります。  
+というのは、電池とモーターを直接つないだときと  
+ ![f:id:konoemario:20170402170803p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170402/20170402170803.png "f:id:konoemario:20170402170803p:plain")
+
+モータードライバーを経由して電池とモーターをつなげたときとでは、タイヤの回る速度が異なるのです。  
+ ![f:id:konoemario:20170402170805p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170402/20170402170805.png "f:id:konoemario:20170402170805p:plain")
+
+どちらが速いかというと、モーターと電池を直接つないだときの方が圧倒的に早く、モータードライバを経由した途端、回転速度がかなり落ちるのです。
+
+いろいろとググってみたところ、モータードライバーを通すと電圧が低くなるとのことで、モーターに伝わる電気の量が少なくなってしまうみたいです。
+
+※参考にさせていただいたサイト  
+[DCモータを動かす（モータドライバ使用）](http://www.hiramine.com/physicalcomputing/arduino/motordriver.html)
+
+かといってモータードライバーはモーターをRaspBerryPiから制御するために必要なので外すことはできません。  
+(正確には、今の自分の知識では外すという選択肢がありません)
+
+話がそれてしまいましたが、モーターに伝わる電気に量が少なくなるのであれば、電池の量を増やせばいいということで、２本の電池から倍の４本の電池で試してみることにします。
+
+※本来であれば、電圧、電流、抵抗といった電子工作に必要であろう知識を、私自身すっ飛ばしています。  
+どこかの回で、自分なりに整理していきたいと思います。
+
+## 電池を増やす
+
+さて、電池を増やすにあたって必要となるのが電池ケースです。近所の島忠（ホームセンター）を見にいったところ、残念なことに単３電池２本の電池ケースしかありません。
+
+![f:id:konoemario:20170402164103j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170402/20170402164103.jpg "f:id:konoemario:20170402164103j:plain:w300")
+
+仕方がないので、ハンダごでも購入し、電池ケースをつなげることにしました。  
+ハンダごては、それこそ中学の授業以来でしたが、なんとかなりました。
+
+![f:id:konoemario:20170402172526j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170402/20170402172526.jpg "f:id:konoemario:20170402172526j:plain:w300")
+
+## 走れキャタピラカー（リベンジ)
+
+電池を倍にしたところで、いざ！
+
+<iframe width="420" height="315" frameborder="0" allowfullscreen="" src="//www.youtube.com/embed/hrb6Bsdf1ms"></iframe>
+
+[走れキャタピラカー（リベンジ)](https://youtube.com/watch?v=hrb6Bsdf1ms)
+
+**うん、やっぱりだめでした。**
+
+以前よりは、引っ張ろうという気概が感じられるのですが、どうも蚊取り線香BOXが重くって前に進むことができなさそうです。
+
+蚊取り線香BOXを引きちぎることができれば、キャタピラカーは走り出すことができるのでしょうが、それと同時に走るための電力を失うという、人生の難しさを表している構図になってしまいました。
+
+とりあえずの策ですが、蚊取り線香BOXにタイヤをつけることで、キャタピラカーの負担が減りそうです。
+
+![f:id:konoemario:20170402174331p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170402/20170402174331.png "f:id:konoemario:20170402174331p:plain:w300")
+
+次回はタイヤをつけていきます。

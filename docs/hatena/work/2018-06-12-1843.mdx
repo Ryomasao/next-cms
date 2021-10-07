@@ -1,0 +1,184 @@
+---
+title: Goに入門してみる
+time: 2018-06-12 18:43
+---
+
+# 日記
+
+さいきんちょっとさぼりぎみ。 忙しくなると駄目ですね。  
+習慣がなくなることが怖いので、書くことを目的として書きました。  
+中身はからっぽだけど気にしない。
+
+- [日記](#%E6%97%A5%E8%A8%98)
+  - [本題](#%E6%9C%AC%E9%A1%8C)
+  - [ということではじめてみる](#%E3%81%A8%E3%81%84%E3%81%86%E3%81%93%E3%81%A8%E3%81%A7%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%BF%E3%82%8B)
+  - [Hello World](#Hello-World)
+  - [IDEをつかってみる](#IDE%E3%82%92%E3%81%A4%E3%81%8B%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B)
+
+## 本題
+
+ぼけーっと電車の中で以下の記事を見て、関数型言語(Go)というところに目がいきました。
+
+[2018年の最先端バックエンドエンジニアになろう - Qiita](https://qiita.com/rana_kualu/items/19ab559dddbca6674417)<cite class="hatena-citation"><a href="https://qiita.com/rana_kualu/items/19ab559dddbca6674417">qiita.com</a></cite>
+
+[2018年の最先端バックエンドエンジニアに必要なスキルについて考えてみました。 - Qiita](https://qiita.com/poly_soft/items/fb649573c19b7a5c0227)<cite class="hatena-citation"><a href="https://qiita.com/poly_soft/items/fb649573c19b7a5c0227">qiita.com</a></cite>
+
+他の記事でも、関数型言語をやったことがないのであれば、ぜひやりましょうみたいなことをよく見るので やってみることにした。
+
+## ということではじめてみる
+
+まずは、必要なリソースをダウンロードすることにします。 ちょっとだけ慣れてきたパッケージ管理ツール(yumとか)を使うかと思いきや、そうでもないみたい。
+
+公式ページよりアーキテクチャにあったものをインストールしろとのこと。
+
+[https://golang.org/dl/](https://golang.org/dl/)
+
+おお、OSがLinuxという欄に3つほど選択肢があるぞ、、、ということで調べます。
+
+以下のコマンドを叩くことで、「64bit」環境であることが確認できました。
+
+**アーキテクチャの確認**
+
+```
+$ arch
+x86_64
+```
+
+なので「go1.10.3.linux-amd64.tar.gz」をダウンロードすることにします。  
+作業ディレクトリに移動して、wgetコマンドですね。
+
+**リソースをダウンロードする**
+
+```
+$ cd /tmp
+$ wget https://dl.google.com/go/go1.10.3.linux-amd64.tar.gz
+```
+
+ダウンロードできたら、解凍します。  
+解凍したファイルは、`/usr/local'に置くことにします。
+
+**解凍する**
+
+```
+$sudo tar -C /usr/local -xzf go1.10.3.linux-amd64.tar.gz
+$ ls -ltr /usr/local
+total 44
+drwxr-xr-x 2 root root 4096 Jan 6 2012 src
+drwxr-xr-x 2 root root 4096 Jan 6 2012 sbin
+drwxr-xr-x 2 root root 4096 Jan 6 2012 libexec
+drwxr-xr-x 2 root root 4096 Jan 6 2012 include
+drwxr-xr-x 2 root root 4096 Jan 6 2012 games
+drwxr-xr-x 2 root root 4096 Jan 6 2012 etc
+drwxr-xr-x 3 root root 4096 Mar 7 06:46 lib
+drwxr-xr-x 6 root root 4096 Mar 7 06:46 share
+drwxr-xr-x 4 root root 4096 Mar 7 06:46 lib64
+drwxr-xr-x 2 root root 4096 Apr 5 08:12 bin
+drwxr-xr-x 11 root root 4096 Jun 7 00:12 go
+```
+
+解凍できたら早速動作確認をしてみます。  
+インストールしたディレクトリの'bin'配下に'go'ファイルがあるので、こちらを実行してみます。
+
+**動作確認**
+
+```
+$ cd /usr/local/go/bin
+$ ./go version
+go version go1.10.3 linux/amd64
+```
+
+ちゃんとバージョンが表示されました。 問題なさそうです。
+
+## Hello World
+
+ということで、さっそく初めてのGoを書いてみることにします。  
+何事も初めてってドキドキしますね。
+
+進めていくにあたっては、こちらの記事を教科書にさせていただきました。
+
+[はじめてのGo―シンプルな言語仕様，型システム，並行処理](http://gihyo.jp/dev/feature/01/go_4beginners)<cite class="hatena-citation"><a href="http://gihyo.jp/dev/feature/01/go_4beginners">gihyo.jp</a></cite>
+
+何はともあれ、作業用のディレクトリとファイルを作成します。
+
+**初めてのgoファイルを作成する**
+
+```
+$ mkdir ~/go
+$ cd ~/go
+$ vim hello.go
+```
+
+教科書の内容を写経し、
+
+**なにも考えずに写経**
+
+```
+package main
+
+import (
+        "fmt"
+)
+
+func main(){
+        fmt.Println("hello world")
+}
+```
+
+よっしゃいくぞ！というところで、そんなコマンドねえよっていわれちゃいました。
+
+**よっしゃいけないぞ**
+
+```
+$ go run hello.go
+-bash: go: command not found
+```
+
+なのでパスを通してあげます。
+
+**パスを通す**
+
+```
+$ vim ~/.bash_profile
+```
+
+**.bash\_profileに以下を追記**
+
+```
+export PATH=$PATH:/usr/local/go/bin
+```
+
+**環境変数反映**
+
+```
+$ source ~/.bash_profile
+```
+
+**よっしゃいくぞ**
+
+```
+$ go run hello.go
+hello world
+```
+
+というところで無事実行ができました。
+
+## IDEをつかってみる
+
+さきほどの教科書を第3章ほど進めていくにつれ、IDEで作業がしたくなってきます。 最近はVsCodeを使っているのですが、探してみるとJetBrains社のIDEがあるとのことなので、そちらを使ってみることにします。
+
+最初、「IntelliJ IDEA」のプラグインとしてあるという記事をみて、「IntelliJ IDEA」をダウンロードしていたりして、あれプラグインないぞ、なんてやってたのですが、どうも新しくGo言語用のIDEができていたみたいです。
+
+[GoLand: Capable and Ergonomic Go IDE by JetBrains](https://www.jetbrains.com/go/)<cite class="hatena-citation"><a href="https://www.jetbrains.com/go/">www.jetbrains.com</a></cite>
+
+無料期間は30日っぽく、集中してGoをやる感じでもなさそもないので、とりあえずはアーリーアクセス版を落とすことにしました。
+
+アーリーアクセス版なのでバグやらなんやらがある可能性もあるのですが、趣味でやる程度なので特に問題はないと判断しました。
+
+[Download GoLand: Capable and Ergonomic Go IDE by JetBrains](https://www.jetbrains.com/go/nextversion/)<cite class="hatena-citation"><a href="https://www.jetbrains.com/go/nextversion/">www.jetbrains.com</a></cite>
+
+そもそもGoのWindows版をインストールしてなかったりして、あれ実行できないぞとかもあったのですが、問題なく使えています。
+
+いまのところ、パラダイムシフトみたいなものは特に感じることができてないです。  
+C言語っぽいけど、Cより書きやすいのなぐらいの理解。
+
+さて何をつくろうか。　　

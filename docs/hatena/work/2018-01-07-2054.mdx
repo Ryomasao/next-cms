@@ -1,0 +1,68 @@
+---
+title: 
+time: 2018-01-07 20:54
+---
+
+**laundry.py**
+
+```
+def goToStore():
+    print('洗剤を買いに行く')
+
+def doTheLaundry():
+    print('洗濯機を回す')
+
+def hangTheLaundry():
+    print('洗濯ものを干す')
+
+    
+'''
+処理は上からしたに流れる
+'''
+goToStore()
+doTheLaundry()
+hangTheLaundry()
+```
+
+**実行結果**
+
+```
+$ python async.py
+洗剤を買いに行く
+洗濯機を回す
+洗濯ものを干す
+```
+
+**laundry.py**
+
+```
+from time import sleep
+
+def goToStore():
+    print('洗剤を買いに行く')
+    sleep(3)
+
+def doTheLaundry():
+    print('洗濯機を回す')
+    sleep(1)
+
+def hangTheLaundry():
+    print('洗濯ものを干す')
+    sleep(2)
+    
+'''
+処理は上からしたに流れる
+'''
+goToStore()
+doTheLaundry()
+hangTheLaundry()
+```
+
+**実行結果**
+
+```
+$ python async.py
+洗剤を買いに行く
+洗濯機を回す
+洗濯ものを干す
+```

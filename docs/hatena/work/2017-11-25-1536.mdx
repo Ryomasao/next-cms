@@ -1,0 +1,505 @@
+---
+title: Laravelで始めるTDD開発 (1):簡単なテストコードを書く
+time: 2017-11-25 15:36
+---
+
+# 前回からの続き
+
+前回からの続きになります。
+
+[Laravelで始めるTDD開発：準備 - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/11/20/233324)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/11/20/233324">www.tohuandkonsome.site</a></cite>
+
+書いていて、どの層向けのなんのための記事なのか、という疑問が何度も頭をよぎります。  
+Laravelはものっそいいろんな機能があるせいか、テストコードを書くに行き着くまでにすごい時間がかかっちゃいますね。
+
+そもそも、テストコードを書きたいという方は、Laravelのことをある程度わかった方なんじゃないかとすれば、この記事の9割9分の情報は不要なものになるなぁと思ったりします。  
+さらにいえば本当に必要な要素だったりといったものは、まったく書けなかったりするので、たちが悪いですね。
+
+と、そんなことを考えているのですが最終的には自分のためだと思うのですよ！
+
+書くことによって自分の理解がより進めばいいなと。
+
+- [前回からの続き](#%E5%89%8D%E5%9B%9E%E3%81%8B%E3%82%89%E3%81%AE%E7%B6%9A%E3%81%8D)
+  - [/threadにアクセスできることを確認する](#thread%E3%81%AB%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E3%81%A7%E3%81%8D%E3%82%8B%E3%81%93%E3%81%A8%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%99%E3%82%8B)
+    - [ThreadTest.phpを作成](#ThreadTestphp%E3%82%92%E4%BD%9C%E6%88%90)
+    - [ThreadControllerの作成とweb.phpの修正](#ThreadController%E3%81%AE%E4%BD%9C%E6%88%90%E3%81%A8webphp%E3%81%AE%E4%BF%AE%E6%AD%A3)
+    - [テストコードを実行してみる](#%E3%83%86%E3%82%B9%E3%83%88%E3%82%B3%E3%83%BC%E3%83%89%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+  - [Threadが見えることの確認](#Thread%E3%81%8C%E8%A6%8B%E3%81%88%E3%82%8B%E3%81%93%E3%81%A8%E3%81%AE%E7%A2%BA%E8%AA%8D)
+    - [assertSee](#assertSee)
+  - [テストコード修正](#%E3%83%86%E3%82%B9%E3%83%88%E3%82%B3%E3%83%BC%E3%83%89%E4%BF%AE%E6%AD%A3)
+  - [factory(ファクトリ)を使う](#factory%E3%83%95%E3%82%A1%E3%82%AF%E3%83%88%E3%83%AA%E3%82%92%E4%BD%BF%E3%81%86)
+    - [Threadモデルの作成](#Thread%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E4%BD%9C%E6%88%90)
+    - [Threadマイグレーションファイルの修正](#Thread%E3%83%9E%E3%82%A4%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E4%BF%AE%E6%AD%A3)
+    - [factoryを書いていこう](#factory%E3%82%92%E6%9B%B8%E3%81%84%E3%81%A6%E3%81%84%E3%81%93%E3%81%86)
+
+## /threadにアクセスできることを確認する
+
+とりあえずコードを書くときには、何かしらの仕様があるかと思うので、改めてそれを確認してみる。
+
+- 「ドメイン名/thread」にアクセスすると、スレッド(Thread)の一覧が参照できる。
+
+- スレッドの一覧は誰でも参照できる
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171121/20171121211045.png" alt="f:id:konoemario:20171121211045p:plain" title="f:id:konoemario:20171121211045p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>/threadにアクセスすると表示される</figcaption></figure>
+
+### ThreadTest.phpを作成
+
+Laravelの`/tests/Feature`ディレクトリ配下に、`ThreadTest.php`を作成する。
+
+artisanで作成すればpathは気にしなくていいので簡単。
+
+**ThreadTest.phpを作成**
+
+```
+php artisan make:test ThreadTest
+```
+
+また、ファイル名にTestをつけないと、phpunitが検知してくれないので気をつけます。
+
+phpunit.xmlとかでいろいろと変えれそうだけれども一旦置いておくよ！
+
+とりあえず、こんなコードが出力されたはず。
+
+**ThreadTest.php**
+
+```
+namespace Tests\Feature;
+
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+class ThreadTest extends TestCase
+{
+    /**
+     * A basic test example.
+     *
+     * @return void
+     */
+    public function testExample()
+    {
+        $this->assertTrue(true);
+    }
+}
+```
+
+これについて、挙動を記載してみよう。
+
+とりあえず、こんな感じで書いてみたよ。
+
+```
+class ThreadTest extends TestCase
+{
+    /**
+     * すべてのユーザーは/threadを参照できること
+     *
+     * @return void
+     */
+    public function test_all_user_can_view_thread()
+    {
+        // getで/threadにアクセスする
+        $response = $this->get('/thread');
+       // そんときのHTTPステータスコードは、200 
+       $response->assertStatus(200) ;
+
+    }
+}
+```
+
+これを満たすコードを書いてみる。
+
+### ThreadControllerの作成とweb.phpの修正
+
+artisanでコントローラーを作成するよ。
+
+**ThreadControllerの作成**
+
+```
+$ php artisan make:controller ThreadController
+```
+
+`ThreadController.php`を適当に書いてっと、
+
+**ThreadController.php**
+
+```
+use App\Thread;
+use Illuminate\Http\Request;
+
+class ThreadController extends Controller
+{
+    public function index()
+    {
+       return('this is Thread');
+    }
+
+}
+```
+
+ルーティングの定義である`web.php`に定義してあげるっと。
+
+**web.phpの修正**
+
+```
+Route::get('/', function () {
+    return view('welcome');
+});
+
+//Threadの一覧を表示する
+Route::get('/thread', 'ThreadController@index');
+```
+
+テストコードを実行する前にあれだけれども、ブラウザで`/thread`にアクセスしてみると、こんな感じに表示されてるね。
+
+Chromeのデベロッパーツールでみるとステータスコード200で返ってきてることも確認できるね！
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171124/20171124213116.png" alt="f:id:konoemario:20171124213116p:plain" title="f:id:konoemario:20171124213116p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>/threadにアクセスした場合</figcaption></figure>
+
+知っている人には当たり前の話かもしれないけれども、コントローラーで適当なメッセージをreturnしても、レスポンスヘッダーをちゃんとつけて返したりするのはすごいなぁと改めて思ったりしました。
+
+### テストコードを実行してみる
+
+それではテストコードを実行してみよう。
+
+**テストコードの実行**
+
+```
+$ phpunit 
+PHPUnit 6.4.4 by Sebastian Bergmann and contributors.
+
+.... 4 / 4 (100%)
+
+Time: 1.19 seconds, Memory: 10.00MB
+
+OK (4 tests, 4 assertions)
+```
+
+「OK」っていってるので大丈夫そうですね！  
+4testsとかになってるのは、デフォルトで用意されているExampleTestがカウントされているみたいですね。
+
+## Threadが見えることの確認
+
+さきほどは/threadにアクセスするとステータスコードが200だぜ！っていうテストをクリアすることができました。
+
+次はもう一歩先に進んで、/threadにアクセスすると、Thread(トピック)の一覧が見えるってことを確認していきましょう。
+
+テストコードを書いてみます。
+
+**TestThread.php**
+
+```
+/**
+     * すべてのユーザーは/threadを参照できること
+     *
+     * @return void
+     */
+    public function test_all_user_can_access_thread()
+    {
+        $response = $this->get('/thread');
+        $response->assertStatus(200) ;
+
+    }
+
+    /**
+     * すべてのユーザーは、/threadにアクセスすると、Threadの一覧が見えること
+     *
+     * @return void
+     */
+    public function test_all_user_can_view_thread()
+    {
+        $response = $this->get('/thread');
+        $response->assertSee('this is Thread');
+
+    }
+```
+
+threadの一覧が見えること、というテストコードを作成しました。  
+メソッド名を変更しているので注意してください。
+
+新しく`aseertSee`というメソッドがでてきましたね。
+
+#### assertSee
+
+assertSeeが何者なのかということなのですが、Laravelのソースを見てみると、以下のようにPHPUnitの`assertContains`の機能をラッパーしたものであることがわかりますね。
+
+細かいことはさておき、クライアントに返すレスポンスの中に、引数で与えられた`$value`が存在するかどうかを確認してくれる、というものでしょうか。
+
+```
+/**
+     * Assert that the given string is contained within the response.
+     *
+     * @param string $value
+     * @return $this
+     */
+    public function assertSee($value)
+    {
+        PHPUnit::assertContains($value, $this->getContent());
+
+        return $this;
+    }
+```
+
+とりあえず、今の状態で`phpunit`を実行してみましょう。
+
+```
+$ phpunit 
+PHPUnit 6.4.4 by Sebastian Bergmann and contributors.
+
+..... 5 / 5 (100%)
+
+Time: 1.21 seconds, Memory: 10.00MB
+
+OK (5 tests, 5 assertions)
+```
+
+問題なく通りますね。
+
+これは、`ThreadController@index`で、文字列「this is Thread」をreturnしていて、それがレスポンスとしてクライアントに返っているからですね。
+
+Chromeでレスポンスを確認してみると、内容が確認できます。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171125/20171125143107.png" alt="f:id:konoemario:20171125143107p:plain" title="f:id:konoemario:20171125143107p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>レスポンスの内容が見える</figcaption></figure>
+
+### テストコード修正
+
+さて、さきほどのテストコードは、文字列「this is thread」が確認できただけなので、Threadの内容が見えること、というように修正していく必要があります。
+
+テストコードのイメージはこんな感じでしょうか。
+
+```
+/**
+     * すべてのユーザーは、/threadにアクセスすると、Threadの一覧が見えること
+     *
+     * @return void
+     */
+    public function test_all_user_can_view_thread()
+    {
+        //Threadがあって
+        $thread = ???
+        
+        //Threadの一覧を表示するURLにアクセスすると
+        $response = $this->get('/thread');
+        
+        //Threadの内容が見えるんだよ
+        $response->assertSee($thread->body);
+
+    }
+```
+
+ここで問題となるのは、最初にでてくる`$thread`を作成するコードです。
+
+### factory(ファクトリ)を使う
+
+Laravelで用意されているテストデータを作成できるツールを使っていきます。
+
+と、テストデータを作成する前に、データを定義する（表現が怪しい)をモデルだったりを作っていきましょう。
+
+#### Threadモデルの作成
+
+Threadを表現する、Threadモデルを作成します。  
+マイグレーションファイルも一緒に作っちゃいましょう。
+
+**モデルとマイグレーションファイルの作成**
+
+```
+$ php artisan make:model Thread -m
+```
+
+こんな感じの空っぽのモデルと、  
+**Thread.php**
+
+```
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Thread extends Model
+{
+    //
+}
+```
+
+/database/migrations配下に以下のファイルができたかな。
+
+**作成した日付\_create\_threads\_table.php(抜粋)**
+
+```
+class CreateThreadsTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('threads', function (Blueprint $table) {
+            $table->increments('id');
+            $table->timestamps();
+        });
+    }
+```
+
+#### Threadマイグレーションファイルの修正
+
+できたばかりのマイグレーションファイルに手を加えていきます。
+
+Threadには、見出しである`title`と内容である`body`を足してあげます。  
+ また、誰が作成したかがわかるように、Threadに作ったユーザーのidである`user_id`を付加してあげましょう。
+
+**作成した日付\_create\_threads\_table.php(抜粋)**
+
+```
+class CreateThreadsTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('threads', function (Blueprint $table) {
+            $table->increments('id');
+            $table->integer('user_id');
+            $table->string('title');
+            $table->text('body');
+            $table->timestamps();
+        });
+    }
+    }
+```
+
+指定してできるカラムタイプは結構適当だよ！  
+カラムタイプの詳細は公式をみよう。   
+[データベース：マイグレーション 5.5 Laravel](https://readouble.com/laravel/5.5/ja/migrations.html)
+
+マイグレーションファイルを修正したら、マイグレーションを実行してテーブルを作成しよう。
+
+**マイグレーションを実行**
+
+```
+php artisan migrate
+```
+
+Threadテーブル以外にも、デフォルトでマイグレーション用意されている、Userテーブルだったりが作成されるはず。
+
+データベースのインストールだったり、.envの環境変えてねえよ！っていう場合は  
+速攻でググるなり導入するなりしよう！
+
+#### factoryを書いていこう
+
+`/database/factories`を覗いてみると、`UserFactory.php`というものがいるかと思います。
+
+**UserFactory.php(抜粋)**
+
+```
+$factory->define(App\User::class, function (Faker $faker) {
+    static $password;
+
+    return [
+        'name' => $faker->name,
+        'email' => $faker->unique()->safeEmail,
+        'password' => $password ?: $password = bcrypt('secret'),
+        'remember_token' => str_random(10),
+    ];
+});
+```
+
+これはなんぞ、という感じなのですが、Userテーブルにテストデータを作成するためのコードになります。
+
+試しに実行してみましょう。
+
+**tinkerの起動**
+
+```
+$ php artisan tinker
+Psy Shell v0.8.15 (PHP 7.1.9-1+ubuntu16.04.1+deb.sury.org+1 — cli) by Justin Hileman
+>>>
+```
+
+さて、でてきました。`tinker'です。
+
+正直なんなのかよくわかってないです！
+
+公式をみると
+
+> 全てのLaravelアプリケーションには、PsySHパッケージによるREPLである、Tinkerが含まれています。 とあり、`PsySH'だったり'REPL'ってなんぞって感じになります。
+
+素敵な記事がこちらにありました。
+
+[PsySHって知ってる？私は感動した。 - Qiita](https://qiita.com/omega999/items/b9b75dc127053deea3a7)<cite class="hatena-citation"><a href="https://qiita.com/omega999/items/b9b75dc127053deea3a7">qiita.com</a></cite>
+
+自分の浅い理解では、PythonとかはCLIでpythonを起動すると、実行しながらコードかけるあの感じと考えることにしました。   
+とはいえ、tinkerはphpを対話型で書ける以上に、Laravelの機能を含んでいる何かなのかなぁと思うことにして、次に進みます。
+
+話がそれてしまいましたが、tinkerでさきほどの`Userfactory.php'のコードを実行してみましょう。
+
+**コードを試す**
+
+```
+$ php artisan tinker
+Psy Shell v0.8.15 (PHP 7.1.9-1+ubuntu16.04.1+deb.sury.org+1 — cli) by Justin Hileman
+>>> factory('App\User')->create()
+=> App\User {#763
+     name: "Bernardo Abbott",
+     email: "vada97@example.com",
+     updated_at: "2017-11-25 06:07:48",
+     created_at: "2017-11-25 06:07:48",
+     id: 1,
+   }
+>>>
+```
+
+おお、となりましたか？  
+自分はなりました。
+
+factory()という謎の関数なのかメソッドなのかわからないものにクラス名を渡して、create()をしてあげると、名前やらemailアドレスやらにそれっぽい値が入ってデータが作成されます。
+
+また、データベースを確認してみると、作成されたデータが保存されていることが確認できるかと思います。
+
+表面しかわかりませんが、とりあえずこんな感じでデータをつくれるということですね。
+
+Thread用のデータを書いていきましょう。
+
+本来であればThreadFactory.phpなるものをつくったほうがよいのかもしれませんが、UserFactory.phpに追記する形で書いてみました。
+
+**UserFactory.php(抜粋)**
+
+```
+$factory->define(App\Thread::class, function (Faker $faker) {
+
+    return [
+        'user_id' => 1,
+        'title' => "ピンキーのかわいさについて",
+        'body' => "動いているところがいいよね" 
+    ];
+});
+```
+
+これで、さきほどの同じ様にtinkerで実行してみましょう。  
+実行する際に、tinkerを起動しっぱなしだと、`UserFacotry.php`の修正が反映されないかもなので、一旦exitして、もっかい起動してあげてね。
+
+**コードを試す**
+
+```
+>>> factory('App\Thread')->create()
+=> App\Thread {#763
+     user_id: 1,
+     title: "ピンキーのかわいさについて",
+     body: "動いているところがいいよね",
+     updated_at: "2017-11-25 06:17:15",
+     created_at: "2017-11-25 06:17:15",
+     id: 1,
+   }
+```
+
+こんな感じでデータが作成されましたね。
+
+さて、データが作成されてようやく次へというところなんですが、このままだとまったく同じテストデータしか作成されません。  
+titleやbodyの内容は今のままでも全く問題ないのですが、user\_idが固定というのは、ちょっといただけないかもしれません。
+
+というのも、user\_idはこのThreadデータを作成したユーザーが紐づいていてほしいからです。
+
+なのでこれを修正していきます。
+
+というところで次回に続きたいと思います。

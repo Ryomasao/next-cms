@@ -1,0 +1,35 @@
+---
+title: Cコンパイラ作成に入門してみた
+time: 2019-08-17 13:34
+---
+
+C言語のコンパイラを作成する以下の記事に入門してみたのだけれども、それがとてもよかったので夏休みの宿題のごとく感想文を書くことにするよ！
+
+[低レイヤを知りたい人のためのCコンパイラ作成入門](https://www.sigbus.info/compilerbook#)<cite class="hatena-citation"><a href="https://www.sigbus.info/compilerbook#">www.sigbus.info</a></cite>
+
+内容としては、C言語を使って、少しずつC言語のコンパイラを実装していく、というもの。  
+アセンブリの説明から、コードをトークン化して、パースする方法、実装の進め方等とても丁寧に書かれていて、C言語にあんまり慣れてにない自分でも、ものすごくわかりやすい！
+
+特に構文をパースしていく再帰下降構文解析は、再帰処理になれていない自分にとっては、神の所業としか思えない。 ただ、実装を進めていくと徐々に理解が進んできて、if文を実装するときは、ノードをこうしたほうがいいのかしら、とか考えることもできるようなったりと、成長も実感することができます。  
+また、シェルスクリプトでシンプルなテストコードを用意して、確認していく過程も、テストコードっていいなぁと思えたり。
+
+ひとまず以下のようなCっぽい言語をコンパイルして、実行することができるようになりました!
+
+**Cっぽい言語**
+
+```
+main() {
+  number = 5
+  return fibonacci(number);
+}
+
+fibonacci(n) {
+  if(n == 1) return 1;
+  if(n == 2) return 1;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+```
+
+Dockerで環境をつくったので、参考までに貼っておきます！[Ryomasao/9cc](https://github.com/Ryomasao/9cc)<cite class="hatena-citation"><a href="https://github.com/Ryomasao/9cc">github.com</a></cite>
+
+そしてセルフホストの意味が今回のコンパイラ作成を通してどんだけ大変なのかを理解することができました。

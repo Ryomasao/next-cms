@@ -1,0 +1,388 @@
+---
+title: 今日から君が開発環境を作ってねと言われたのでAnsbileでつくろう 
+time: 2018-05-08 22:38
+---
+
+# 日記
+
+Ansibleをつかって便利だなぁっと思って、備忘録がてらまとめたいとおもったんだけれども、こんな記事や、Quitaのわかりやすい記事がいっぱいあって、書く労力のわりに、得るものがあんまないなと思った今日このごろ。
+
+[Ansible チュートリアル | Ansible Tutorial in Japanese](http://yteraoka.github.io/ansible-tutorial/)<cite class="hatena-citation"><a href="http://yteraoka.github.io/ansible-tutorial/">yteraoka.github.io</a></cite>
+
+# 本題
+
+とあるプロジェクトが始まったときに開発環境をつくる必要がでてきた。  
+なんとなく環境は用意できるけれども開発人数分ちゃんと用意したい！ということでAnsibleと呼ばれる構成管理ツールを使ってみました。
+
+作成した環境は、Vagrantで作成した仮想マシン上に、Apache + PHP7 + Laravel + Mysql + memcached + Node.jsだったのですが、思いの外さくさくと書くことができたので、Ansibleおすすめです！
+
+なので今回は、Ansibleを導入した際の手順等をまとめておこうと思います。
+
+## Ansibleの仕組み
+
+まずは、Ansibleのイメージです。
+
+ものすごく適当な図ですが、下記の図をもとに紹介していきます。
+
+<figure class="figure-image figure-image-fotolife" title="Ansibleのいめーじ"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180505/20180505195204.png" alt="f:id:konoemario:20180505195204p:plain" title="f:id:konoemario:20180505195204p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Ansibleのいめーじ</figcaption></figure>
+
+大枠に「コントローラー」1台と「ターゲット」が2台存在しています。  
+これらは、それぞれが独立したマシンです。
+
+コントローラーはAnsibleを実行するマシンになります。 なのでAnsibleをさわってみる際には、コントローラー側にAnsibleをインストールしておきます。
+
+また、Ansibleに実行させる命令はPlaybookと呼ばれファイルにいろいろと記載します。  
+記載の内容はここでは割愛するのですが、yml形式とよばれるフォーマットで書きます。
+
+コントローラーでAnsibleを実行すると、SSHでターゲットに接続し、playbookに書かれたコマンドを順次実行していきます。
+
+図ではターゲットが2台存在していますが、環境をつくるターゲットにIPをAnsibleに教えてあげることで何台でも作成することができるみたいです。
+
+## Ansibleをつかってみる
+
+無駄な前置きが長くなりましたが、実際にさわってみることにします。
+
+### Vagrantで仮想マシン「コントローラー」と「ターゲット」を作成する
+
+Ansibleを動かすコントローラーと実際に使用するターゲットをそれぞれVagrantで立ち上げることにします。
+
+当初、コントローラーもVagrantで立ち上げるの？という疑問もありましたが、ホストマシンがWindowsだとAnsibleを実行できないみたいな問題があるとのことで素直にコントローラーも仮想マシンとして用意してあげます。
+
+※よくよく調べると、Ansibleをローカルマシンを対象として実行するみたいな記事もあるので、コントローラーを用意しなくても、ターゲットにAnsibleをインストールして、自身に対して実行する、ということもできそうです。
+
+まずは、作業ディレクトリを用意してあげます。 今回ホストマシンはWindowsなのでPowerShellで作業することをイメージしてます。
+
+**作業ディレクトリを作成**
+
+```
+mkdir test
+cd test
+mkdir vagrant
+```
+
+作成したディレクトリ`test/vagrant`配下に以下のようなVagrantfileをおきます。
+
+こんな感じのVagrantfileを用意することで、ひとつのVagrantfileで複数台のマシンを作成することができるみたいです。
+
+**Vagrantfile**
+
+```
+Vagrant.configure(2) do |config|
+  config.vm.define "controller" do |node|
+        node.vm.box = "mvbcoding/awslinux"
+        node.vm.hostname = "controller"
+        node.vm.network :private_network, ip: "192.168.100.10"
+  end
+  config.vm.define "target" do |node|
+        node.vm.box = "mvbcoding/awslinux"
+        node.vm.hostname = "target"
+        node.vm.network :private_network, ip: "192.168.100.20"
+        node.vm.network "forwarded_port", guest: 80, host: 8080
+  end
+end
+```
+
+書いている人は、Vagrantもなんとなく使える程度なので、しっかりとした解説はできないのですが大事な点だけをここに記載します。
+
+- node.vm.box Vagrantが立ち上げる仮想マシンの大元イメージです。  
+今回のプロジェクトではAWSLinuxを使うので、開発環境もAWSLinuxのイメージを使うことにします。
+
+- node.vm.hostname Vagrantが立ち上げる仮想マシンの名前になります。 後ほど仮想マシンにsshでログインする際などに使います。
+
+- node.vm.network :private\_network, ip Vagrantが立ち上げる仮想マシンのIPになります。  
+Ansibleを実行する際にターゲットに接続する際に使用します。
+
+準備ができたら、実際に仮想マシンを立ち上げてみましょう。  
+Vagrantfileが置かれているディレクトリで以下のコマンドを実行します。
+
+**仮想マシンを起動する**
+
+```
+vagrant up
+```
+
+これで仮想マシンが起動したはずです。
+
+念のため仮想マシンに接続できるか確認してみましょう。
+
+仮想マシンにログインする際には`vagrant ssh`とするのですがWindowsなので`Teraterm`をインストールの上、Vagrantのプラグインをインストールしましょう。
+
+[vagrant teraterm が便利すぎてしょうがない件](https://blog.pg1x.com/2015/10/31/20151031233246/)<cite class="hatena-citation"><a href="https://blog.pg1x.com/2015/10/31/20151031233246/">blog.pg1x.com</a></cite>
+
+インストールが完了したら、以下のコマンドでそれぞれの仮想マシンにログインできるか確認します。
+
+**仮想マシン「controller」に接続する**
+
+```
+vagrant teraterm controller
+```
+
+**仮想マシン「target」に接続する**
+
+```
+vagrant teraterm target
+```
+
+無事、接続できたら早速Ansibleをインストールしていきます。
+
+### Ansibleをインストールする
+
+それでは、早速Ansibleをインストールしていきます。  
+インストール対象は、controllerの方になるので、あらかじめcontrollerに接続の上インストールします。
+
+**仮想マシン「controller」に接続する**
+
+```
+vagrant teraterm controller
+```
+
+ログインしたらyumコマンドでansibileをインストールします。
+
+**ログイン後インストール**
+
+```
+$ sudo yum -y --enablerepo=epel install ansible
+```
+
+AWS Linuxのデフォルトのパッケージリストには入ってないみたいなので、epelリポジトリから落としてきます。
+
+無事、インストールできたら念のためバージョン等をみれるか確認しておきます。
+
+**ansibleの確認**
+
+```
+$ ansible --version
+ansible 2.5.0
+  config file = /etc/ansible/ansible.cfg
+  configured module search path = [u'/home/vagrant/.ansible/plugins/modules', u'/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/lib/python2.6/site-packages/ansible
+  executable location = /usr/bin/ansible
+  python version = 2.6.9 (unknown, Sep 1 2016, 23:34:36) [GCC 4.8.3 20140911 (Red Hat 4.8.3-9)]
+```
+
+問題なさそうですね。
+
+#### Ansibleをインストールしておきたい場合
+
+他の人が環境をつくる際に、Ansibleもインストールしておいてほしい、ということであれば、Vagrantのプロジョニングをつかって用意しとくといいかもです。
+
+以下のように、Vagrantfileのprovisionに実行するシェルスクリプトを追記します。
+
+**Vagrantfile**
+
+```
+Vagrant.configure(2) do |config|
+  config.vm.define "controller" do |node|
+        node.vm.box = "mvbcoding/awslinux"
+        node.vm.hostname = "controller"
+        node.vm.network :private_network, ip: "192.168.100.10"
+        #初回のvagrant up のときに ansibleのインストールを行う
+        node.vm.provision :shell, path: "install.sh"
+  end
+  config.vm.define "target" do |node|
+        node.vm.box = "mvbcoding/awslinux"
+        node.vm.hostname = "target"
+        node.vm.network :private_network, ip: "192.168.100.20"
+        node.vm.network "forwarded_port", guest: 80, host: 8080
+  end
+end
+```
+
+シェルスクリプトの中身は単純にyumを実行します。
+
+**install.sh**
+
+```
+#!/usr/bin/env bash
+sudo yum -y --enablerepo=epel install ansible
+```
+
+### Playbookを用意する
+
+Ansibleが用意できたら、今度は実行する命令を記載するPlaybookを記載します。
+
+PlayBookの構成内容にはいろいろなパターンがあるみたいなのですが、以下のサイトを参考にさせていただき、一番簡単そうなベージックパターンを選ぶことにしました。
+
+[Ansible inventoryパターン ｜ Developers.IO](https://dev.classmethod.jp/server-side/ansible/ansible-inventory-pattern/)
+
+まずはホストマシン上でplaybookを置く場所を作っていきます。  
+Vagrantfileが置いてあるディレトリに移動して、以下の作業を行います。
+
+**ansible用のディレクトリを作成**
+
+```
+mkdir ansible
+cd ansible
+mkdir group_vars inventory roles
+```
+
+また、空っぽのファイル`master.yml'を同じディレクトリに置いておきます。
+
+結果、こんな感じのディレクトリ構成になりました。
+
+**ディレクトリ構成**
+
+```
+.
+├── Vagrantfile
+└── ansible
+    ├── group_vars
+    ├── inventory
+    ├── master.yml
+    └── roles
+```
+
+まずは、`inventory`配下に`hosts`ファイルを以下のように作成します。
+
+**hostsファイル**
+
+```
+[targets]
+192.168.100.20
+```
+
+なんぞ、これという感じなんですが、環境を作成するターゲットのマシンのIPを記載するみたいです。  
+上記に書かれているIPはVagrantfileで定義したIPなので、変更している場合は定義読み替えてください。
+
+次に、実際に命令を書く`master.yml`を書いてみましょう。
+
+**master.yml**
+
+```
+- hosts: targets
+  user: vagrant
+  tasks:
+    - name: シンプルなこまんど1
+      command: touch hoge1.txt chdir=/home/vagrant
+    - name: シンプルなこまんど2
+      command: touch hoge2.txt chdir=/home/vagrant
+```
+
+yamlの記法についてはここでは触れない(自分もあいまいです)として、上記の内容を見ますと
+
+targetsを対象にvagrantユーザーでtasks配下の命令を実行する
+
+ということがなんとなくわかるでしょうか。
+
+命令は、モジュールと呼ばれるものをつかって書いていきます。
+
+ここでは、`command`モジュールを使っているのですが、これは`command`に与えられた値をシェルで実行してくれるモジュールになります。
+
+なので上記`master.yml`の例では`touch hoge1.txt`というコマンドを実行するということになります。
+
+`chdir`等は指定されたディレクトリでコマンドを実行するというオプションで、オプションの情報は公式ドキュメントにのってました。
+
+※モジュールの一覧は以下に記載されています。
+
+[Module Index — Ansible Documentation](http://docs.ansible.com/ansible/latest/modules/modules_by_category.html)
+
+### PlayBookを実行する
+
+PlayBookの準備ができたので試しに実行してみます。
+
+<figure class="figure-image figure-image-fotolife" title="Ansibleのいめーじ"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180505/20180505195204.png" alt="f:id:konoemario:20180505195204p:plain" title="f:id:konoemario:20180505195204p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>Ansibleのいめーじ</figcaption></figure>
+
+再掲になりますが、ansibleを実行は`controller`で行います。
+
+ですので、まずは`controller`に接続します。
+
+**仮想マシン「controller」に接続する**
+
+```
+vagrant teraterm controller
+```
+
+接続したら、ホストマシンと同期しているディレクトリに移動して、実行してみます。
+
+**Ansibleを実行する！**
+
+```
+$ cd /vagrant/ansible
+$ ansible-playbook -i inventory/hosts master.yml
+```
+
+おっしゃいくぜ！というところで残念なのですが、今のままだと`Permission denied`で怒られてしまいます。
+
+というのも、Ansibleを実行する際に`controller`は`target`にsshで接続を行うのですが、`controller`から`target'に接続する際の鍵の情報がありません。
+
+なので、まず鍵を作成しておきます。
+
+`controller`で鍵を生成するコマンドを叩きます。
+
+**controllerの鍵を作成する**
+
+```
+$ ssh-keygen
+```
+
+いろいろでてきますが、Enter連打しちゃってます。
+
+**公開鍵を表示する**
+
+```
+$cat ~/.ssh/id_rsa.pub
+```
+
+鍵を作成すると、上記のファイルに公開鍵が生成されます。 上記で表示された公開鍵を、`target`に接続して`authorized_keys`に追記します。
+
+**公開鍵を追記する**
+
+```
+$ vim ~/.ssh/authorized_keys
+```
+
+これでようやく、Ansibleを実行する準備ができました。
+
+再度、実行してみましょう。
+
+**Ansibleを実行する**
+
+```
+$ cd /vagrant/ansible
+$ ansible-playbook -i inventory/hosts master.yml
+
+PLAY [targets] ***************************************************************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************************************************************
+ok: [192.168.100.20]
+
+TASK [シンプルなこまんど] *************************************************************************************************************************************
+ [WARNING]: Consider using the file module with state=touch rather than running touch. If you need to use command because file is insufficient you
+can add warn=False to this command task or set command_warnings=False in ansible.cfg to get rid of this message.
+
+changed: [192.168.100.20]
+
+TASK [シンプルなこまんど] *************************************************************************************************************************************
+changed: [192.168.100.20]
+
+PLAY RECAP *******************************************************************************************************************************************
+192.168.100.20 : ok=3 changed=2 unreachable=0 failed=0   
+
+[vagrant@controller ansible]$ ansible-playbook -i inventory/hosts master.yml 
+
+PLAY [targets] ***************************************************************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************************************************************
+ok: [192.168.100.20]
+
+TASK [シンプルなこまんど] *************************************************************************************************************************************
+ [WARNING]: Consider using the file module with state=touch rather than running touch. If you need to use command because file is insufficient you
+can add warn=False to this command task or set command_warnings=False in ansible.cfg to get rid of this message.
+
+changed: [192.168.100.20]
+
+TASK [シンプルなこまんど] *************************************************************************************************************************************
+changed: [192.168.100.20]
+
+PLAY RECAP *******************************************************************************************************************************************
+192.168.100.20 : ok=3 changed=2 unreachable=0 failed=0
+```
+
+つらつらとログがでてくることが確認できるかと思います。
+
+この状態で`target`に接続して、`/home/vagrant`配下を確認してみると、無事ファイルが作成されていることが確認できると思います！
+
+これだけだと、シェルスクリプトを実行してるだけなんじゃないの？という気もするが、Ansibleには`command`以外にもいろいろなモジュールがあってものすごく便利です。
+
+長くなったので、次回に続きます。   
+次回は、roleをつかって具体的に環境を構築したいと思います。

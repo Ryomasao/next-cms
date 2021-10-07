@@ -1,0 +1,40 @@
+---
+title: Storybook V6 + Vueのメモ
+time: 2020-08-22 11:18
+---
+
+いきなり鬼門。
+
+```js sample.vue
+export default {
+  title: 'Atoms/Step',
+  component: Step
+};
+
+const Template = (args, { argTypes }) => {
+  return {
+    props: Object.keys(argTypes),
+    components: { Step },
+    template: ''
+  };
+};
+```
+
+- Template: 文字通りテンプレート。これをexportするだけだとStoryは表示されない。
+
+`props: Object.keys(argTypes)`　これがポイントっぽい。 argsTypesには、Vueコンポーネントのpropsを自動で拾ってくるっぽい。なんかすごい。
+
+[https://github.com/storybookjs/storybook/issues/12073#issuecomment-674886463](https://github.com/storybookjs/storybook/issues/12073#issuecomment-674886463)
+
+ほんで、`v-bind="$props"` をテンプレートにbindすることで、↑で拾っていたpropsを自動でbindする。  
+これにより、StoryBookのUI上で、propsを編集できるんだと思う。
+
+一方、パターンを書いていきたい場合は、argsにpropsを書くんだと思う。だよね？
+
+```js
+export const Disable = Template.bind();
+Disable.args = {
+  index: 1,
+  active: false
+};
+```

@@ -1,0 +1,90 @@
+---
+title: BEMでフォームのスタイルを作成する
+time: 2017-12-08 20:13
+---
+
+ここにとあるHTMLがある。
+
+**とあるhtml**
+
+```
+<label for="title">タイトルlabel>
+<input type="text" name="title" placeholder="title">
+```
+
+これは、掲示板を作成するページの入力欄で、「タイトル」と「入力欄」がセットで考えていきたい。 なので、「タイトル」と「入力欄」は「入力ブロック」という考え方で使っていきたいと思う。
+
+なので、「タイトル」と「入力欄」をラップするdiv要素を作成し、クラス名を`input`とした。
+
+**inputを追加**
+
+```
+<div class="input">
+    <label for="title">タイトルlabel>
+    <input type="text" name="title" placeholder="title">
+<div>
+```
+
+クラス名`input`はブロックで、要素(Element)である`label`と`input`は以下それぞれ、クラス名`input __title`、`input__ input`とした。
+
+**inputを追加**
+
+```
+<div class="input">
+    <label class="input__title" for="title">タイトルlabel>
+    <input class="input__input"type="text" name="title" placeholder="title">
+<div>
+```
+
+この状態で、以下の要望があった場合
+
+- タイトル、入力欄を少し大きくしたい
+- 入力欄を角丸に
+- タイトルと入力欄の間をもうすこしあけたい
+
+スタイルは、こうしてみる。
+
+**スタイル**
+
+```
+.input{
+    &__title{
+       padding:10px; 
+       margin-right:10px
+    }
+
+    &__input{
+        border: 1px solid;
+        border-radius:1px;
+        padding:10px; 
+    }
+}
+```
+
+ブラウザでみるとこんな感じ。
+
+未だにブラウザの左上にぴったりとくっついているので、無性に`input`に`margin:10px`とかやりたくなるかもしれない。  
+**スタイル**
+
+```
+.input{
+    //見にくいからmarginいれるんだよおお
+　margin:10px
+    &__title{
+       padding:10px; 
+       margin-right:10px
+    }
+
+    &__input{
+        border: 1px solid;
+        border-radius:1px;
+        padding:10px; 
+    }
+}
+```
+
+でも、これはやめたほうがいい。
+
+「入力ブロック」をどこにどう置くのか、という情報は入力ブロックではなく、それを使う側が決めよう。
+
+具体的な話を書く前に、入力ブロックをもうすこし増やしてみる

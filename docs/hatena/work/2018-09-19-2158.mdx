@@ -1,0 +1,108 @@
+---
+title: Nuxt.jsでassetsをCDNから配信する
+time: 2018-09-19 21:58
+---
+
+当たり前のことかもしれないけど、アセットをCDNから配信したいけど、どうようかと思ったらものすごく簡単だった話。
+
+Nuxt.jsを`npm run build`でビルドして`npm run start`で起動してサイトにアクセスしてみると、アセットは`ドメイン/_nuxt/`配下を参照していることがわかる。
+
+**サイトにアクセスしてHTMLソースを見たとき**
+
+```
+<script src="/_nuxt/pages/index.js" defer="">script>
+```
+
+また、Nuxt.js内で以下のように書いていたimgのsrcも同様に
+
+**hogehoge.vue**
+
+```
+<img src="~/assets/images/logo.png>
+```
+
+`_nuxt`配下に置き換わっている。  
+**ビルド後**
+
+```
+<img src="/_nuxt/img/logo.ad5be72.jpg">
+```
+
+今回、jsだったり画像だったりは、`_nuxt`から配信するのではなく、AWSのCloudFrontだったりのCDNから配信するようにしたかった。
+
+[API: build プロパティ - Nuxt.js](https://ja.nuxtjs.org/api/configuration-build#loaders)<cite class="hatena-citation"><a href="https://ja.nuxtjs.org/api/configuration-build#loaders">ja.nuxtjs.org</a></cite>
+
+上記をみると、`nuxt.config.js`の`build`に`publicPath`を指定してあげればいけるっぽいことが書かれている。
+
+なので、サンプル通りに書いてみる。
+
+**nuxt.config.js**
+
+```
+module.exports = {
+  build: {
+    // CDNのドメイン名を設定する
+    publicPath: 'https//mycdn_domain/assets/'
+  }
+}
+```
+
+再度ビルドして、試しに起動してみてHTMLを確認してみると、見事にアセット達が、CDNを指すようになった。
+
+**ビルド後**
+
+```
+<script src="https://mycdn_domain/assets/pages/index.js" defer="">script>
+<img src="https://mycdn_domain/assets/img/logo.ad5be72.jpg">
+```
+
+あとは肝心のアセットをCDNのストレージにアップロードすればいい。  
+どこにあるんだろうと思ったけれども、ビルドしたときに、プロジェクトのルートディレクトリに`.nuxt`ができている
+
+**ビルドする**
+
+```
+$ 
+$ tree -aL 1 
+.
+├── .editorconfig
+├── .git
+├── .gitignore
+├── .nuxt ←これができる
+├── README.md
+├── assets
+├── components
+├── layouts
+├── middleware
+├── node_modules
+├── nuxt.config.js
+├── package-lock.json
+├── package.json
+├── pages
+├── plugins
+├── static
+└── store
+```
+
+`.nuxt`の中に`dist`ディレクトリがあるので、これをそのままCDNのストレージにアップロードすることにした。
+
+**.nuxt/dist配下のファイル**
+
+```
+$ tree -L 1
+.
+├── LICENSES
+├── app.d3f9a819d101620d04de.js
+├── fonts
+├── img
+├── index.spa.html
+├── index.ssr.html
+├── layouts
+├── manifest.2f9dbf3059b488511414.js
+├── pages
+├── server-bundle.json
+├── vendor.7b05ec8e037fef1169eb.js
+└── vue-ssr-client-manifest.jso
+```
+
+やりたいことはできたのでよかったのだけれども、SSRする場合、サーバー側は同じリソースをみてるのか、別なのかいまいちわかってない。

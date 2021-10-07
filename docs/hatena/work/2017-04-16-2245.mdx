@@ -1,0 +1,141 @@
+---
+title: Python環境周り
+time: 2017-04-16 22:45
+---
+
+自端末の環境が毎回わからなくなるので記載。
+
+## 参考記事
+
+[[http://qiita.com/Kodaira](http://qiita.com/Kodaira)_/items/feadfef9add468e3a85b:embed:cite][pyenv 利用のまとめ - Qiita](http://qiita.com/m3y/items/45c7be319e401b24fca8)<cite class="hatena-citation"><a href="http://qiita.com/m3y/items/45c7be319e401b24fca8">qiita.com</a></cite>[[http://qiita.com/th1nkd0g/items/d33a9be75098571cad72#](http://qiita.com/th1nkd0g/items/d33a9be75098571cad72#)_reference-0ed5125b2dfcca45e1f1:embed:cite]
+
+## 環境確認
+
+現在の環境
+
+```
+python -V
+```
+
+インストール済みのバージョン一覧確認
+
+```
+pyenv versions
+```
+
+```
+masao-3:.pyenv konoe_mario$ git clone https://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
+```
+
+- virtualenvにはpyenv-virtualenvと、virtualenvがある
+- 自分はpyenv-virtuakenvを使っていたみたい
+- 両者の使い所の理解ができていないが、とりあえずpyenv-virtualenvを使用することにした
+
+pyenv-virtualenvの記事<cite class="hatena-citation"><a href="http://qiita.com/Kodaira_/items/feadfef9add468e3a85b:embd">qiita.com</a></cite>
+
+virtualenvの記事 pyenv-virtualenvとの差異に言及あり<iframe src="http://dackdive.hateblo.jp/embed/2015/12/12/163400" title=" [Python]pyenvとvirtualenvとpyenv-virtualenv - dackdive's blog" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://dackdive.hateblo.jp/entry/2015/12/12/163400">dackdive.hateblo.jp</a></cite>
+
+## raspberry3.5.1
+
+ラズパイ用に構築
+
+#### 現在存在しているバージョンの確認
+
+```
+masao-3:~ konoe_mario$ pyenv versions
+  system
+  3.5.1
+* 3.5.2 (set by /Users/konoe_mario/.pyenv/version)
+```
+
+#### ラズパイ用の環境を構築
+
+```
+masao-3:~ konoe_mario$ sudo pyenv virtualenv 3.5.1 raspberry_3.5.1
+Password:
+Ignoring indexes: https://pypi.python.org/simple
+Requirement already satisfied (use --upgrade to upgrade): setuptools in /Users/konoe_mario/.pyenv/versions/3.5.1/envs/raspberry_3.5.1/lib/python3.5/site-packages
+Requirement already satisfied (use --upgrade to upgrade): pip in /Users/konoe_mario/.pyenv/versions/3.5.1/envs/raspberry_3.5.1/lib/python3.5/site-packages
+```
+
+#### 環境の確認
+
+```
+masao-3:~ konoe_mario$ pyenv versions
+  system
+  3.5.1
+  3.5.1/envs/raspberry_3.5.1
+* 3.5.2 (set by /Users/konoe_mario/.pyenv/version)
+  raspberry_3.5.1
+```
+
+#### 環境の切り替え
+
+```
+masao-3:~ konoe_mario$ pyenv global raspberry_3.5.1 
+(raspberry_3.5.1) masao-3:~ konoe_mario$
+```
+
+パッケージは空っぽ
+
+```
+(raspberry_3.5.1) masao-3:~ konoe_mario$ pip freeze
+(raspberry_3.5.1) masao-3:~ konoe_mario$
+```
+
+#### 作成した環境をPycharmで使用する
+
+[PyCharmでpyenvとvirtualenvで構築したライブラリにパスを通す方法 - Qiita](http://qiita.com/m2t9/items/11aea3d8e6ebbeef88c9)<cite class="hatena-citation"><a href="http://qiita.com/m2t9/items/11aea3d8e6ebbeef88c9">qiita.com</a></cite>
+
+## Python3.5.2
+
+Udemy用に構築。
+
+いつ設定したか記憶にないけれども、pyenvが入っているみたいなので、pyenvで3.5.2をインストールする。
+
+しかし、エラーになる。
+
+```
+masao-3:~ konoe_mario$ pyenv install 3.5.2
+Downloading readline-6.3.tar.gz...
+-> https://yyuu.github.io/pythons/56ba6071b9462f980c5a72ab0023893b65ba6debb4eeb475d7a563dc65cafd43
+Installing readline-6.3...
+
+BUILD FAILED (OS X 10.10.5 using python-build 1.0.8-2-gb7d89ba)
+
+Inspect or clean up the working tree at /var/folders/rn/tv8gxk290vgb3tq2dhk74fh00000gn/T/python-build.20170416222435.77644
+Results logged to /var/folders/rn/tv8gxk290vgb3tq2dhk74fh00000gn/T/python-build.20170416222435.77644.log
+
+Last 10 log lines:
+    done
+install: /Users/konoe_mario/.pyenv/versions/3.5.2/include/readline: No such file or directory
+install: /Users/konoe_mario/.pyenv/versions/3.5.2/include/readline: No such file or directory
+install: /Users/konoe_mario/.pyenv/versions/3.5.2/include/readline: No such file or directory
+install: /Users/konoe_mario/.pyenv/versions/3.5.2/include/readline: No such file or directory
+install: /Users/konoe_mario/.pyenv/versions/3.5.2/include/readline: No such file or directory
+install: /Users/konoe_mario/.pyenv/versions/3.5.2/include/readline: No such file or directory
+install: /Users/konoe_mario/.pyenv/versions/3.5.2/include/readline: No such file or directory
+install: /Users/konoe_mario/.pyenv/versions/3.5.2/include/readline: No such file or directory
+make: *** [install-headers] Error 71
+```
+
+sudoで実行したらいけた。
+
+```
+masao-3:~ konoe_mario$ sudo pyenv install 3.5.2
+Password:
+Downloading readline-6.3.tar.gz...
+-> https://yyuu.github.io/pythons/56ba6071b9462f980c5a72ab0023893b65ba6debb4eeb475d7a563dc65cafd43
+Installing readline-6.3...
+Installed readline-6.3 to /Users/konoe_mario/.pyenv/versions/3.5.2
+
+Downloading Python-3.5.2.tar.xz...
+-> https://www.python.org/ftp/python/3.5.2/Python-3.5.2.tar.xz
+Installing Python-3.5.2...
+patching file Lib/venv/scripts/posix/activate.fish
+Installed Python-3.5.2 to /Users/konoe_mario/.pyenv/versions/3.5.2
+```
+
+pipのバージョンを最新化(必須ではない) masao-3:~ konoe\_mario$ sudo pip install –upgrade pip
+
+pipとは、pythonのパッケージ管理システム

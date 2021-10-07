@@ -1,0 +1,683 @@
+---
+title:  jest + Vue.js でテストコード入門に至る道のり
+time: 2019-08-26 22:47
+---
+
+# jest + Vue.js でテストコード入門に至る道のり
+
+フロントエンドでもテストコード書いてったほうがよさそうだから、Vue.jsでもテストコード書いてみるか！ということでいざ始めてみると、書けはするんだけどなにやら設定やら必要なモジュールが多くってねぇ、、、と思ったので、そこに至る道のりを書いてみようと思います！
+
+まずは、シンプルに`jest`を使って、ただのjsのテストコードから始めて、そっからフレームワークを使わないDOMレンダリングのテスト、Vue.jsに移っていき、必要なモジュールは都度導入していこうと思います。
+
+とはいえ、各モジュールの使い方や、具体的パターンに応じたなテストの書き方にはあんま触れてなかったりするのでご注意ください。
+
+書いてる人はテストコードを書くことに多少慣れた程度なので、なにかあれば突っ込んでくれるとうれしいです。
+
+ではさっそく初めてみよう！
+
+- [jest + Vue.js でテストコード入門に至る道のり](#jest--Vuejs-%E3%81%A7%E3%83%86%E3%82%B9%E3%83%88%E3%82%B3%E3%83%BC%E3%83%89%E5%85%A5%E9%96%80%E3%81%AB%E8%87%B3%E3%82%8B%E9%81%93%E3%81%AE%E3%82%8A)
+  - [なにはともあれ、準備](#%E3%81%AA%E3%81%AB%E3%81%AF%E3%81%A8%E3%82%82%E3%81%82%E3%82%8C%E6%BA%96%E5%82%99)
+    - [jestを導入](#jest%E3%82%92%E5%B0%8E%E5%85%A5)
+    - [Babelを導入](#Babel%E3%82%92%E5%B0%8E%E5%85%A5)
+      - [余談 @babel/preset-env をもうすこしだけみる](#%E4%BD%99%E8%AB%87-babelpreset-env-%E3%82%92%E3%82%82%E3%81%86%E3%81%99%E3%81%93%E3%81%97%E3%81%A0%E3%81%91%E3%81%BF%E3%82%8B)
+    - [jestを再実行](#jest%E3%82%92%E5%86%8D%E5%AE%9F%E8%A1%8C)
+  - [DOMがからむテストを書く](#DOM%E3%81%8C%E3%81%8B%E3%82%89%E3%82%80%E3%83%86%E3%82%B9%E3%83%88%E3%82%92%E6%9B%B8%E3%81%8F)
+    - [jest-domを使う](#jest-dom%E3%82%92%E4%BD%BF%E3%81%86)
+    - [dom-testing-libraryを使う](#dom-testing-library%E3%82%92%E4%BD%BF%E3%81%86)
+  - [Vue.jsのテストコードを書く](#Vuejs%E3%81%AE%E3%83%86%E3%82%B9%E3%83%88%E3%82%B3%E3%83%BC%E3%83%89%E3%82%92%E6%9B%B8%E3%81%8F)
+    - [vue-test-utilsを使う](#vue-test-utils%E3%82%92%E4%BD%BF%E3%81%86)
+      - [babel-coreがないよでテストが失敗する場合](#babel-core%E3%81%8C%E3%81%AA%E3%81%84%E3%82%88%E3%81%A7%E3%83%86%E3%82%B9%E3%83%88%E3%81%8C%E5%A4%B1%E6%95%97%E3%81%99%E3%82%8B%E5%A0%B4%E5%90%88)
+    - [vue-testing-libraryを使う](#vue-testing-library%E3%82%92%E4%BD%BF%E3%81%86)
+  - [まとめ](#%E3%81%BE%E3%81%A8%E3%82%81)
+  - [そのほか](#%E3%81%9D%E3%81%AE%E3%81%BB%E3%81%8B)
+
+## なにはともあれ、準備
+
+今回のお試し用のプロジェクトを作っていきます。  
+`yarn`をつかっていますが、`npm`であれば適宜置き換えてください。
+
+**プロジェクト作成**
+
+```
+$ mkdir hellojest
+$ cd hellojest
+$ yarn init -y
+$ mkdir src
+```
+
+### jestを導入
+
+テスト対象のコードまだ何もありませんが、ひとまず`jest`を追加します。
+
+**jestを導入**
+
+```
+$ yarn add --dev jest
+```
+
+`jest`は、javascriptのテスト用のフレームワークで、facebookが開発を進めているOSS。  
+テストには、大きくテストを実行するテストランナーと、テストの結果を検証するアサーションとがあって、`jest`はテストランナーもアサーションの機能も含んでいるフレームワークとのこと。
+
+過去に`webpack + mocha`を一瞬試したことがあったんだけれども、こちらは、テストランナー部分だけが`webpack + mocha`でアサーションは別の機能をつかったりとしていたから、ものによっては、オールインワンではなく好みのものを組み合わせるという方法もあるみたいだね！
+
+`jest`の追加ができたら、テスト対象となるコード`/src/sum.js`をこんな感じにつくってみます。
+
+**sum.js**
+
+```
+const sum = (a, b) => {
+  return a + b
+}
+
+export default sum
+```
+
+引数を足した結果を返すだけのシンプルな関数ですね。
+
+これをテストコードとして書くと以下のようになります。
+
+**sum.test.js**
+
+```
+import sum from './sum'
+
+it('関数sumに1と2を渡すと3が返ってくる', () => {
+  // 関数sumの結果を格納
+  const result = sum(1, 2)
+  // sumの結果は3だよね！
+  expect(result).toBe(3)
+})
+```
+
+上記のようにテストコードは、テスト対象の関数だったり、コンポーネントだったりを準備して、その結果を`expect`で検証(アサーション)する構成になっているかと思います。 上記のテストコードを`sum.js`と同じディレクトリにおいて実行してみましょう。
+
+**実行してみる**
+
+```
+$ yarn jest
+```
+
+`jest`はファイル名に`.test.js`、`.spec.js`が含まれている、もしくは、` __tests__ `ディレクトリ配下にあるコードをテストコードと判断し、実行してくれます。
+
+よっしゃ！実行と思ったら、`SyntaxError: Unexpected identifier`でこけちゃいます。
+
+というのも、`sum.test.js`では、`import`文をつかっていますが、これはES6の記法になります。
+
+普段ES6のものをブラウザで実行させるときは`webpack`でバンドルして依存解決したものを実行していますよね。
+
+ですが、`jest`はブラウザではなくNode.jsの環境で実行されます。 なので、ES6の記法で書かれたコードをNode.jsが実行できるCommonJSの形にトランスパイルする必要があります。
+
+### Babelを導入
+
+トランスパイルには`Babel`を使います。  
+`Babel`はES6記法だったり、日々進化しているjavascriptの新しい文法で書かれているものを、それに対応していないブラウザが使えるように変換するものです。  
+というのがなんとなくの認識だったのですが、CommonJSにもトランスパイルができるみたいです。
+
+※ 他にもAMD、UMDにトランスパイルできるみたいなんだけどあんまりよくわかっていない。
+
+ためしに、トランスパイルしてみることにしましょう。 以下のパッケージを追加します。
+
+**babelを導入**
+
+```
+$ yarn add --dev @babel/core @babel/cli
+```
+
+`@babel/cli`は、CLIからトランスパイルを実行するために追加しています。
+
+以下のように、トランスパイルしたいファイルを指定して、実行してみると、トランスパイル後のソースコードがコンソールに表示されます。
+
+**Babelを実行**
+
+```
+$ yarn babel ./src/sum.js
+// ↓トランスパイル後のコード
+const sum = (a, b) => {
+  return a + b;
+};
+
+export default sum;
+
+✨ Done in 1.72s.
+```
+
+Yes！とおもいきや、なんもかわってないですね。 というのも、`Babel`の設定でソースコードをCommonJSにしてね！という設定をしていないからです。
+
+なので設定をしていきます。
+
+プロジェクトのルートディレクトリ(`package.json`と同じところ)に`.babelrc`を作ります。ここに設定を書くと、`Babel`実行時にこちらを参照してくれるみたいです。
+
+ちなみに`.babelrc`以外にも`babel.config.js`だったり`package.json`に書いたりと、いろいろな`Babel`の設定方法があるみたいですね。
+
+さて、肝心の設定ですが、以前は大変だったみたいなのですが、今は環境に合わせていい感じに設定してくれる機能してくれる`@babel/preset-env`があるのでこちらを利用することにします。
+
+**presetを導入**
+
+```
+$ yarn add --dev @babel/preset-env
+```
+
+パッケージを追加したら先ほど作成した`.babelrc`を以下のように編集します。
+
+**.babelrc**
+
+```
+{
+  "presets": ["@babel/preset-env"],
+}
+```
+
+さきほど同様に`Babel`を実行してみると、
+
+**Babel実行**
+
+```
+$ yarn babel ./src/sum.js
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+var sum = function sum(a, b) {
+  return a + b;
+};
+
+var _default = sum;
+exports["default"] = _default;
+
+✨ Done in 2.56s.
+```
+
+ES6の`export`が`exports["default"]`にかわりました！ これで無事、CommonJSに変換されました！ (といいたいのですが、CommonJSに自信がないのでちょっと不安。)
+
+#### 余談 @babel/preset-env をもうすこしだけみる
+
+`@babel/preset-env`って何をやっているのだろうと思い、もう少し調べて見ることにする。
+
+以下の公式ドキュメントに書かれている通り、そもそも`Babel`はコンパイラのように、コードをパースして、変換して、結果を出力するということをしてくれるもの。[https://babeljs.io/docs/en/plugins/](https://babeljs.io/docs/en/plugins/)
+
+コードを変換する処理は、プラグインという形で`Babel`本体からは切り出されているんだと思う。なのでプラグインを指定しない場合、`Babel`はコードをパースして、そのまま出力するだけになる。
+
+そこで、以下のようにプラグインを指定して、`Babel`を実行すると、CommonJSの形式になることがわかった。
+
+**.babelrc**
+
+```
+{
+  "plugins": ["@babel/plugin-transform-modules-commonjs"]
+}
+```
+
+なので、`@babel/preset-env`を使わない場合、必要な環境に応じて、プラグインを記載していく必要があるんだけれども、これがたぶん面倒。
+
+つまり`@babel/preset-env`を使うと環境に応じて必要なプラグインを追加してくれているんだと思う。
+
+`@babel/preset-env`に`debug`オプションがあったので、さきほどの`.babelrc`に追加して、`Babel`を実行してみたところ、以下のようにプラグイン`transform-xxx`がいっぱいで表示されることが確認でき、想定通りプラグインを追加していることが確認できる。
+
+```
+@babel/preset-env: `DEBUG` option
+
+Using targets:
+{}
+
+Using modules transform: auto
+
+Using plugins:
+  transform-template-literals {}
+  transform-literals {}
+  transform-function-name {}
+  transform-arrow-functions {}
+  ・・・省略
+```
+
+ちなみに、肝心のCommonJSに変換するであろう`@babel/plugin-transform-modules-commonjs`が、上記のプラグインのリストには見当たらなかった。
+
+あれ？と思い、さきほどのログを見返すと`modules`が`auto`になっており、ググって見ると、以下のissueがみつかる。[https://github.com/babel/babel/pull/8485](https://github.com/babel/babel/pull/8485)
+
+ものすごくざっくりとした理解だと、`auto`にしとくと`Babel`がどのように実行されたかによって、どのモジュールタイプに変換するかを制御してくれているってことかな。 webpackで`babel-loader`を使って`Babel`を実行した場合は、モジュール変換用のプラグインは使わなくって、それ以外は`transform-modules-commonjs`をプラグインに追加してるっぽい。
+
+### jestを再実行
+
+だいぶ話がそれましたが、無事CommonJSに変換できることが確認できたので、`jest`を再実行してみます。
+
+**Babelを再実行**
+
+```
+$ yarn jest
+  ✓ 関数sumに1と2を渡すと3が返ってくる (3ms)
+
+Test Suites: 1 passed, 1 total
+Tests: 1 passed, 1 total
+Snapshots: 0 total
+Time: 5.886s
+Ran all test suites.
+✨ Done in 8.12s.
+```
+
+ほんのり遅いのですが無事テストがpassさせることに成功しました！
+
+特段、`jest`向けに`Babel`の設定はしていないのですが、テスト実行時に`.babelrc`を見てくれているみたいですね。
+
+ちなみに`yarn jest --watch`でwatchオプション付きで実行すると、テスト対象のコード、テストコードを監視してくれて、変更が入るたびにテストコードが走ります。 これぞTDDだ！という体験ができるのでおすすめです。
+
+## DOMがからむテストを書く
+
+次にDOMをレンダリングするアプリケーションのテストを書いてみようと思います。
+
+以下のようにボタンを押すと、カウントアップするDOMをつくってbodyにつっこむ、`counterPage.js`をつくってみました。
+
+フレームワークもライブラリも使っていないので、単純に`document.createElement`でDOMノードをつくっています。
+
+**/src/counterPage.js**
+
+```
+import { increment, getCount } from './counter'
+
+ // ボタンを押した分だけその回数をラベルに表示する
+const counterPage = () => {
+  const div = document.createElement('div');
+
+  // 回数を表すラベル
+  const label = document.createElement('label');
+  label.textContent = '0'
+
+  // カウントアップボタン
+  const button = document.createElement('button');
+  button.textContent = 'count up'
+  button.addEventListener('click', () => {
+    increment()
+    label.textContent = getCount()
+  })
+
+  div.appendChild(button)
+  div.appendChild(label)
+
+  // つくったdivをbodyにつっこんじゃう
+  document.body.appendChild(div)
+}
+
+export default counterPage
+```
+
+また、あんまり意味がないのですが、カウンターを管理する機能を`counter.js`として、別のファイルに切り出しています。
+
+**/src/counter.js**
+
+```
+let counter = 0
+
+export const increment = () => {
+ return counter++
+}
+
+export const getCount = () => {
+ return counter
+```
+
+では早速`counterPage.js`をテストしていきます。 テストコードは、`counterPage.test.js`としてつくります。
+
+こんな感じに書いてみました。
+
+**/src/counterPage.test.js**
+
+```
+import counterPage from './counterPage'
+
+it('count upボタンをおすと、ラベルのテキストがカウントアップすること', () => {
+  // 初期レンダリング
+  counterPage()
+
+  //ボタンとラベルの要素を取得取得する
+  const button = document.querySelector('button')
+  const label = document.querySelector('label')
+
+  // 最初は0で
+  expect(label.textContent).toBe('0')
+  // ボタンをクリックすると
+  button.click()
+  // 1になる
+  expect(label.textContent).toBe('1')
+})
+```
+
+普段javascriptでDOM要素を扱っている方なら、すらすら書けるのではないでしょうか。`button`タグで要素をとってきたりとちょっと乱暴ですが、実際はクラス名だったりIDだったりをつけて取得するイメージでしょうか。
+
+ちなみに自分は「あれ`jest`ってNode.js環境なのに`document.createElement()`とか使っているコードを問題なく実行しているんだろう」と混乱しました。
+
+これは、`jsdom`というパッケージがNode.js環境でもDOMを扱えるようしてくれているみたいです！すごい！  
+[https://github.com/jsdom/jsdom](https://github.com/jsdom/jsdom)
+
+そして`jest`を追加すると`jsdom`も追加されるので、個別で追加する必要はなさそうです。
+
+### jest-domを使う
+
+とはいえアサーションする度に、`label.textContent`のように書いていくのは、DOMの構造を意識する必要があり、めんどうです。
+
+例えば以下のようにDOMの構造がかわった場合、`label.textContent`ではなく、`span.textContent`にテストコードを修正する必要があります。
+
+**変更前**
+
+```
+<label>0label>
+```
+
+**変更後**
+
+```
+<label>
+  カウント：
+  <span>0span>
+label>
+```
+
+テスト観点としては「count upボタンを押したら、ラベルのテキストがカウントアップすること」という点はかわっていないのですが、DOMの構造がかわってしまったために、テストコードの修正が発生してしまいました。
+
+これを回避するために、`jest-dom`を使うことにします。
+
+[https://github.com/testing-library/jest-dom](https://github.com/testing-library/jest-dom)
+
+`jest-dom`は、以下の`toBe`の部分(Matcherと呼ぶみたい)をDOM用に便利に拡張したものを用意してくれます。
+
+```
+expect(button.textContent).toBe('1')
+                          // ↑Matcher
+```
+
+さっそくつかってみます。
+
+**パッケージを追加**
+
+```
+$ yarn add --dev @testing-library/jest-dom
+```
+
+`counterPage.js`にさきほどの例のように`span`を追加することにします。
+
+**/src/counterPage.js**
+
+```
+import { increment, getCount } from './counter'
+
+const counterPage = () => {
+  const div = document.createElement('div');
+
+  const label = document.createElement('label');
+  // spanを追加
+  const span = document.createElement('span');
+  span.textContent = 0
+
+  label.textContent = 'カウント：'
+  label.appendChild(span)
+
+  const button = document.createElement('button');
+  button.textContent = 'count up'
+  button.addEventListener('click', () => {
+    increment()
+    // spanにカウント回数を設定する
+    span.textContent = getCount()
+  })
+
+  div.appendChild(button)
+  div.appendChild(label)
+
+  document.body.appendChild(div);
+}
+
+export default counterPage
+```
+
+この状態でテストを実行すると、テストが失敗するかと思います。
+
+これを、`jest-dom`のカスタムマッチャーを使って置き換えてみるとこんな感じになります。
+
+**/src/counterPage.test.js**
+
+```
+import '@testing-library/jest-dom/extend-expect'
+import counterPage from './counterPage'
+
+it('count upボタンをおすと、カウントラベルがカウントアップすること', () => {
+  // 初期レンダリング
+  counterPage()
+
+  //ボタンとラベルの要素を取得取得する
+  const button = document.querySelector('button')
+  const label = document.querySelector('label')
+
+  // 最初は0で
+  expect(label).toHaveTextContent('0')
+
+  // もしくは、以下のようにしてもいい！
+  // expect(label).toHaveTextContent('カウント：0')
+  // ボタンをクリックすると
+  button.click()
+  // 1になる
+  expect(label).toHaveTextContent('1')
+
+})
+```
+
+上記で使用した`toHaveTextContent`は、対象のDOMノード配下に、期待するテキストがあるかをちゃんと判断してくれます。 そのため、DOMの構造がかわったとしてもテストコードの修正が不要になるという優れもの。
+
+これは大したことではないように感じるかもしれませんが、テストコードを書くにあたっては、結構大事なことなんじゃないかなと思います。
+
+テストコードを書き始めていって量が増えてくると、ちょっとしたリファクタリングの度にテストコードもセットで直さないといけない、という状況はなかなか厳しいものです。
+
+最後には、テストをskipしていくという悲しい結末にならないように、DOMに関係するテストコードはできるだけ **内部実装に依存させない** ことが大事かもしれませんね。
+
+`jest-dom`には他にも便利なマッチャーがあるので公式を参照してください。  
+個人的にはボタンが非活性になっているかどうか判断する`toBeDisabled`や、フォーカスがあっているかどうかを判断する`toHaveFocus`、要素が存在しているかを確認する`toBeInTheDocument`をよくつかったりします。
+
+### dom-testing-libraryを使う
+
+内部実装に依存させないという点から、さらにもう一歩進んで、よりユーザーの操作を意識したテストにかえていきます。
+
+なんのこっちゃという感じなのですが、まずは以下のパッケージを追加してみます。
+
+**パッケージを追加**
+
+```
+$ yarn add --dev @testing-library/dom
+```
+
+パッケージを追加したら以下のように使うことができます。
+
+```
+import '@testing-library/jest-dom/extend-expect'
+import { getByText } from '@testing-library/dom'
+import counterPage from './counterPage'
+
+it('count upボタンをおすと、カウントラベルがカウントアップすること', () => {
+  // 初期レンダリング
+  counterPage()
+  const body = document.querySelector('body')
+
+  const button = getByText(body, 'count up')
+  const label = getByText(body, 'カウント:')
+
+  // 最初は0で
+  expect(label).toHaveTextContent('0')
+  // ボタンをクリックすると
+  button.click()
+  // 1になる
+  expect(label).toHaveTextContent('1')
+})
+```
+
+`getByText`は第一引数に与えられたHTMLElementから、第2引数の文字列を持つDOMを取得して返してくれるメソッドです。
+
+これにより、ボタンやカウントの回数を表示するラベルを取得する際に、ユーザーが画面上に見える言葉をつかってテストを書いていくことができます。 これにより、見た目を変更する為にクラス名をかえたり、DOMの構造をかえても、テストが壊れる頻度がぐっと減ります。
+
+`getByText`以外にも、ラベルに紐づく要素を取得する`getByLabelText`や、以下のように`data-testid`を定義して、それを取得する`data-testid`等あるので、こちらも公式を参照してみてください。
+
+```
+<div data-testid="wrapper">div>
+```
+
+## Vue.jsのテストコードを書く
+
+ようやく目標のVue.jsのテストコードを書いていきます！
+
+まずはVue.jsをいれましょう。
+
+**パッケージを追加**
+
+```
+$ yarn add vue
+```
+
+また、後ほどでてくる`vue-jest`で`vue-template-compiler`が必要になるので、こちらも追加しておきます。
+
+**パッケージを追加**
+
+```
+$ yarn add --dev vue-template-compiler
+```
+
+次に、単一ファイルコンポーネントである`App.vue`を作成します。 ひとまず、機能はおいておいて、`Hello Jest!`を表示するだけのコンポーネントです。
+
+**App.vue**
+
+```
+<template>
+  <h1>Hello Jest!</h1>
+</template>
+```
+
+準備ができたらテストコードに移りましょう！
+
+### vue-test-utilsを使う
+
+単一ファイルコンポーネントのテストは、まずはVue.js公式の単体テストライブラリである、`vue-test-utils`を使ってみます。[https://vue-test-utils.vuejs.org/ja/](https://vue-test-utils.vuejs.org/ja/)
+
+**パッケージを追加**
+
+```
+$ yarn add --dev vue-test-utils
+```
+
+また、こちらも公式に記載されている通り、`jest`の設定を追加します。[https://vue-test-utils.vuejs.org/ja/guides/testing-single-file-components-with-jest.html](https://vue-test-utils.vuejs.org/ja/guides/testing-single-file-components-with-jest.html)
+
+`package.json`に追加しようとありますが、今回は`jest`用の設定ファイルを作成することにしました。
+
+プロジェクトのドキュメントルートに`jest.config.js`をつくり、公式の設置を追加します。
+
+**jest.config.js**
+
+```
+module.exports = {
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    // *.vue ファイルを処理するように Jest に指示する
+    "vue"
+  ],
+  "transform": {
+    // transformの定義を追加すると、デフォルトでjestがやってくれていた
+    // babelのトランスパイルが上書きされてしまうとのことなので
+    // 以下も書いておく
+    '^.+\\.js$': '/node_modules/babel-jest',
+    // vue-jest で *.vue ファイルを処理する
+    ".*\\.(vue)$": "vue-jest"
+  }
+}
+```
+
+`vue-jest`が必要とのことなので追加します。
+
+**パッケージを追加**
+
+```
+$ yarn add --dev vue-jest
+```
+
+`vue-jest`ですが、冒頭のES6記法のファイルをNode.js環境で実行できるようにBabelの設定を行ったのと同じ様な話ですね！  
+Vue.jsを使う際はwebpackで`vue-loader`を使ってトランスパイルしていますが、`jest`は`vue-jest`を使ってトランスパイルしてくれているということかと思います。 なお、公式に書いてありますが、`vue-jest`は`vue-loader`のすべての機能を担保していないですよっていうのだけ、ちょっと気になりますが、ひとまず進めます。
+
+テストコードは以下のようにしました。
+
+**App.test.js**
+
+```
+import { mount } from '@vue/test-utils'
+import App from './App.vue'
+
+it('初期表示時にHello Jest!が表示されていること', () => {
+  const wrapper = mount(App)
+  expect(wrapper.html()).toBe('Hello Jest!')
+})
+```
+
+`mount`を使うことでコンポーネントをマウント(そのまんま)した状態のオブジェクト`Wrapper`を返してくれるとのこと。
+
+この`Wrapper`からそのコンポーネントのプロパティだったり、レンダリングされている要素に取得できるみたいで 今回は`html`を使って、描画されるHTMLが想定通りであることを確認しています。
+
+`jest`を実行すると、テストが無事passしました！
+
+ですが、Vue.jsを使わないでDOMに関わるテストコードのときにもあったのですが、このテストの仕方だと、Vueのテンプレートの構造がかわると、テストが失敗していまいます。  
+あくまで、このテストは`Hello Jest!`が表示されることを確認したいのであって、HTMLの構造が`<h1>Hello Jest!</h1>`を確認したいわけではないです。
+
+`jest-dom`、`dom-testing-library`を使っていったように、Vue.jsでも同じことがしたい！というのを解決するのが`vue-testing-library`になります。
+
+#### babel-coreがないよでテストが失敗する場合
+
+`jest`を実行してみると、悲しいことに`babel-core`が見つからないよというエラーで落ちたので対応方法を記載します。
+
+この記事を書いていた時点だと`vue-jest`のv3.0.4でした。 ※v4系からはなおっていそうです。
+
+こちらですが、`vue-jest`のpeerDependeciesに`babel-core": "^6.25.0 || ^7.0.0-0`,と書いているのですが、Babelはパッケージ名がv7から`@babel/core`にかわっています。
+
+冒頭で`@babel/core`をインストールしていたので、`babel-core`がねえよといわれてしまっています。
+
+こちらですが、`babel-bridge`を使うことで、`babel-core`の名前で`@babel/core`を参照してくれるようになるみたいです。[https://github.com/babel/babel-bridge](https://github.com/babel/babel-bridge)
+
+なのでこちらも追加します。
+
+**パッケージを追加**
+
+```
+$ yarn add --dev babel-core@^7.0.0-bridge.0
+```
+
+### vue-testing-libraryを使う
+
+[https://github.com/testing-library/vue-testing-library](https://github.com/testing-library/vue-testing-library)
+
+`vue-testing-library`は`dom-testing-library`をVue用にラップしたものになります。内部では、`vue-test-utils`を使ってコンポーネントをマウントしてるみたいです。
+
+では、さきほどのテストコードを`vue-testing-library`を使って置き換えてみたいと思います。
+
+**App.test.js**
+
+```
+import '@testing-library/jest-dom/extend-expect'
+import { render} from 'vue-testing-library'
+import App from './App.vue'
+
+it('render App', () => {
+  const { getByText } = render(App)
+  expect(getByText('Hello Jest!')).toBeInTheDocument()
+})
+```
+
+`dom-testing-libary`を使ったときは、`getByText`に検索対象のDOMノードを渡していましたが、`vue-testing-library`だとrenderメソッドの返り値として、検索対象のDOMノードが指定された状態の関数を受け取ることができます。
+
+これで、DOMの構造を意識することなくテストを行うことができるようになりました！
+
+この他にもボタンを押下したり、非同期処理だったり、モックを使ったテスト等、いろいろとあるのですが、とりあえず目標であるVue.js用のテストコードを書くことができました。
+
+## まとめ
+
+長くなりましたが、書きたかったことはこれだけでした。
+
+- フロントのテストは、内部実装にできるだけ依存せず、ユーザーの観点でテストできると、テストコードで消耗する機会は減ると思うよ！
+
+- それには`vue-testing-library`が便利だよ！でもそれに至るまでにでてくる登場人物がちょっと多くって混乱するよ！
+
+- とはいえ、複雑な機能だったりは、共通コンポーネントだけをテストしたい等の場合は`vue-test-utils`を使う等、使い分けをするといいかもね！
+
+## そのほか
+
+[jestのmockを学ぶ - 豆腐とコンソメ](https://www.tohuandkonsome.site/entry/2019/11/20/205130)<cite class="hatena-citation"><a href="https://www.tohuandkonsome.site/entry/2019/11/20/205130">www.tohuandkonsome.site</a></cite>

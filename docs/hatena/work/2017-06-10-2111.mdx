@@ -1,0 +1,241 @@
+---
+title: Djangoを学ぶ(3):画像の表示
+time: 2017-06-10 21:11
+---
+
+# 前回からの続き
+
+今回は前回表示できていなかった、画像を表示していきたいと思います。
+
+![f:id:konoemario:20170610205858p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170610/20170610205858.png "f:id:konoemario:20170610205858p:plain:w500")
+
+- [前回からの続き](#%E5%89%8D%E5%9B%9E%E3%81%8B%E3%82%89%E3%81%AE%E7%B6%9A%E3%81%8D)
+- [staticファイルの公開](#static%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%85%AC%E9%96%8B)
+  - [ヘッダー画像を表示する](#%E3%83%98%E3%83%83%E3%83%80%E3%83%BC%E7%94%BB%E5%83%8F%E3%82%92%E8%A1%A8%E7%A4%BA%E3%81%99%E3%82%8B)
+  - [管理者画面で投稿した画像を表示する](#%E7%AE%A1%E7%90%86%E8%80%85%E7%94%BB%E9%9D%A2%E3%81%A7%E6%8A%95%E7%A8%BF%E3%81%97%E3%81%9F%E7%94%BB%E5%83%8F%E3%82%92%E8%A1%A8%E7%A4%BA%E3%81%99%E3%82%8B)
+    - [他のディレクトリを公開する。](#%E4%BB%96%E3%81%AE%E3%83%87%E3%82%A3%E3%83%AC%E3%82%AF%E3%83%88%E3%83%AA%E3%82%92%E5%85%AC%E9%96%8B%E3%81%99%E3%82%8B)
+
+# staticファイルの公開
+
+画像とかjsとかcssとかのいわゆるstaticファイルと呼ばれる。   
+これをDjangoで扱うには、ちょっと作業がいる。   
+適当なディレクトリに置いて、そのディレクトリを公開すればいいんじゃない？って考えてしまうのですが、Djangoには以下の機能が備わっているみたいです。
+
+[静的ファイルの公開方法 — Django 1.4 documentation](http://docs.djangoproject.jp/en/latest/howto/static-files.html)
+
+上記より抜粋。
+
+> 小さなプロジェクトではこのことは大きな問題になりません。 Web サーバが見つけら れる場所で静的ファイルを単に管理することができるからです。しかし、もっと大きな プロジェクトで、特に複数のアプリケーションからなる場合は、各アプリケーションが 持っている静的ファイルの集まりを複数扱うことになり、ややこしくなってきます。
+> 
+> django.contrib.staticfiles はまさにそのためにあります。これは静的なファイルを各アプリケーションから (さらに指定した別の場所からも) 一つの場所に集め、運用環境で公開しやすくするものです。
+
+大きなプロジェクトを作成しないと、有り難みがわからないかもしれませんが、ざっと見ていきます。
+
+## ヘッダー画像を表示する
+
+まず、管理者画面から投稿した画像を表示する前に、通常の画像を扱う方法を見ていきます。  
+ここでは、以下のようにTOP画面のヘッダー画像を表示していきます。
+
+![f:id:konoemario:20170610194010p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170610/20170610194010.png "f:id:konoemario:20170610194010p:plain:w500")
+
+前述の「django.contrib.staticfiles」ですが、setting.pyのINSTLLED\_APPSに標準搭載されているのが確認できるので、特になにもしなくても使えそうです。
+
+**setting.py**
+
+```
+# Application definition
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+#↓これのこと
+    'django.contrib.staticfiles',  
+    'posts',
+]
+```
+
+そして、「django.contrib.staticfiles」は「setting.py」の「STATIC\_URL」配下を探しにいくみたいです。  
+デフォルトでは、「/static/」が既に記載されています。
+
+**setting.py**
+
+```
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/1.11/howto/static-files/
+
+#staticlファイルの定義
+STATIC_URL = '/static/'
+```
+
+このへんを確認したら、実際に表示したい画像を置きます。 アプリケーション「posts」配下にstaticディレクトリを新規に作成して、その配下にアプリケーション名「posts」のディレクトリを作成した上で、「home.jpg」を置きます。
+
+```
+└── posts
+    ├── __init__.py
+    ├── __pycache__
+    ├── admin.py
+    ├── apps.py
+    ├── migrations
+    ├── models.py
+#staticディレクトリを作成した
+    ├── static
+    │   └── posts
+    │   └── home.jpg
+```
+
+前回のtemplatesもそうだったのですが、
+
+アプリケーションのディレクトリ–\>templates とか　static とか–\>アプリケーション名–\>ファイル
+
+という構成になってます。   
+(このへんの仕組みを書いたドキュメントがあったのですが、わからなくなっちゃいました。)
+
+次に、html側を修正していきます。  
+以下のようにします。
+
+**home.html**
+
+```
+{% load static%}
+<img src="{% static "posts/home.jpg"%}" style="max-height:500px"/>
+```
+
+「{% load static %}」と 「{% static “ディレクトリ名” %}」を追加しています。  
+ 実際に、クライアントに返されるhtmlは以下の通りとなります。
+
+**home.html**
+
+```
+<img src="/static/posts/home.jpg" style="max-height:500px"/>
+```
+
+実際にTOP画面にアクセスすると、画像が表示されることが確認できるかと思います。
+
+## 管理者画面で投稿した画像を表示する
+
+次に、管理者画面で投稿した画像を表示していきます。
+
+現在の状態ですが、html側のソースを見てみると、「media/pinky2.jpg」となっていることが確認できます。
+
+**home.html**
+
+```
+<h3> 彼女とデートなうh3>
+    <p> June 5, 2017, midnightp>
+    <img src="media/pinky2.jpg"/>
+    <p> 彼女ともんじゃ焼きを食べに行きました p>
+```
+
+クライアントに返す前の状態はこんな感じでした。
+
+**home.html**
+
+```
+{% for post in posts.all %}
+    <h3> {{ post.title }}h3>
+    <p> {{ post.pub_date }}p>
+    <img src="{{ post.image.url }}"/>
+    <p> {{ post.body }} p>
+
+{% endfor %}
+```
+
+そもそもmediaディレクトリってなんだっけ？ってなったのですが、 Postクラスのimageにアップロード先のディレクトリを定義していました。
+
+```
+class Post(models.Model):
+    #適当な画像
+    image = models.ImageField(upload_to='media/')
+```
+
+そして、管理者画面から投稿した画像は、mediaディレクトリに置かれてますね。
+
+```
+├── db.sqlite3
+├── manage.py
+├── media
+│   ├── django?\205??\226\200.png
+│   ├── jingyi-wang-195381.jpg
+│   ├── pinky2.jpg
+│   └── remi-skatulski-88995.jpg
+├── ohankyblog
+```
+
+なのでここでやりたいことはヘッダー画像のようにstaticディレクトリ配下に置いたものを見せる、というものではなく  
+管理者画面で投稿したmediaディレクトリ配下に置いたものを見せる、ということになります。
+
+### 他のディレクトリを公開する。
+
+あんまりしっくりきてないのですが、メモがてら書きます。  
+さらにいえば、こんへんのやり方は **開発環境用のもので実際に運用する際にはいろいろと問題がある** みたいです。  
+最終的にはインターネットの世界に公開していきたいので、どこかでちゃんとした運用を紹介できればと思います。
+
+まず、「setting.py」に「MEDIA\_URL」と「MEDIA\_ROOT」を追加しています。
+
+**setting.py**
+
+```
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/1.11/howto/static-files/
+
+STATIC_URL = '/static/'
+MEDIA_URL = '/pics/'
+MEDIA_ROOT = BASE_DIR
+```
+
+次に、urls.pyを以下のように編集しています。
+
+**urls.py**
+
+```
+from django.conf.urls import url
+from django.contrib import admin
+import posts.views
+
+#以下の定義を追加
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    #home
+    url(r'^$',posts.views.home, name='home'),
+#以下の定義を追加
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+
+こうすることで、あら不思議、管理者画面で投稿した画像たちが表示されます。
+
+![f:id:konoemario:20170610205637p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170610/20170610205637.png "f:id:konoemario:20170610205637p:plain:w500")
+
+実際のhtmlソースは以下のように編集されています。
+
+```
+<h3> 彼女とデートなうh3>
+    <p> June 5, 2017, midnightp>
+    
+    <img src="/pics/media/pinky2.jpg" style="max-height:300px"/>
+    <p> 彼女ともんじゃ焼きを食べに行きました p>
+```
+
+setting.pyで設定した「MEDIA\_URL」は画像が置かれているディレクリを指定しているわけではなく、URLでどう見せるのかという設定だということがわかります。
+
+なんでDjangoはmediaディレクトリに画像があるって知ってるんだろうなぁ、とか考えていたのですが  
+Postsクラスのimageフィールドがあるのか、思ったら納得しました。
+
+試しに、sqliteでテーブルの中身を確認したところ、imageフィールドには、画像のパスが定義されていました。  
+(media以外にも格納先を「tekitou」とかに変えてみたりしていました)
+
+```
+sqlite> select * from posts_post2;
+      id = 1
+   title = aaaa
+pub_date = 2017-06-10 11:26:18
+    body = aaaaaa
+   image = tekitou/pinky2.jpg
+```
+
+ちょっと中途半端ですが、今回はここまでです。

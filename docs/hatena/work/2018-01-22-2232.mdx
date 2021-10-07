@@ -1,0 +1,273 @@
+---
+title: ファイルアップロード機能で学ぶVue.js(2)
+time: 2018-01-22 22:32
+---
+
+# 日記
+
+なんかこう人生に対してやる気がでないときってあるよね！   
+今、そんな感じ。
+
+よくあるのであまり気にしてないのだけれども、もしこれが続くようなことがあった場合、フリーランスだと怖いなぁって思う。  
+小説の死のロングウォークを思い出したりするよ。
+
+よくよく考えれば、会社員でも同じかもしれないけれども。
+
+# 前回の続き
+
+前回は`drop.vue`コンポーネントを作成して、`main.js`に登録したところまでを行いました。
+
+<figure class="figure-image figure-image-fotolife" title="前回の様子"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180118/20180118222045.png" alt="f:id:konoemario:20180118222045p:plain" title="f:id:konoemario:20180118222045p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>前回の様子</figcaption></figure>
+
+その続きを書いていくんだよ！
+
+- [日記](#%E6%97%A5%E8%A8%98)
+- [前回の続き](#%E5%89%8D%E5%9B%9E%E3%81%AE%E7%B6%9A%E3%81%8D)
+  - [drop.vueにドラッグ & ドロップでファイル選択を追加する](#dropvue%E3%81%AB%E3%83%89%E3%83%A9%E3%83%83%E3%82%B0--%E3%83%89%E3%83%AD%E3%83%83%E3%83%97%E3%81%A7%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E9%81%B8%E6%8A%9E%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B)
+  - [onDropの処理を書く](#onDrop%E3%81%AE%E5%87%A6%E7%90%86%E3%82%92%E6%9B%B8%E3%81%8F)
+  - [ちょっと前回を振りかえる](#%E3%81%A1%E3%82%87%E3%81%A3%E3%81%A8%E5%89%8D%E5%9B%9E%E3%82%92%E6%8C%AF%E3%82%8A%E3%81%8B%E3%81%88%E3%82%8B)
+  - [子のdrop.vueから親にデータを渡す](#%E5%AD%90%E3%81%AEdropvue%E3%81%8B%E3%82%89%E8%A6%AA%E3%81%AB%E3%83%87%E3%83%BC%E3%82%BF%E3%82%92%E6%B8%A1%E3%81%99)
+
+## drop.vueにドラッグ & ドロップでファイル選択を追加する
+
+前回は、inputタグだけを使ってファイル選択のみがてきていた状態でしたが、当初の予定通りドラッグ&ドロップ機能もつけていきます。
+
+まずはテンプレートですが、以下のように、ドラッグ&ドロップができるエリアを用意してあげます。  
+スタイルは、ここには記載しませんが、`drop`クラスに対してpaddingなりwidth、heightを指定して、エリアを確保しています。
+
+**drop.vue**
+
+```
+<template>
+    <div class="drop" @dragleave.prevent @dragover.prevent @drop.prevent="onDrop">
+    </div>
+</template>
+```
+
+`@dragleave.prevent`あたりはドラッグ&ドロップでファイル選択するにあたって定番の処理でしょうか。  
+ブラウザにドラッグ&ドロップをしてしまうと、ブラウザがファイルを表示しようとしてくれます。  
+Vue.jsではイベント名の後に`.prevent`と書くこと、デフォルトのイベントの処理をキャンセルすることができます。
+
+ドラッグ&ドロップを行ったときのファイルは`@drop`イベントが発生したときの`onDrop`に書くことにします。
+
+さて、`onDrop`の処理を書く前に、ドラッグ&ドロップのエリアの中にinputタグもいれることにします。
+
+**drop.vue**
+
+```
+<template>
+    <div class="drop" @dragleave.prevent @dragover.prevent @drop.prevent="onDrop">
+        <div class="drop__default-container">
+            <label> ファイルを選択
+                <input class="drop__input" type="file" multiple="multiple" @change="onDrop">
+            </label>
+        </div>
+    </div>
+</template>
+```
+
+こんな感じになりました。
+
+![f:id:konoemario:20180122222838p:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180122/20180122222838.png "f:id:konoemario:20180122222838p:plain")
+
+## onDropの処理を書く
+
+つづいて`onDrop`の処理を書いていきます。
+
+といっても大した内容ではないのでさくっといきます。
+
+**drop.vue**
+
+```
+<script>
+    export default {
+        methods:{
+        //inputタグとドラッグ&ドロップから呼ばれる
+            onDrop:function(event){
+                let fileList = event.target.files ? 
+                               event.target.files:
+                               event.dataTransfer.files;
+
+                let files = [];
+
+                for(let i = 0; i < fileList.length; i++){
+                    files.push(fileList[i]);
+                }
+            }
+        },
+    }
+</script>
+```
+
+`onDrop`はファイル選択とドラッグ&ドロップから呼ばれます。  
+ファイル選択から呼ばれた場合、`event.target.files`からファイルを取得することができます。
+
+一方、ドラッグ&ドロップの場合は、`event.dataTransfer.files`で取得することができます。
+
+その後に、取得したファイルを`files`変数に格納しています。
+
+これだけでとりあえず、ファイルを取得するコンポーネントdropが完成しました！
+
+## ちょっと前回を振りかえる
+
+前回は、dropコンポーネントをもつ`main.js`がいました。  
+`main.js`は`create.html`のフォームの内容をaxiosでサーバーに送信する処理を担っています。
+
+**main.js**
+
+```
+//ファイル選択コンポーネント
+const Drop = require('./components/drop');
+
+new Vue({
+    el:'.form',
+    data:{
+        //タイトル
+        title:'',
+        //ファイル
+        files:[]
+    },
+    methods:{
+        //ファイル送信処理
+        onSubmit:function(){
+            //送信データはFormDataを使うよ！
+            let data = new FormData;
+
+            //titleを追加
+            data.append('title', this.title);
+
+            //filesは複数ファイルを選択できる想定なのでループで追加するよ！
+            for(let i = 0; i < this.files.length; i++){
+                data.append('files[]', this.files[i]);
+            }
+
+            //axiosでサーバーに送るよ！
+            axios.post('/file',data)
+            .then((response) => {
+                console.log(response.data);
+            })
+            .catch((error) => {
+                console.log(error);
+            })
+        },    
+    },
+    components:{
+        //コンポーネントを登録する！
+        'drop':Drop
+    }
+```
+
+`create.html`はこんな感じで、省略しちゃってますがさきほどの`main.js`を読み込んでおります。
+
+**create.html**
+
+```
+<form class="simple-form">
+        <h2>ファイルアップロードh2>
+        <label for="title">タイトルlabel>
+        <input type="text" name="title" v-model="title">
+        <button type="button" @click="onSubmit">投稿するbutton>
+        <drop>drop>
+    form>
+```
+
+図にするとこんな感じでしょうか。
+
+<figure class="figure-image figure-image-fotolife" title="わかりにくい関係図"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180122/20180122215656.png" alt="f:id:konoemario:20180122215656p:plain" title="f:id:konoemario:20180122215656p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>わかりにくい関係図</figcaption></figure>
+
+それでですね、今`drop.vue`にファイル選択とドラッグ&ドロップでファイルを取得することができるようになりました。
+
+<figure class="figure-image figure-image-fotolife" title="今の状態"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180122/20180122220034.png" alt="f:id:konoemario:20180122220034p:plain" title="f:id:konoemario:20180122220034p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>今の状態</figcaption></figure>
+
+今回、この取得したファイルをmain.jsに渡して、サーバーに送信したいわけです。
+
+## 子のdrop.vueから親にデータを渡す
+
+ということで、Vue.jsのコンポーネントで避けて通れないemitを使うことにします。
+
+このへんについては、以前も書いたのでここでは割愛します。  
+[3連休だしVue.jsをはじめよう：コンポーネントを使ってみる - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/10/09/004525)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/10/09/004525">www.tohuandkonsome.site</a></cite>
+
+イメージはものっそい汚い絵ですが、こんな感じになります。  
+<figure class="figure-image figure-image-fotolife" title="汚い絵"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20180122/20180122221122.png" alt="f:id:konoemario:20180122221122p:plain" title="f:id:konoemario:20180122221122p:plain" class="hatena-fotolife" itemprop="image"></span><figcaption>汚い絵</figcaption></figure>
+
+コードはこんな感じになります。
+
+**drop.vue**
+
+```
+<script>
+    export default {
+        methods:{
+        //inputタグとドラッグ&ドロップから呼ばれる
+            onDrop:function(event){
+                let fileList = event.target.files ? 
+                               event.target.files:
+                               event.dataTransfer.files;
+
+                let files = [];
+
+                for(let i = 0; i < fileList.length; i++){
+                    files.push(fileList[i]);
+                }
+
+                //イベントsend-fileを発火させて、files変数を渡す
+                this.$emit('send-file', files);
+            }
+        },
+    }
+</script>
+```
+
+`create.html`では、ややこしいですがdrop.vueが発生するイベント`send-file`をキャッチして、`sendFile`関数を呼びます。
+
+**create.html**
+
+```
+<form class="simple-form">
+        <h2>ファイルアップロードh2>
+        <label for="title">タイトルlabel>
+        <input type="text" name="title" v-model="title">
+        <button type="button" @click="onSubmit">投稿するbutton>
+        <drop @send-file="sendFile">drop>
+    form>
+```
+
+最後に`sendFile`関数を`main.js`に書いてあげます。
+
+**main.js**
+
+```
+//ファイル選択コンポーネント
+const Drop = require('./components/drop');
+
+new Vue({
+    el:'.form',
+    data:{
+        //タイトル
+        title:'',
+        //ファイル
+        files:[]
+    },
+    methods:{
+        //ファイル送信処理
+        onSubmit:function(){
+          //省略
+        },    
+        sendFile(files){
+            this.files = files;
+        }
+    },
+    components:{
+        //コンポーネントを登録する！
+        'drop':Drop
+    }
+```
+
+`senfFile`は、`drop.vue`が発火させるイベントからfiles変数を受け取っています。この中身を`main.js`のデータである`this.files`に格納することで無事、子から親にデータを渡すことができました。
+
+あとは、前回書きました`onSubmit`の処理を書くことで選択したファイルをサーバーに送信することができるようになりました。
+
+やりたかったことは以上になります。
+
+他にもdrop.vueコンポーネントは、ファイル選択したあとも見た目がかわらなかったりするので、もう少し使い勝手のよいコンポーネントに直したりとかも宿題はあるのですが、こちらは気がむいたら書いていこうと思います。

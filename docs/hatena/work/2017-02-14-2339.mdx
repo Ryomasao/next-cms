@@ -1,0 +1,88 @@
+---
+title: Python初心者:CloudVisonを使ってみた(1)
+time: 2017-02-14 23:39
+---
+
+## 目次
+
+- [目次](#%E7%9B%AE%E6%AC%A1)
+  - [前回からの続き](#%E5%89%8D%E5%9B%9E%E3%81%8B%E3%82%89%E3%81%AE%E7%B6%9A%E3%81%8D)
+  - [必要な情報を揃える](#%E5%BF%85%E8%A6%81%E3%81%AA%E6%83%85%E5%A0%B1%E3%82%92%E6%8F%83%E3%81%88%E3%82%8B)
+- [まずはリクエスト](#%E3%81%BE%E3%81%9A%E3%81%AF%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88)
+  - [とりあえずリクエスト処理を行う。](#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9A%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88%E5%87%A6%E7%90%86%E3%82%92%E8%A1%8C%E3%81%86)
+  - [イメージデータを渡す](#%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E3%83%87%E3%83%BC%E3%82%BF%E3%82%92%E6%B8%A1%E3%81%99)
+
+#### 前回からの続き
+
+前回からの続きになります。
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/02/14/201936" title="Python初心者:CloudVisonを使ってみることにしました - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/02/14/201936">tohutokonsome.hatenablog.com</a></cite>
+
+#### 必要な情報を揃える
+
+以下の記事を参考にさせていただきます。
+
+[Cloud Vision APIの使い方まとめ](https://syncer.jp/cloud-vision-api)<cite class="hatena-citation"><a href="https://syncer.jp/cloud-vision-api">syncer.jp</a></cite>
+
+<iframe src="http://vaaaaaanquish.hatenablog.com/embed/2016/08/08/160353" title="PythonでGoogle Cloud Visionを使った顔検出 - Stimulator" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://vaaaaaanquish.hatenablog.com/entry/2016/08/08/160353">vaaaaaanquish.hatenablog.com</a></cite>
+
+内容を多少理解することができたら、Google公式を見ることにします。
+
+[Cloud Vision API のリクエストとレスポンス &nbsp;|&nbsp; Google Cloud Vision API ドキュメント &nbsp;|&nbsp; Google Cloud Platform](https://cloud.google.com/vision/docs/requests-and-responses?hl=ja)
+
+### まずはリクエスト
+
+[Cloud Vision APIの使い方まとめ (サンプルコード付き)](https://syncer.jp/cloud-vision-api)のリクエスト方法を参考に作業していきます。
+
+<script src="https://gist.github.com/4792b71adfbac7ad2685ebd90b33020e.js"> </script>
+
+[CloudVison\_01.py](https://gist.github.com/4792b71adfbac7ad2685ebd90b33020e)
+
+CloudVisionを利用するためには、APIにリクエストを投げる必要があります。 PythonでHTTPリクエストを投げるにはどうすればいいんだろう？と思ったところで
+
+[PythonでGoogle Cloud Visionを使った顔検出 - Stimulator](http://vaaaaaanquish.hatenablog.com/entry/2016/08/08/160353)のコードを参考にします。
+
+Session()、Request()関数あたりが、該当処理になりそうです。
+
+#### とりあえずリクエスト処理を行う。
+
+「みんなのPython」では、Webリクエスト処理として、標準ライブラリのurllibが紹介されていましたが 　 **_今風ではない？_** ということでしょうか。 こちらの記事を参考に、Requestsライブラリを利用していきます。
+
+[クイックスタート — requests-docs-ja 1.0.4 documentation](http://requests-docs-ja.readthedocs.io/en/latest/user/quickstart/)
+
+<script src="https://gist.github.com/707c5e61a4989ac51c04195c3fcac157.js"> </script>
+
+[とりあえずリクエスト](https://gist.github.com/707c5e61a4989ac51c04195c3fcac157)
+
+APIにリクエストを投げることができました（と思います。）
+
+とはいえ、結果は返ってきていないです。
+
+というのも、肝心のイメージデータを渡していません。
+
+#### イメージデータを渡す
+
+イメージデータですが、CloudVisonのAPIはHTTPのPOSTメソッドで、かつJSON形式のデータを リクエストボディに渡す仕様になっています。
+
+[Cloud Vision API のリクエストとレスポンス &nbsp;|&nbsp; Google Cloud Vision API ドキュメント &nbsp;|&nbsp; Google Cloud Platform](https://cloud.google.com/vision/docs/requests-and-responses?hl=ja#post_requests)
+
+そもそも、HTTPのPOSTメソッドってなんじゃ、みたいな状態ですが それっぽいことを書いています。
+
+このへんの事は、以下を読むとなんとなくほーん、という感じになります。
+
+[![Webを支える技術 -HTTP、URI、HTML、そしてREST (WEB+DB PRESS plus)](https://images-fe.ssl-images-amazon.com/images/I/51qo6pgjaSL._SL160_.jpg "Webを支える技術 -HTTP、URI、HTML、そしてREST (WEB+DB PRESS plus)")](http://www.amazon.co.jp/exec/obidos/ASIN/4774142042/hatena-blog-22/)
+
+[Webを支える技術 -HTTP、URI、HTML、そしてREST (WEB+DB PRESS plus)](http://www.amazon.co.jp/exec/obidos/ASIN/4774142042/hatena-blog-22/)
+
+- 作者: 山本陽平
+- 出版社/メーカー: 技術評論社
+- 発売日: 2010/04/08
+- メディア: 単行本（ソフトカバー）
+- 購入: 143人 クリック: 4,320回
+- [この商品を含むブログ (182件) を見る](http://d.hatena.ne.jp/asin/4774142042/hatena-blog-22)
+
+中身が薄いわりに、ながくなったので次回に回します。
+
+※HTTPリクエストの中身をみたいのですが、なにかよい方法はないでしょうか。 Wiresharkで見れるかも！と思い立って覗いたのですが、膨大な量のパケットが飛び交っていて どれが目的のリクエストなのかがわからず。。。
+
+PyCharmでそういった素敵なデバック機能はないのでしょうか。

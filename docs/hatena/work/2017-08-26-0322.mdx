@@ -1,0 +1,186 @@
+---
+title: PHPを学習する必要がでてきたので、いろいろめも
+time: 2017-08-26 03:22
+---
+
+# 開発環境を整える
+
+XAMPPを使うというのも魅力的だったけれども、勉強もかねて個別で用意しよう。
+
+なんとなく名前だけ聞いた事のある、vargrantやDockerを使っていくのが一番いい気もするけれども、仮想環境の前に、実環境で試してみる。
+
+### なにはともあれPHPを用意する
+
+といっても、これもMacOSの場合、デフォルトでインストールされているっぽい。 （4年ぐらい前にPHP入門をやった記憶があるので、そのときに導入したかもしれない。)
+
+###### phpバージョン確認
+
+```
+$ php -v
+PHP 5.5.38 (cli) (built: Mar 30 2017 12:11:07) 
+Copyright (c) 1997-2015 The PHP Group
+Zend Engine v2.5.0, Copyright (c) 1998-2015 Zend Technologies
+```
+
+デフォルトで用意されているPHPはのバージョンは、5.5系だった。  
+せっかくなので、最新のPHP7を使ってみようと思う。
+
+PHPのインストールに関しては、以下の記事を参考にさせていただきました。
+
+[homebrewでapache2.4とphp7.0.7をインストール - Qiita](http://qiita.com/OTAGRAMER/items/5d5ee63e05ae3c759365)<cite class="hatena-citation"><a href="http://qiita.com/OTAGRAMER/items/5d5ee63e05ae3c759365">qiita.com</a></cite>
+
+### メモ
+
+```
+$ brew install php70
+(中略)
+==> Searching taps...
+Error: No formulae found in taps.
+```
+
+そんなフォームラはないよっていわれる。
+
+現在のフォームラ一覧を確認する。
+
+```
+$ brew tap
+homebrew/core
+```
+
+フォームラの追加。
+
+```
+$ brew tap homebrew/homebrew-php
+```
+
+無事、追加されている。
+
+```
+$ brew tap
+homebrew/core
+homebrew/php
+```
+
+再挑戦したところ、インストールが完了した。
+
+```
+$ brew install php70
+(中略)
+/usr/local/Cellar/php70/7.0.22_14: 337 files, 39.2MB
+```
+
+バージョンがあがったことが確認できる。
+
+```
+$ php -v
+PHP 7.0.22 (cli) (built: Aug 7 2017 14:05:56) ( NTS )
+Copyright (c) 1997-2017 The PHP Group
+Zend Engine v3.0.0, Copyright (c) 1998-2017 Zend Technologies
+```
+
+そもそも、どこにインストールされたんだっけ。
+
+```
+$ which php
+/usr/local/bin/php
+```
+
+```
+$ ls -ltr|grep php
+lrwxr-xr-x 1 konoe_mario wheel 33 9 2 14:59 php -> ../Cellar/php70/7.0.22_14/bin/php
+```
+
+Homebrewでは、「/usr/local/Cellar」にphpがインストールされて、「/usr/local/bin/php」にはリンクが貼られていることがわかる。
+
+#### Composer
+
+PHPの依存性を解決してくれるツールとのこと。  
+なんだかよくわからないけれども、とりあえずインストールする。
+
+動画で紹介されていた方法が古かったっぽいので、公式を見てインストールした。
+
+**うまくいかなかったやつ**
+
+```
+$ curl -sS https://github.com/composer/getcomposer.org/blob/master/web/installer|php
+```
+
+[Composer](https://getcomposer.org/)<cite class="hatena-citation"><a href="https://getcomposer.org/">getcomposer.org</a></cite>
+
+**公式**
+
+```
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php -r "if (hash_file('SHA384', 'composer-setup.php') === '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+php composer-setup.php
+php -r "unlink('composer-setup.php');"
+```
+
+上記を行うと、実行したディレクトリに、「composer.phar」ができる。 このファイルを、デフォルトでパスが通っているディレクトリ配下に移動する。
+
+```
+$ mv composer.phar /usr/local/bin/composer
+```
+
+これで、composerが使う準備ができた。
+
+## Webサーバーの準備
+
+PHPの勉強をするだけだったら、Webの環境は必須でもないような、必須のような
+
+Webサーバーの選択肢として
+
+- nginx
+- Apache
+
+[PHP ビルトインウェブサーバーを起動するコマンドのメモ - Qiita](http://qiita.com/dounokouno/items/543e6e1b74539175f1cf)<cite class="hatena-citation"><a href="http://qiita.com/dounokouno/items/543e6e1b74539175f1cf">qiita.com</a></cite>
+
+今回は、Apacheを使ってみることにする。
+
+## Apache
+
+### さくっと確認
+
+MacOSの場合、Apacheはデフォルトでインストールされている。
+
+**Apacheバージョン確認**
+
+```
+$ httpd -v
+Server version: Apache/2.4.16 (Unix)
+Server built: Jul 22 2015 21:03:09
+```
+
+Apacheの2.4系が現在のところ最新みたいなので、これをそのまま使っていくことにする。
+
+**Apacheの起動**
+
+```
+$ sudo apachectl start
+```
+
+**ブラウザで「[http://localhost/](http://localhost/)」にアクセス**![f:id:konoemario:20170902152645p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170902/20170902152645.png "f:id:konoemario:20170902152645p:plain:w300")
+
+参照できる。
+
+Apacheを停止すると、参照できなくなる。
+
+**Apacheの停止**
+
+```
+$ sudo apachectl stop
+```
+
+### 気になったことの羅列
+
+httpd.confの場所 /etc/apache2/httpd.conf
+
+## ApacheでPHPを使えるようにする
+
+### #
+
+```
+$ brew tap
+Updating Homebrew...
+homebrew/core
+```

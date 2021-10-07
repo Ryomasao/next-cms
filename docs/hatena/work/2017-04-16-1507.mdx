@@ -1,0 +1,204 @@
+---
+title: RaspBerryPiでステッピングモーターを動かす
+time: 2017-04-16 15:07
+---
+
+[RaspBerryPiではじめる電子工作まとめ - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/04/09/175440)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/04/09/175440">tohutokonsome.hatenablog.com</a></cite>
+
+ラジコンカーをつくるためにモーターを漁っていたら、「ステッピングモーター」に触れる機会があったので書いておきます！
+
+動かすのに、かなり苦戦しました。
+
+**誤っている箇所があればご指摘いただけると嬉しいです！**
+
+- [ステッピングモーターとは](#%E3%82%B9%E3%83%86%E3%83%83%E3%83%94%E3%83%B3%E3%82%B0%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC%E3%81%A8%E3%81%AF)
+- [使用した製品](#%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%9F%E8%A3%BD%E5%93%81)
+- [モータードライバのはんだごて](#%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC%E3%83%89%E3%83%A9%E3%82%A4%E3%83%90%E3%81%AE%E3%81%AF%E3%82%93%E3%81%A0%E3%81%94%E3%81%A6)
+- [配線をしてみる](#%E9%85%8D%E7%B7%9A%E3%82%92%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+- [Pythonで実行してみる](#Python%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+- [反省点](#%E5%8F%8D%E7%9C%81%E7%82%B9)
+  - [はんだごてが適当すぎた](#%E3%81%AF%E3%82%93%E3%81%A0%E3%81%94%E3%81%A6%E3%81%8C%E9%81%A9%E5%BD%93%E3%81%99%E3%81%8E%E3%81%9F)
+  - [データシート、秋月電子通商のマニュアルをちゃんと読むべき](#%E3%83%87%E3%83%BC%E3%82%BF%E3%82%B7%E3%83%BC%E3%83%88%E7%A7%8B%E6%9C%88%E9%9B%BB%E5%AD%90%E9%80%9A%E5%95%86%E3%81%AE%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB%E3%82%92%E3%81%A1%E3%82%83%E3%82%93%E3%81%A8%E8%AA%AD%E3%82%80%E3%81%B9%E3%81%8D)
+
+## ステッピングモーターとは
+
+通常のモータは電流を流すと、ぷしゃあああと何回転もするの対して  
+ステッピングモータは、とりあえず30度回転しよっかみたいみたいな感じで  
+回転する角度を制御できるみたいです。
+
+## 使用した製品
+
+以下の製品を使用しました。
+
+ステッピングモーター  
+[バイポーラ ステッピングモーター ＭＤＰ−３５Ａ ４８ステップ: パーツ一般 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gP-09438/)
+
+モータードライバ  
+[ＤＲＶ８８３５使用ステッピング＆ＤＣモータドライバモジュール: 組立キット 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gK-09848/)
+
+これらは、ラズパイマガジン2017年2月&4月号の電子工作入門部品セットに含まれています。
+
+[![ラズパイマガジン 2017年2月号 (日経BPパソコンベストムック)](https://images-fe.ssl-images-amazon.com/images/I/61CFZ5rsKCL._SL160_.jpg "ラズパイマガジン 2017年2月号 (日経BPパソコンベストムック)")](http://www.amazon.co.jp/exec/obidos/ASIN/4822239225/hatena-blog-22/)
+
+[ラズパイマガジン 2017年2月号 (日経BPパソコンベストムック)](http://www.amazon.co.jp/exec/obidos/ASIN/4822239225/hatena-blog-22/)
+
+- 作者: 日経Linux
+- 出版社/メーカー: 日経BP社
+- 発売日: 2016/12/15
+- メディア: 単行本
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/4822239225/hatena-blog-22)
+
+  
+
+[![ラズパイマガジン 2017年4月号(日経BPパソコンベストムック)](https://images-fe.ssl-images-amazon.com/images/I/61lk36R06UL._SL160_.jpg "ラズパイマガジン 2017年4月号(日経BPパソコンベストムック)")](http://www.amazon.co.jp/exec/obidos/ASIN/4822239276/hatena-blog-22/)
+
+[ラズパイマガジン 2017年4月号(日経BPパソコンベストムック)](http://www.amazon.co.jp/exec/obidos/ASIN/4822239276/hatena-blog-22/)
+
+- 作者: 日経Linux
+- 出版社/メーカー: 日経BP社
+- 発売日: 2017/02/15
+- メディア: 単行本
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/4822239276/hatena-blog-22)
+
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+<ins class="adsbygoogle" style="display:block; text-align:center;" data-ad-layout="in-article" data-ad-format="fluid" data-ad-client="ca-pub-9454652061055047" data-ad-slot="9448453805"></ins>
+
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+## モータードライバのはんだごて
+
+ブレッドボードに接続する際には、端子とモータードライバをはんだごてする必要があります。
+
+モータードライバはものすごく小さい！  
+ ![f:id:konoemario:20170416014034j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170416/20170416014034.jpg "f:id:konoemario:20170416014034j:plain")
+
+とりあえず部品を固定しないとどうにもならないので、ブレッドボードに挿して固定することにしました。  
+おそらく推奨されないやり方だと思われますが、突き進みます。
+
+![f:id:konoemario:20170416131614j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170416/20170416131614.jpg "f:id:konoemario:20170416131614j:plain")
+
+はんだごてをするための「はんだ」も写っているのですが 部品に比べかなり大きいです。   
+電子工作用のもうすこし細いやつを購入すればよかったかも。
+
+また、端子は14本あったのですが、モータードライバは6本が2つ必要だったので手で折っちゃいました。  
+この辺のことは常識なのか、どこにも説明が書いてないので不安になります。
+
+・  
+・  
+・
+
+はんだごて途中経過
+
+![f:id:konoemario:20170416014650j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170416/20170416014650.jpg "f:id:konoemario:20170416014650j:plain")
+
+びっくりするぐらい下手くそですね。  
+念のため買っておいた、はんだ吸い取り線が大活躍しました。
+
+・  
+・  
+・
+
+汚いながらも、なんとか最後まで完了しました。
+
+![f:id:konoemario:20170416014907j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170416/20170416014907.jpg "f:id:konoemario:20170416014907j:plain")
+
+## 配線をしてみる
+
+伝える気があるのかないのかわからない絵ですが、こんな感じです。
+
+![f:id:konoemario:20170416021142j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170416/20170416021142.jpg "f:id:konoemario:20170416021142j:plain")
+
+ラズパイから、モーター用の電源5V、モータドライバー用の電源3.3Vを供給しています。
+
+モーターのデータシートをみると、駆動電圧12Vとなっており、モータドライバの方もMAX12Vと記載があるので、今回は少なめです。
+
+絵の中のラズパイから伸びている、青、白、黄、赤の線ですが、こちらがプログラムで制御する部分になります。
+
+ステッピングモーターは、DCモーターとは異なり、線が４本あります。
+
+細かい仕組みはさっぱりですが、この線に決まった順序で電圧をかけていくことで、モーターが回転します。
+
+![f:id:konoemario:20170416134103j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170416/20170416134103.jpg "f:id:konoemario:20170416134103j:plain")
+
+ここまでを簡単に整理すると、 以下の通りとなります。
+
+- AIN1→AOUT1(青の線へ出力)
+- AIN2→AOUT2(白の線へ出力)
+- BIN1→BOUT1(黄の線へ出力)
+- BIN2→BOUT2(赤の線へ出力)
+
+ですので、今度はラズパイ側から、AIN1〜BIN2へ信号をおくるために配線を行っていきます。
+
+まず前提のとなるラズパイ側ピンの役割は以下の通りとなります。
+
+![f:id:konoemario:20170416140214j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170416/20170416140214.jpg "f:id:konoemario:20170416140214j:plain")
+
+※下段部分の絵は、公式の絵になります。[GPIO: Models A+, B+, Raspberry Pi 2 B and Raspberry Pi 3 B - Raspberry Pi Documentation](https://www.raspberrypi.org/documentation/usage/gpio-plus-and-raspi2/)<cite class="hatena-citation"><a href="https://www.raspberrypi.org/documentation/usage/gpio-plus-and-raspi2/">www.raspberrypi.org</a></cite>
+
+黄色のGPIOの部分がプログラムから制御できる部分になります。
+
+今回は、AIN1〜BIN2の制御は以下のピンを使うことにしました。
+
+- 　７番のピン-AIN1
+- １１番のピン-AIN2
+- １３番のピン-BIN1
+- １５番のピン-BIN2
+
+ちなみに、１番のピンはモータードライバの電源、２番のピンはモーダー電源として利用しました。  
+６番もGND(マイナス側）として利用しています。
+
+※GNDってなんだってなるのですが、ラズパイをただの乾電池として捉えると、理解しやすいかもです。  
+電流はプラスからマイナスに向かって電流が流れます。  
+なので、乾電池もプラス極とマイナス極をつないで初めて電流が流れます。
+
+GPIOや電源の部分は全てプラスになります。  
+GND(マイナス)まで回路をつなぐことで、電流が流れ始めます。
+
+全部つなげてみるとこんな感じになりました。
+
+![f:id:konoemario:20170416143227j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170416/20170416143227.jpg "f:id:konoemario:20170416143227j:plain")
+
+## Pythonで実行してみる
+
+コードは、以下の通りとなります。  
+冗長なコードかもしれませんが許してください。　
+
+一点混乱するところとして、PINの番号とGPIOの番号が一致していません。
+
+- GPIO4 -７番のピン
+- GPIO17-１１番のピン
+- GPIO27-１３番のピン
+- GPIO22-１５番のピン
+
+物理的なピンの番号と、内部の役割に応じた番号で違っているみたいです。  
+公式サイトにそれらしき関係が載っていました。  
+[Raspberry Pi GPIO Pinout](https://pinout.xyz/)
+
+<script src="https://gist.github.com/2ead7d3f720fd12f7be332eca99df0ba.js"> </script>
+
+[ステッピングモーターを動かす](https://gist.github.com/2ead7d3f720fd12f7be332eca99df0ba)
+
+## 反省点
+
+備忘録がてら反省点を。
+
+### はんだごてが適当すぎた
+
+最初、モーターが全然動きませんでした。   
+テスターを使ってステッピングモータのそれぞれの線に電流が流れているのかを確認した結果  
+白の線に電流が流れていないことが判明。  
+対応するモータドライバ部分のはんだをやり直した結果、電流が流れるようになった。
+
+### データシート、秋月電子通商のマニュアルをちゃんと読むべき
+
+[http://akizukidenshi.com/download/ds/sanyos/MDP-35A\_a.pdf](http://akizukidenshi.com/download/ds/sanyos/MDP-35A_a.pdf)[http://akizukidenshi.com/download/ds/akizuki/AE-DRV8835-Ss.pdf](http://akizukidenshi.com/download/ds/akizuki/AE-DRV8835-Ss.pdf)
+
+作業の進め方は、ラズパイマガジン2月号のステッピングモーターの内容で進めていました。  
+ラズパイマガジンには、読者限定サイトが用意され、配線図や、Pythonコード収録されています。
+
+しかし、配線図、コードを、そっくりそのまま実行したところ、モーターがまったく動きませんでした。
+
+前述のはんだごてがダメだった部分もあり、調査にいろいろと時間がかかったのですが  
+最終的にデータシート、秋月電子通商のマニュアルをよく見ることで解決しました。

@@ -1,0 +1,238 @@
+---
+title: redux-thunkを学ぶ
+time: 2019-02-05 23:15
+---
+
+Reduxに慣れ始めたのであらためて`redux-thunk`をちゃんと理解しようと思う。
+
+- [redux-thunk](#redux-thunk)
+- [まずは基本](#%E3%81%BE%E3%81%9A%E3%81%AF%E5%9F%BA%E6%9C%AC)
+- [非同期処理](#%E9%9D%9E%E5%90%8C%E6%9C%9F%E5%87%A6%E7%90%86)
+- [middlewareを使う](#middleware%E3%82%92%E4%BD%BF%E3%81%86)
+- [redux-thunk](#redux-thunk-1)
+
+## redux-thunk
+
+[reduxjs/redux-thunk](https://github.com/reduxjs/redux-thunk/blob/master/src/index.js)<cite class="hatena-citation"><a href="https://github.com/reduxjs/redux-thunk/blob/master/src/index.js">github.com</a></cite>
+
+`redux-thunk`は以下のように非常にシンプルなコードでつくられている。
+
+**魔法のようなredux-thunk**
+
+```
+function createThunkMiddleware(extraArgument) {
+  return ({ dispatch, getState }) => next => action => {
+    if (typeof action === 'function') {
+      return action(dispatch, getState, extraArgument)
+    }
+
+    return next(action)
+  }
+}
+
+const thunk = createThunkMiddleware()
+thunk.withExtraArgument = createThunkMiddleware
+
+export default thunk
+```
+
+こちらがなぜ必要なのかを、順を追ってみていく。
+
+## まずは基本
+
+まずは、シンプルにアクションをつくってdispatchする基本パターン。
+
+**普通のアクションクリエイター**
+
+```
+import { createStore } from "redux"
+
+// storeをつくって
+const store = createStore((state, action) => {
+  console.log("Action is...", action)
+  return state
+});
+
+// 普通のアクションクリエイターを定義して
+const syncActionCreator = someValue => ({
+  type: "SYNC",
+  payload: someValue
+});
+
+// dispatchする
+store.dispatch(syncActionCreator(1))
+```
+
+## 非同期処理
+
+これがアクションクリエイターが非同期処理を含むとうまくいかなくなる。
+
+**非同期のアクションクリエイター**
+
+```
+import { createStore } from "redux"
+
+// storeをつくって
+const store = createStore((state, action) => {
+  console.log("Action is...", action)
+  return state
+})
+
+// 非同期処理を含むアクションクリエイターを定義して
+const asyncActionCreator = async () => {
+  // 非同期処理
+  const res = await axios.get("https://jsonplaceholder.typicode.com/todos/1")
+  
+  // 非同期処理の結果をアクションとして設定したい
+  return {
+    type: "ASYNC",
+    payload: res.data
+  }
+}
+
+// dispatchする
+store.dispatch(syncActionCreator(1))
+```
+
+が、これは`Actions must be plain objects. Use custom middleware for async actions.`と怒られてしまう。
+
+なぜなら`async/await`でreturnした場合は、Promiseオブジェクトを返すので、dispatch(PromiseObject)となり、PlainObjectではなくなってしまうから。
+
+これを解決するためには、
+
+- 非同期処理の結果をアクションクリエイターに渡すようする
+- Reduxのmiddlewareの機能を使ってなんとかする
+
+の二択が考えられる。
+
+未だに、アクションクリエイターの中で非同期処理を行わずに、前者の方法でいいんじゃねと思ったりもする。  
+ビジネスロジックをRedux側にまとめたいから、アクションクリエイターに書くのだろうか。
+
+後者のmiddlewareのひとつとして、`redux-thunk`を使う。   
+次に`redux-thunk`の理解をより深めるためにまずは、自前でmiddlewareを作成することにする。
+
+## middlewareを使う
+
+middlewareは以下のように`createStore`に引数として渡す。  
+**Middleware**
+
+```
+import { createStore, applyMiddleware } from "redux"
+
+const store = createStore((state, action) => {
+  console.log("Action is...", action)
+  return state
+}, applyMiddleware(myMiddleware))
+```
+
+作成するmiddlewareは以下の公式ドキュメントに従った関数を作成しておく。
+
+[applyMiddleware · Redux](https://redux.js.org/api/applymiddleware)<cite class="hatena-citation"><a href="https://redux.js.org/api/applymiddleware">redux.js.org</a></cite>
+
+> Each middleware receives Store's dispatch and getState functions as named arguments, and returns a function. That function will be given the next middleware's dispatch method, and is expected to return a function of action calling next(action)
+
+ものすごく適当に意訳すると、 「各ミドルウェアは、`dispatch`と`getState`を引数にとる、関数を返すよ。  
+その関数は、`next`を引数にもらって、さらに関数を返すよ。それで、その関数も`action`を引数にもらって`next(action)`を実行するような関数を返すよ。」  
+という内容。
+
+コードに起こすとこんな感じ。
+
+```
+const middlware = function ({getState, dispatch}) {
+   return function(next) {
+     return function(action) {
+       next(action) 
+    }
+  }
+}
+```
+
+アロー関数を使うと、公式通りすっきりする。
+
+```
+const myMiddlware = ({ getState, dispatch }) => next => action => {
+    next(action)
+};
+```
+
+以下はPromiseオブジェクトが返却されることを考慮したmiddleware。  
+actionには、dispatch(action)のaciton。  
+nextには、本来のstoreのdispatchが設定されている。  
+尚、middlwareが複数ある場合は、次のmiddlwareになる。
+
+**Promiseに対応したミドルウェア**
+
+```
+const myMiddlware = ({ getState, dispatch }) => next => action => {
+ // actionのthenプロパティが関数だったら(つまりPromiseオブジェクト) 
+ if (typeof action.then === "function") {
+     // thenでPromiseの値を取得して
+     action.then(res => {
+    // 次のmiddlewareにresを渡す、またはdispatch(res) となる。   
+      next(res)
+    });
+  } else {
+    next(action)
+  }
+};
+```
+
+これで、非同期処理に対応したmiddlewareを作成することができた。
+
+## redux-thunk
+
+最後にようやく本題に入る。
+
+これまでの流れを踏まえると、以下のコードが見慣れた感じになる。
+
+**魔法のようなredux-thunk**
+
+```
+function createThunkMiddleware(extraArgument) {
+  return ({ dispatch, getState }) => next => action => {
+    if (typeof action === 'function') {
+      return action(dispatch, getState, extraArgument)
+    }
+
+    return next(action)
+  }
+}
+```
+
+`extraArgument`は、`redux-thunk`に引数を指定できる機能なので、それを使用しない場合の`redux-thunk`は以下になる。
+
+**魔法のようなredux-thunk**
+
+```
+({ dispatch, getState }) => next => action => {
+  if (typeof action === 'function') {
+    return action(dispatch, getState)
+  }
+
+  return next(action)
+};
+```
+
+actionが関数だったら、その関数にdispatchと、getStateを渡して実行してる。
+
+このことから、アクションクリエイターは、以下のようにかくことができる。
+
+```
+const asyncActionCreator = () => {
+  // actionは関数にしておく
+  // thunkはactionが関数だとdispatch、getStateを渡して実行してくれる
+  // なので、それをもとに非同期の結果をdispatchする関数を返す
+  return dispatch => {
+    axios.get("https://jsonplaceholder.typicode.com/todos/1").then(res => {
+      dispatch({
+        type: "ASYNC",
+        payload: res.data
+      })
+    })
+  }
+}
+```
+
+前者のmiddlwareは、middleware側でPromiseオブジェクトが解決したときの処理を書いて、取得した値をdispatch。  
+一方、redux-thunkは関数が渡されたらdispatchを渡して、関数を実行するだけ。  
+redux-thunkの方がより柔軟な処理を書くことができることがわかる。

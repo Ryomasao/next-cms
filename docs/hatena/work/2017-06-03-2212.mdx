@@ -1,0 +1,409 @@
+---
+title: Djangoを学ぶ(1)
+time: 2017-06-03 22:12
+---
+
+せっかくだしpythonを使って、Webアプリケーションも作りたいな！と思ってDjangoにたどり着きました。  
+そして都合がよい事にオンライン学習の「Udemy」でセールがあった際に「Djangoの入門編」を見つけて購入していたので、始めることにしました。
+
+[The Ultimate Beginner's Guide to Django - Udemy](https://www.udemy.com/the-ultimate-beginners-guide-to-django-python-web-dev-website/learn/v4/overview)<cite class="hatena-citation"><a href="https://www.udemy.com/the-ultimate-beginners-guide-to-django-python-web-dev-website/learn/v4/overview">www.udemy.com</a></cite>
+
+当初は、オンライン学習のみをこつこつとやっていたのですが、動画ベースの講座なので時間が開くとさっぱり忘れちゃっていて、思い出すにも動画を見返さないといけなくって結構しんどいです。
+
+なので、ここでは学習サイトでやった部分のうち、重要だと思われる部分を抜粋して記載していこうかと思います。
+
+ただ、英語がぜんぜんわからないのに、英語の動画を見ているので、作業内容はともかく、口頭でいっているかもしれない重要なエッセンスは結構な頻度で漏らしている可能性があります。
+
+そういった部分があれば、コメント等でご指摘いただければ幸いです。
+
+- [Djangoのインストール](#Django%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
+- [プロジェクトの作成](#%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%81%AE%E4%BD%9C%E6%88%90)
+- [Webサーバーの立ち上げ](#Web%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC%E3%81%AE%E7%AB%8B%E3%81%A1%E4%B8%8A%E3%81%92)
+- [HelloWorld](#HelloWorld)
+  - [views.pyの作成](#viewspy%E3%81%AE%E4%BD%9C%E6%88%90)
+  - [url.pyの編集](#urlpy%E3%81%AE%E7%B7%A8%E9%9B%86)
+- [簡単なWebページを作成してみる](#%E7%B0%A1%E5%8D%98%E3%81%AAWeb%E3%83%9A%E3%83%BC%E3%82%B8%E3%82%92%E4%BD%9C%E6%88%90%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+  - [home.htmlの作成](#homehtml%E3%81%AE%E4%BD%9C%E6%88%90)
+  - [templatesの作成](#templates%E3%81%AE%E4%BD%9C%E6%88%90)
+  - [setting.pyの編集](#settingpy%E3%81%AE%E7%B7%A8%E9%9B%86)
+  - [ohanky.htmlを一旦作成](#ohankyhtml%E3%82%92%E4%B8%80%E6%97%A6%E4%BD%9C%E6%88%90)
+  - [home.htmlからohanky.htmlへの遷移](#homehtml%E3%81%8B%E3%82%89ohankyhtml%E3%81%B8%E3%81%AE%E9%81%B7%E7%A7%BB)
+    - [home.htmlの入力内容をohanky.htmlに表示する。](#homehtml%E3%81%AE%E5%85%A5%E5%8A%9B%E5%86%85%E5%AE%B9%E3%82%92ohankyhtml%E3%81%AB%E8%A1%A8%E7%A4%BA%E3%81%99%E3%82%8B)
+
+# Djangoのインストール
+
+まずは、導入作業から。  
+pipでとってくるだけ。
+
+```
+masao-3:~ konoe_mario$ sudo pip3 install django
+```
+
+# プロジェクトの作成
+
+Djangoには、プロジェクトという概念があるみたい。  
+プロジェクト単位にテスト用のWebサーバを立ち上げたりできる。
+
+今回は、「sample」という名前でプロジェクトを作った。
+
+```
+#django-admin startproject プロジェクト名
+django-admin startproject sample
+```
+
+プロジェクトを作成すると、以下のファイルが作成される。  
+「db.sqllite3」は後述のrunserverを行うことで作成されるみたいなので 、この時点でなくても大丈夫。
+
+```
+masao-3:sample konoe_mario$ tree
+.
+├── db.sqlite3
+├── manage.py
+└── sample
+    ├── __init__.py
+    ├── __pycache__
+    ├── settings.py
+    ├── urls.py
+    └── wsgi.py
+```
+
+# Webサーバーの立ち上げ
+
+プロジェクトを作成した際に、作成される「manage.py」でWebサーバーを立ち上げることができる。
+
+```
+masao-3:sample konoe_mario$ python manage.py runserver
+```
+
+上記、コマンドを実行すると、「[http://127.0.0.1:8000/](http://127.0.0.1:8000/)」でテスト用のWebサーバが起動しているよ！とのメッセージが表示される。
+
+```
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 13 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, sessions.
+Run 'python manage.py migrate' to apply them.
+
+June 03, 2017 - 09:45:20
+Django version 1.11, using settings 'sample.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+```
+
+さっそく、ブラウザでアクセスしてみると、以下の画面が表示され、無事起動できていることが確認できた。  
+ ![f:id:konoemario:20170603185035p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170603/20170603185035.png "f:id:konoemario:20170603185035p:plain:w500")
+
+ポート番号をデフォルトの8000以外にしたいときは、runserver時にポート番号を指定することで変更できるみたい。
+
+```
+masao-3:sample konoe_mario$ python manage.py runserver 8080
+```
+
+終了したいときはctrl+cで終了する。
+
+# HelloWorld
+
+とりあえず、ブラウザから特定のURLにアクセスして、pythonコードで「Hello World」ちっくなことをやってみる。
+
+## views.pyの作成
+
+プロジェクトのsample配下に「views.py」を作成する。  
+この中に、HTTPリクエストから呼ばれる関数を書く。  
+名前に関しては「views.py」じゃなきゃいけないということではなさそうだけれども、動画の通りに作成した。
+
+```
+masao-3:sample konoe_mario$ tree
+.
+├── db.sqlite3
+├── manage.py
+├── sample
+   ├── __init__.py
+   ├── settings.py
+   ├── urls.py
+   ├── views.py ←----------これ
+   └── wsgi.py
+```
+
+views.pyの内容は以下の通り。   
+クライアントからのHTTPリクエストでohankywolrd関数が呼ばれ、レスポンスとして「OhankyWorld」を返すだけ。
+
+**views.py**
+
+```
+from django.http import HttpResponse
+
+def ohankyworld(request):
+    return HttpResponse("Ohanky World")
+```
+
+## url.pyの編集
+
+さきほど作成した「ohankyworld」関数をURLと紐づける。 プロジェクト作成時に作成されるurl.pyファイルを開くと、urlと関数の紐付けを定義する箇所がある。
+
+ここに作成した、「ohankyworld」を追加する。  
+view.pyをimportしないと、ohankyworldはurls.pyからは見えないので追加する。
+
+**urls.py**
+
+```
+from django.conf.urls import url
+from django.contrib import admin
+#views.pyのohanky関数を呼ぶためにimport
+from . import views
+
+urlpatterns = [
+    #Djangoの管理者画面。今回触れないんだ。  
+    url(r'^admin/', admin.site.urls),
+    #ohankyworld/でアクセスすると関数ohankyworldが呼び出される
+    url(r'^ohankyworld/', views.ohankyworld),
+]
+```
+
+上記設定後に、「[http://localhost:8000/ohankyworld](http://localhost:8000/ohankyworld)」にアクセスしてみれば、「Ohanky World！」と表示される。
+
+# 簡単なWebページを作成してみる
+
+次にDjangoの基本を理解するために、簡単なWebページを作成してみる。   
+作成するWebサイトの構成は以下のとおり。
+
+![f:id:konoemario:20170603213320p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170603/20170603213320.png "f:id:konoemario:20170603213320p:plain:w500")
+
+## home.htmlの作成
+
+まず、新規に「templates」ディレクトリを作成して、その配下に「home.html」を置く。
+
+```
+masao-3:sample konoe_mario$ tree
+.
+├── db.sqlite3
+├── manage.py
+├── sample
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── settings.py
+│   ├── urls.py
+│   ├── views.py
+│   └── wsgi.py
+└── templates ←---------------これ
+    ├── home.html
+```
+
+home.htmlを抜粋すると以下の通り。  
+  
+**home.html**
+
+```
+<h1>おはんきーてすとh1>
+<form action="xxxxx">
+        <input type="text" name="myText1"/>
+        <br>
+        <input type="text" name="myText2"/>
+        <br>
+        <input type="submit" value="Button"/>
+    form>
+```
+
+formタグのAcitonがポイントになるのだけれども、ちょっと話がそれるので一旦xxxxとしています。
+
+## templatesの作成
+
+さきほど作成したディレクトリのtemplatesのこと書く。  
+HelloWorldを試したときは、HttpResoponseとして文字列「Ohanky World!」を返した。
+
+**views.py**
+
+```
+from django.http import HttpResponse
+
+def onankyworld(request):
+    return HttpResponse("Ohanky World")
+```
+
+文字列ではなく、htmlファイルをレスポンスとして返したい場合、templatesの機能を使うことで簡単にできる。
+
+**views.py**
+
+```
+from django.http import HttpResponse
+#templatesの機能を使うのに必要
+from django.shortcuts import render
+
+def home(request):
+   #render関数に返却するhtmlファイルを指定
+   return render(request, 'home.html')
+```
+
+ただし、このままではうまくいかない。  
+home.htmlがどこにあるを定義する必要がある。
+
+## setting.pyの編集
+
+render関数に指定したhtmlファイルがどこにあるかは、プロジェクトを作成した際に自動で作成される「setting.py」で指定する。   
+「setting.py」のTEMPLATESに、home.htmlを置いたディレクトリ「templates」を指定する。   
+こうすることで、render関数はtemplates配下のファイルを探しに行ってくれるみたい。
+
+**setting.py**
+
+```
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': ['templates'], ←-------ここ
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+```
+
+また忘れずに、「url.py」にもhome.htmlの定義を追加しておく。
+
+**urls.py**
+
+```
+from django.conf.urls import url
+from django.contrib import admin
+from . import views
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    #home.htmlを返す
+    url(r'^home/', views.home),
+]
+```
+
+ここまでやったら、「[http://localhost:8000/home](http://localhost:8000/home)」でhomeにアクセスしてみる。
+
+無事、表示されることが確認できた。
+
+![f:id:konoemario:20170603205643p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170603/20170603205643.png "f:id:konoemario:20170603205643p:plain:w500")
+
+## ohanky.htmlを一旦作成
+
+次にhome.htmlの入力内容を表示するohanky.htmlを作成する。  
+home.htmlと同じtemplatesディレクトリ配下に作成する。
+
+**ohanky.html**
+
+```
+<h1>ここに、home.htmlで入力した内容を表示したいh1>
+```
+
+また、views.py、urls.pyにもohanky.htmlが参照できるように追記しておく。
+
+**views.py**
+
+```
+from django.http import HttpResponse
+#setting.pyでtemplatesの設定をした
+from django.shortcuts import render
+
+def home(request):
+   return render(request, 'home.html')
+
+def ohanky(request):
+   return render(request, 'ohanky.html')
+```
+
+**urls.py**
+
+```
+from django.conf.urls import url
+from django.contrib import admin
+from . import views
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    #home.htmlを返す
+    url(r'^home/', views.home),
+    #ohanky.htmlを返す
+    url(r'^ohanky/', views.ohanky),
+]
+```
+
+「[http://localhost:8000/ohanky](http://localhost:8000/ohanky)」にアクセスするとhtmlの内容が表示される。
+
+![f:id:konoemario:20170603215348p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170603/20170603215348.png "f:id:konoemario:20170603215348p:plain:w500")
+
+## home.htmlからohanky.htmlへの遷移
+
+ここで、さきほど端折ったButtonを押したときのacitonについて書く。 action=“xxxx"だった部分について、以下のように変更する。 昔さわったphpを思い出した。
+
+**home.html**
+
+```
+<h1>おはんきーてすとh1>
+<form action="{% url 'ohanky' %}">
+        <input type="text" name="myText1"/>
+        <br>
+        <input type="text" name="myText2"/>
+        <br>
+        <input type="submit" value="Button"/>
+    form>
+```
+
+さらに、urls.pyのohaky.html部分のurl関数に引数nameを与える。  
+このnameが前述のform actionで指定する名前になる。
+
+**urls.py**
+
+```
+from django.conf.urls import url
+from django.contrib import admin
+from . import views
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    #home.htmlを返す
+    url(r'^home/', views.home),
+    #ohanky.htmlを返す
+    url(r'^ohanky/', views.ohanky, name='ohanky'),
+]
+```
+
+この状態でButtonを押すと、「ohanky.html」に遷移してくれると思う。
+
+### home.htmlの入力内容をohanky.htmlに表示する。
+
+さきほど作成した、ohanky関数にrequest.GETメソッドを追加することでhome.htmlの入力フォームの内容を取得することができる。  
+これを、render関数の引数にディクショナリ形式で渡す。
+
+**views.py**
+
+```
+from django.http import HttpResponse
+#setting.pyでtemplatesの設定をした
+from django.shortcuts import render
+
+def home(request):
+   return render(request, 'home.html')
+
+def ohanky(request):
+    #request.GETメソッドtextを取得する。
+    mytext1 = request.GET['myText1']
+    mytext2 = request.GET['myText2']
+
+    #ディクショナリ形式の引数を渡す
+    return render(request, 'ohanky.html',{'mytext1':mytext1,'mytext2':mytext2})
+```
+
+ohanky.html側には、「{{ディクショナリのキー}}」を記載することで表示することができる。
+
+**ohanky.html**
+
+```
+<h1>
+        {{ mytext1}}
+        {{ mytext2}}
+    h1>
+```
+
+次回に続きます。  
+[Djangoを学ぶ(2)：ブログサイトの作成 - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/06/08/163004)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/06/08/163004">tohutokonsome.hatenablog.com</a></cite>

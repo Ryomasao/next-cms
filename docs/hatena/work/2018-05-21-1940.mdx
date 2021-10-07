@@ -1,0 +1,161 @@
+---
+title: いろんな作業めも
+time: 2018-05-21 19:40
+---
+
+作業メモ
+
+**dentrycache**
+
+```
+$slabtob -d 1
+```
+
+※-d オプションは反映する間隔。つけないとリアルタイムかな。
+
+**問題のcurl**
+
+```
+$ strace -e trace=access curl 'https://www.google.com' > /dev/null
+```
+
+⇒めっちゃ、denty\_cacheが増えていくことが確認できる。
+
+キャッシュクリア
+
+```
+$ echo 2 > /proc/sys/vm/drop_caches
+```
+
+今回の原因
+
+[https://qiita.com/tfunato/items/e5619f8ad0060606e98c](https://qiita.com/tfunato/items/e5619f8ad0060606e98c)
+
+とてもわかりやすい。  
+[linuxにおけるメモリと関連コマンド（free, vmstat, top, sar） - 銀色うつ時間](https://sisidovski.hatenablog.com/entry/2015/07/07/072150)<cite class="hatena-citation"><a href="https://sisidovski.hatenablog.com/entry/2015/07/07/072150">sisidovski.hatenablog.com</a></cite>
+
+## Jmeter
+
+~/home/apache-jmeter-4.0/bin
+
+GitBashで実行
+
+```
+$ ./jmeter -n -t ./templates/re.jmx -l log.jtl
+```
+
+[【JMeter】負荷テスト実行はGUIから行ってはならない](https://qiita.com/tatesuke/items/827e6190753964e46814)
+
+[【JMeter】負荷テスト実行はGUIから行ってはならない](https://qiita.com/tatesuke/items/827e6190753964e46814)
+
+## diffのオプション
+
+-yがいい
+
+[わかりやすい差分(diff)の取り方いろいろメモ](https://qiita.com/bitnz/items/725350b614bafedc581a)
+
+## mysqlの縦持ちのデータを横持にしたい話
+
+縦持ちカラム数が固定ならcase分でいけそだが、可変となるとたいへんかも？
+
+これがやりたかった。ただ、mysqlのはrow\_number関数がない。[[SQL]データの縦持ち、横持ちを入れ替える ｜ Developers.IO](https://dev.classmethod.jp/etc/sql-data-horizontal-vertical/)
+
+mysqlにはrow\_numberがないので、サブクエリで代替する方法 ためしたらめっちゃおそいので断念。[第1回 連番の特性を利用してデータ操作をもっと自由に SQLで連番を扱う （2）行集合に連番を割り当てる：SQLアタマアカデミー｜gihyo.jp … 技術評論社](http://gihyo.jp/dev/serial/01/sql_academy2/000102)
+
+読んでないけどなにかあるかも。[SQL: 縦横変換で気をつけていること - プログラマ３８の日記](http://crmprogrammer38.hatenablog.com/entry/2017/08/01/154831)
+
+## sed
+
+文字"を空白に置き換えたかった。
+
+```
+sed -e 's/"/ /g' sed.tsv > alter.tsv
+```
+
+sudo tail -f /var/log/nginx/pbt.di-pink.com/access.log | grep --line-buffered -v "1.1\"\s200|302\s" sudo tail -f var/log/nginx/pbt.di-pink.com/access.log | grep --line-buffered 504 sudo tail -f /var/log/nginx/pbt.di-pink.com/access.log | grep --line-buffered "1.1\"\s502\s"
+
+特定の時刻で行数カウント grep -c -E "2018:19:18" access.log-20180523
+
+gzip -d gz解凍
+
+df -h
+
+## dstat
+
+[dstatの便利なオプションまとめ](https://qiita.com/harukasan/items/b18e484662943d834901)
+
+## キャッシュ　メモリ
+
+でかいログファイルがページキャッシュを圧迫する
+
+[cachectld〜無駄なページキャッシュの削除を自動化〜 - Mercari Engineering Blog](http://tech.mercari.com/entry/2015/07/16/170310)
+
+ページキャッシュ・バッファキャッシュ
+
+ページキャッシュはファイルの情報。↑のでかいログを見るに、ファイルの内容とかも含んでるのかな。←HDDにアクセスすることなく参照できるとのことなので、そういうことなんだと思う。 dentry\_cacheはディレクトリの構造なのかな。 バッファキャッシュはブロックデバイス。ストレージとかに直接アクセスするときのキャッシュとのこと。謎。
+
+[いまさら聞けないLinuxとメモリの基礎＆vmstatの詳しい使い方](https://qiita.com/kunihirotanaka/items/70d43d48757aea79de2d)
+
+メモリの内訳を表示
+
+```
+$ cat /proc/meminfo
+```
+
+[プロセスあたりのメモリ使用量を知りたい - 備忘録 blog](http://sharply.hatenablog.com/entry/2016/07/18/233546)
+
+[/proc/meminfoを考える - めもめも](http://enakai00.hatenablog.com/entry/20110906/1315315488)
+
+中身はあんまわからないけれども記事がある。
+
+## ロードアベレージ
+
+[LinuxのI/OやCPUの負荷とロードアベレージの関係を詳しく見てみる](https://qiita.com/kunihirotanaka/items/21194f77713aa0663e3b)
+
+[load averageを見てシステムの負荷を確認する](https://qiita.com/k0kubun/items/8065f5cf2da7605c8043)
+
+[アプリエンジニア向け：「サーバがなんか重い」時にすること](https://qiita.com/yuku_t/items/2f5341e4aa635800a0a1)
+
+## 外部API
+
+[外部サービスAPIを使用している場合の負荷試験方法](https://qiita.com/kinpira/items/ebf0d0c8427d33ed1ba7)
+
+## php-fpm
+
+[php-fpm＋nginxで「504 Gateway Time-out」が出た時の対処法 - oneのはてなダイアリー](http://eno0514.hatenadiary.jp/entry/20150614/1434228237)<cite class="hatena-citation"><a href="http://eno0514.hatenadiary.jp/entry/20150614/1434228237">eno0514.hatenadiary.jp</a></cite>
+
+## 環境変数を追加
+
+全ユーザーに追加する場合は
+
+```
+$ vim /etc/profile
+export HOGE=HOGEHOGE
+$ source /etc/profile
+```
+
+## とあるディレクトリにあるファイルを再帰的に検索して、権限を表示
+
+```
+# ls -lR /var/www/html |grep -E "\-.......-." > temp.txt
+```
+
+[特定のディレクトリから再帰的に特定のオーナーのファイルやディレクトリだけchownしたい: ぴろにっき](https://piro791.blog.so-net.ne.jp/2010-07-21-1)<cite class="hatena-citation"><a href="https://piro791.blog.so-net.ne.jp/2010-07-21-1">piro791.blog.so-net.ne.jp</a></cite>
+
+## 権限変更系
+
+```
+#グループ追加
+$ sudo groupadd developer
+$ cat /etc/group
+#hogeユーザーのプライマリーグループをdeveloperに変更する
+$ sudo usermod -g developer hoge
+#セカンダリーに追加していきたい場合は、こっち
+$ sudo usermod -aG developer hoge
+#groupがdeveloperのファイルを検索
+$ sudo find /var/www/html -group developer -print > /tmp/temp.txt
+#findした結果のグループを変更 -print0　とxagrs 0 はファイルにスペースがある場合の考慮
+$ sudo find . -group imj -print0 |xargs -0 sudo chgrp developer
+#findの権限に!で否定表現も使える -permは権限で検索 。-g+wはグループに書き込み権限があるもの
+$ find . ! -user root -group developer ! -perm -g+w -print0 >/tmp/perm.txt
+```

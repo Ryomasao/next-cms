@@ -1,0 +1,264 @@
+---
+title: RaspBerryPiでラジコンをつくる(6)：とりあえず動くものができました
+time: 2017-05-06 21:03
+---
+
+電子工作経験がゼロでしたが、とりあえず動くものができたのでまとめます！
+
+いろいろと試行錯誤してお金が地味にかかったので、これからはじめる方の最短距離になればと思います。
+
+ただ、制御部分がさっぱりできていなかったり、モーターがいまいちだったり、改善点はいっぱいあるので、変更しだい記事を上げていこうかと思います。
+
+お子様がいる方には、夏休みの宿題とかに、かなりおすすめです。
+
+[RaspBerryPiでモーターを動かす(1) - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/03/05/200409)  
+[RaspBerryPiでモーターを動かす(2) - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/03/06/223721)   
+[RaspBerryPiでモーターを動かす(3):圧倒的力不足 - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/03/11/001512)  
+[RaspBerryPiでモーターを動かす(4) - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/04/02/174735)  
+[RaspBerryPiでラジコンをつくる(5) - 豆腐とコンソメ](http://tohutokonsome.hatenablog.com/entry/2017/04/23/122526)
+
+- [できるもの](#%E3%81%A7%E3%81%8D%E3%82%8B%E3%82%82%E3%81%AE)
+  - [必要なもの](#%E5%BF%85%E8%A6%81%E3%81%AA%E3%82%82%E3%81%AE)
+    - [RaspBerryPiおよび、周辺機器](#RaspBerryPi%E3%81%8A%E3%82%88%E3%81%B3%E5%91%A8%E8%BE%BA%E6%A9%9F%E5%99%A8)
+      - [購入する場合のリンク](#%E8%B3%BC%E5%85%A5%E3%81%99%E3%82%8B%E5%A0%B4%E5%90%88%E3%81%AE%E3%83%AA%E3%83%B3%E3%82%AF)
+    - [電子工作で必要なもの](#%E9%9B%BB%E5%AD%90%E5%B7%A5%E4%BD%9C%E3%81%A7%E5%BF%85%E8%A6%81%E3%81%AA%E3%82%82%E3%81%AE)
+      - [購入する場合のリンク](#%E8%B3%BC%E5%85%A5%E3%81%99%E3%82%8B%E5%A0%B4%E5%90%88%E3%81%AE%E3%83%AA%E3%83%B3%E3%82%AF-1)
+    - [ラジコンのモーターを扱う上で必要なもの](#%E3%83%A9%E3%82%B8%E3%82%B3%E3%83%B3%E3%81%AE%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC%E3%82%92%E6%89%B1%E3%81%86%E4%B8%8A%E3%81%A7%E5%BF%85%E8%A6%81%E3%81%AA%E3%82%82%E3%81%AE)
+      - [購入する場合のリンク](#%E8%B3%BC%E5%85%A5%E3%81%99%E3%82%8B%E5%A0%B4%E5%90%88%E3%81%AE%E3%83%AA%E3%83%B3%E3%82%AF-2)
+    - [ラジコンのモーター](#%E3%83%A9%E3%82%B8%E3%82%B3%E3%83%B3%E3%81%AE%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC)
+      - [レゴ M-Motor](#%E3%83%AC%E3%82%B4-M-Motor)
+        - [レゴ M-Motorの線をジャンパー線にする](#%E3%83%AC%E3%82%B4-M-Motor%E3%81%AE%E7%B7%9A%E3%82%92%E3%82%B8%E3%83%A3%E3%83%B3%E3%83%91%E3%83%BC%E7%B7%9A%E3%81%AB%E3%81%99%E3%82%8B)
+      - [マイクロサーボモーター](#%E3%83%9E%E3%82%A4%E3%82%AF%E3%83%AD%E3%82%B5%E3%83%BC%E3%83%9C%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC)
+    - [ラジコンカー本体](#%E3%83%A9%E3%82%B8%E3%82%B3%E3%83%B3%E3%82%AB%E3%83%BC%E6%9C%AC%E4%BD%93)
+    - [モバイルバッテリー （追記)](#%E3%83%A2%E3%83%90%E3%82%A4%E3%83%AB%E3%83%90%E3%83%83%E3%83%86%E3%83%AA%E3%83%BC-%E8%BF%BD%E8%A8%98)
+
+# できるもの
+
+ものすごくごちゃごちゃしてますが、とりあえずの完成図はこちら！ ![f:id:konoemario:20170506162521j:plain](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506162521.jpg "f:id:konoemario:20170506162521j:plain")
+
+動いているところ  
+<iframe width="459" height="344" src="https://www.youtube.com/embed/8BDsm5SkzCc?feature=oembed" frameborder="0" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://youtu.be/8BDsm5SkzCc">youtu.be</a></cite>
+
+## 必要なもの
+
+作成にあたって、実際に使用したものを書きます。   
+ただ、ラジコンパーツにレゴを使っているので、やっぱり高くなっちゃいます。  
+なので安く済ませたいという方は、タミヤの楽しい工作シリーズを使用する路線のほうが安くすみそうです。  
+でも、レゴそのものも楽しいので、悪くない買い物だと思います！
+
+### RaspBerryPiおよび、周辺機器
+
+まずは本体と周辺機器です。  
+このへんはラジコンどうのこのではなくラズパイセットアップ共通のものになるので、詳しい内容は割愛しちゃってます。
+
+その都度、おすすめのものがでたりしているので、個々で検索してもらったほうがよさそうです。
+
+- RaspBerryPi Zero 600円
+- microSDカード8GB 　1000円〜
+- Wifiドングル 1000円〜
+- マイクロUSB-USB変換 500円ぐらい
+- USB電源アダプタ(5V 2A〜2.5A) 1500円〜
+- HDMIケーブル　　　　　 1000円〜
+- HDMIアダプタ(ミニ to 標準) 200円ぐらい
+- gpio-hammmer-header 800円ぐらい
+- キーボード (自宅にあったものを流用)
+
+![f:id:konoemario:20170506192914j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506192914.jpg "f:id:konoemario:20170506192914j:plain:w500")
+
+* * *
+
+以下はあったら便利なもの
+
+- USBハブ 1000円〜
+- RaspBerryPiZero用のケース
+
+USBハブは、あったら便利なもの、としてますがあったほうが絶対にいいです。 また、USBハブには電源をラズパイから供給するバスタイプと、別途外部から電源をもらうセルフタイプがありますが、バスタイプにして、いろいろとUSB機器を挿すと、ラズパイの電源がもたないみたいな記事を見たことがあったので、セルプタイプを購入しました。
+
+[![エレコム USBハブ 2.0対応 4ポート ACアダプタ付 1.0m ブラック U2H-TZ410SBK](https://images-fe.ssl-images-amazon.com/images/I/41RxKi%2BrEDL._SL160_.jpg "エレコム USBハブ 2.0対応 4ポート ACアダプタ付 1.0m ブラック U2H-TZ410SBK")](http://www.amazon.co.jp/exec/obidos/ASIN/B002K6EU3K/hatena-blog-22/)
+
+[エレコム USBハブ 2.0対応 4ポート ACアダプタ付 1.0m ブラック U2H-TZ410SBK](http://www.amazon.co.jp/exec/obidos/ASIN/B002K6EU3K/hatena-blog-22/)
+
+- 出版社/メーカー: エレコム
+- 発売日: 2009/08/19
+- メディア: Personal Computers
+- 購入: 1人 クリック: 2回
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B002K6EU3K/hatena-blog-22)
+
+* * *
+
+#### 購入する場合のリンク
+
+ここでは、本体とピンヘッダーだけ紹介します。 在庫の関係で、別々のサイトになっちゃいました。  
+ラズパイについては送料の方が高くつきます。  
+  
+ここでZeroをひとつ買ってみました。  
+[Raspberry Pi Zero 取扱開始のお知らせ - Raspberry Pi Shop by KSY](https://raspberry-pi.ksyic.com/news/page/nwp.id/46)  
+こっちでgpio-hammer-headerを買いました。  
+[GPIO Hammer Header - スイッチサイエンス](https://www.switch-science.com/catalog/3189/)
+
+### 電子工作で必要なもの
+
+こちらは電子工作で使ったものをあげています。
+
+- はんだごて 1000円〜
+- はんだ吸い取り線 150円
+- ジャンパー線(オス-オス、オス-メスを10本ずつぐらい) 500円ぐらい
+- ブレッドボード 130円
+- グルーガン 300円〜
+- プラスチックカッター 100円
+- やすり 100円
+- 各種ドライバー (自宅にあったものを使用)
+
+![f:id:konoemario:20170506193942j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506193942.jpg "f:id:konoemario:20170506193942j:plain:w500")
+
+はんだごていらないかと思いきや、レゴのモーターを触る場合に必要になっちゃいます。その際、はんだ吸い取り線もあるといいので一緒に。
+
+ブレッドボードで思い出しましたが、LEGOにくっつけることができる「Cake Board ケーキボード」も試してみました。  
+が、思った以上に外れやすいので、あまりお勧めできません。
+
+プラスチックカッター、グルーガンは100均一で売ってるみたいですが、グルーガンは見つけることができず、ホームセンターで購入しました。   
+この辺りがでてきちゃうと、レゴだけじゃ無理だったんだなと察する方がいらっしゃるかと思います。
+
+#### 購入する場合のリンク
+
+はんだごて、吸い取り線、グルーガン、プラスチックカッター、やすりは近所で購入しました。  
+[ブレッドボード・ジャンパーコード（オス−メス） １５ｃｍ（赤） （１０本入）: パーツ一般 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gC-08933/)  
+[ブレッドボード・ジャンパーコード（オス−オス）（１０ｃｍ）２０本セット: パーツ一般 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gC-05371/)  
+[ミニブレッドボード ＢＢ−６０１（白）: パーツ一般 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gP-05155/)
+
+### ラジコンのモーターを扱う上で必要なもの
+
+- モータードライバ　300円
+- 抵抗(3kΩ以上) 100円
+- 単三電池ボックス4本用　70円
+- 単三電池4本　80円  
+
+![f:id:konoemario:20170506195209j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506195209.jpg "f:id:konoemario:20170506195209j:plain:w500")
+
+電池と、モーターを制御するためのモータードライバが必要になります。  
+モータードライバーを使用するにあたり、抵抗も必要みたいなので合わせて揃えます。
+
+テスト用のDCモーター(130円ぐらい)を合わせて購入したら便利かもしれません。
+
+#### 購入する場合のリンク
+
+[モータードライバー ＴＡ７２９１Ｐ （２個入）: 半導体 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gI-02001/)  
+[カーボン抵抗（炭素皮膜抵抗） １／４Ｗ ５．１ｋΩ （１００本入）: パーツ一般 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gR-25512/)  
+[電池ボックス 単３×４本 リード線: パーツ一般 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gP-02671/)  
+[単３形アルカリ乾電池 ゴールデンパワー製 ＬＲ６ （４本入）: 電池一般 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gB-03256/)  
+[ＤＣモーター ＦＡ−１３０ＲＡ−２２７０Ｌ: パーツ一般 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gP-09169/)
+
+### ラジコンのモーター
+
+ここからはレゴのパーツが出てきます。
+
+- レゴ M-Motor 8883 (通称、Mモーター) 1650円
+- マイクロサーボモーター 400円
+
+#### レゴ M-Motor
+
+車を動かす肝となるモーターです。  
+Mモーターは「パワーファンクションセット」に含まれています。  
+ただ、パワーファンクションセットは5000円ぐらいするので、単品のモーターだけ購入したほうがお買い得です。
+
+(自分は、[レゴ (LEGO) テクニック RCトラックレーサー 42065](http://d.hatena.ne.jp/asin/B01J41LWFW/hatena-blog-22)を購入した際、一緒に入っていたのを使ってます。)
+
+[![LEGO (レゴ) Functions Power Functions M-Motor 8883 ブロック おもちゃ （並行輸入）](https://images-fe.ssl-images-amazon.com/images/I/2182ksYIQQL._SL160_.jpg "LEGO (レゴ) Functions Power Functions M-Motor 8883 ブロック おもちゃ （並行輸入）")](http://www.amazon.co.jp/exec/obidos/ASIN/B003S88XH8/hatena-blog-22/)
+
+[LEGO (レゴ) Functions Power Functions M-Motor 8883 ブロック おもちゃ （並行輸入）](http://www.amazon.co.jp/exec/obidos/ASIN/B003S88XH8/hatena-blog-22/)
+
+- 出版社/メーカー: レゴ (LEGO)
+- メディア: おもちゃ＆ホビー
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B003S88XH8/hatena-blog-22)
+
+単品だと1650円で、当初は割高だなぁって思ってました。 というのも、一番安いDCモーターなら130円程度で購入できるのです。  
+ただ、130円のDCモーターで試したのですが、トルクが足りなくって動きませんでした。
+
+こちらのレゴのモーターのトルクを参考にさせていただきました。  
+[LEGOTechLab - LEGO パワーファンクションモーターの種類](http://lego.masa-lab.net/modules/d3blog/details.php?bid=53)<cite class="hatena-citation"><a href="http://lego.masa-lab.net/modules/d3blog/details.php?bid=53">lego.masa-lab.net</a></cite>
+
+これと同じレベルのモーターを買うとした場合、1000円以上はするんじゃないかと勝手に思ってます。だとすれば、そこまで高くないかもしれません。
+
+とはいえ、Mモーターを使っている現時点もパワー不足が否めないので、モーター関係は改善しだい別途まとめます。
+
+##### レゴ M-Motorの線をジャンパー線にする
+
+レゴのM-Motorですが、ケーブルがレゴの電池にくっつくようになってます。  
+今回、モーターはモータードライバーとブレッドボート経由で接続したいのですが、このままでは接続できません。  
+なので、モーターの中身を開けて、ジャンパー線とつなぐようにします。
+
+![f:id:konoemario:20170506203301j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506203301.jpg "f:id:konoemario:20170506203301j:plain:w500")
+
+モーターの開け方は、こちらの動画が参考になります。  
+<iframe width="480" height="270" src="https://www.youtube.com/embed/9y-k5yYG2hY?feature=oembed" frameborder="0" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://www.youtube.com/watch?v=9y-k5yYG2hY">www.youtube.com</a></cite>
+
+肝心の作業風景ですが、集中のあまり、全く撮っていませんでした。。。  
+130円のDCモーターとジャンパー線を一度つなげてみて、感覚を掴んでからやったほうがよさげです。
+
+需要があれば、もっかいモーターの中身を開けようかと思いますので、ご連絡いただければと思います。
+
+#### マイクロサーボモーター
+
+車を曲げるために必要なモーター。 レゴ公式のサーボモーターもあるみたいだけれども、市販のサーボモーターで間に合いました。
+
+[マイクロサーボ９ｇ ＳＧ−９０: サーボ 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gM-08761/)
+
+とはいえ、M-motorと同じで、そのままは使えないです。
+
+こちらは、プラスチックカッター、やすりで不要な部分を削って、グルーガンでレゴの部品とくっつける工程が必要になります。
+
+![f:id:konoemario:20170506204430j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506204430.jpg "f:id:konoemario:20170506204430j:plain:w500") ![f:id:konoemario:20170506204602j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506204602.jpg "f:id:konoemario:20170506204602j:plain:w500") ![f:id:konoemario:20170506204718j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506204718.jpg "f:id:konoemario:20170506204718j:plain:w500")
+
+これは以下の参考動画をそのまま真似しました。  
+<iframe width="480" height="270" src="https://www.youtube.com/embed/qTcIXiINAu4?feature=oembed" frameborder="0" allowfullscreen></iframe><cite class="hatena-citation"><a href="https://www.youtube.com/watch?v=qTcIXiINAu4">www.youtube.com</a></cite>
+
+### ラジコンカー本体
+
+そして最後に、車の本体です。
+
+- LEGO テクニック [42037] 8500円
+
+[![レゴ (LEGO) テクニック フォーミュラ・オフロードカー 42037](https://images-fe.ssl-images-amazon.com/images/I/51nO3mbI9bL._SL160_.jpg "レゴ (LEGO) テクニック フォーミュラ・オフロードカー 42037")](http://www.amazon.co.jp/exec/obidos/ASIN/B00NGJCED8/hatena-blog-22/)
+
+[レゴ (LEGO) テクニック フォーミュラ・オフロードカー 42037](http://www.amazon.co.jp/exec/obidos/ASIN/B00NGJCED8/hatena-blog-22/)
+
+- 出版社/メーカー: レゴ (LEGO)
+- 発売日: 2015/01/16
+- メディア: おもちゃ＆ホビー
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B00NGJCED8/hatena-blog-22)
+
+8500円かよ！たけえ！となるかもしれませんが、個人的にこのレゴの車は感動しました。作っていて、すげええ！となります。  
+極端な話、今回のラズパイのラジコンカーという挑戦を抜きにしても、素敵な商品だと思います。
+
+ステアリング機構がうまくできないなぁなんて悩んでいただけに、公式のステアリングの出来の良さにびびりました。
+
+![f:id:konoemario:20170506205509j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506205509.jpg "f:id:konoemario:20170506205509j:plain:w500")
+
+また、エンジン部分もギアが絡まって、かっこよさが滲み出ています。
+
+![f:id:konoemario:20170506205646j:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170506/20170506205646.jpg "f:id:konoemario:20170506205646j:plain:w500")
+
+以上で、必要な部品は揃ったので、あとはそれを組み合わせていくだけです！
+
+長くなったので、別の記事で書こうと思います。
+
+ぜひ読んでいるみなさんも車作ってみてください！
+
+### モバイルバッテリー （追記)
+
+肝心なものを忘れてました。  
+ラジコンなので、コンセントから電源を供給するのではなく、モバイルバッテリーから電源を供給します。
+
+- モバイルバッテリー(5V 2A〜) 1300円〜
+
+いろいろあるかと思いますが、以下を使用しました。
+
+[![cheero Power Plus 3 mini 5200mAh コンパクト モバイルバッテリー iPhone&Android対応 パナソニック電池搭載 (ブラック) CHE-071-BK](https://images-fe.ssl-images-amazon.com/images/I/31DbdFS1lUL._SL160_.jpg "cheero Power Plus 3 mini 5200mAh コンパクト モバイルバッテリー iPhone&Android対応 パナソニック電池搭載 (ブラック) CHE-071-BK")](http://www.amazon.co.jp/exec/obidos/ASIN/B01F8X7LFA/hatena-blog-22/)
+
+[cheero Power Plus 3 mini 5200mAh コンパクト モバイルバッテリー iPhone&Android対応 パナソニック電池搭載 (ブラック) CHE-071-BK](http://www.amazon.co.jp/exec/obidos/ASIN/B01F8X7LFA/hatena-blog-22/)
+
+- 出版社/メーカー: cheero
+- メディア: エレクトロニクス
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B01F8X7LFA/hatena-blog-22)
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/05/15/221112" title="RaspBerryPiでラジコンをつくる(7)：少し改善 - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/05/15/221112">tohutokonsome.hatenablog.com</a></cite>

@@ -1,0 +1,93 @@
+---
+title: フロントエンドの開発にDockerを使ってたけれども、なんだかいらない気がしてきた
+time: 2018-11-14 18:23
+---
+
+フロントエンドの開発環境にdockerを使うようにしていたんだけれども、Node.jsのバージョンだけ意識するんであれば、nodebrewなりなんなりで切り替えして、ホストOSにそのまんまNode.jsしかり、jsのパッケージをインストールしたほうがいいんじゃないかと思った今日このごろ。
+
+今までは、下記のような`Dockerfile`、`docker-compose.yml`を用意して、Dockerコンテナを使った。
+
+作成に関しては以下の記事を参考させていただいた。
+
+[DockerでのNodeアプリ構築で学んだこと | POSTD](https://postd.cc/lessons-building-node-app-docker/)<cite class="hatena-citation"><a href="https://postd.cc/lessons-building-node-app-docker/">postd.cc</a></cite>
+
+**Dockerfile**
+
+```
+FROM node:9.11-alpine
+
+#add user for security
+#shadow: you can use useradd on alpine
+RUN apk --update add shadow &&\
+    rm -rf /var/cache/apk/* &&\
+    useradd --user-group --create-home app
+ENV HOME=/home/app
+#package.json.lockもCOPYすべし
+COPY ./app/package.json $HOME/src
+RUN chown -R app:app $HOME/*
+ENV HOST 0.0.0.0
+USER app
+WORKDIR $HOME/src
+RUN npm install --no-cache
+```
+
+**docker-compose.yml**
+
+```
+version: '3'
+services:
+  app:
+    build: ./
+    # コンテナ起動後になにかしらをするコマンド
+    command: npm run serve
+    privileged: true
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./app:/home/app/src
+      - /home/app/src/node_modules
+```
+
+これの素敵なところは、node\_modulesがDockerイメージに含まれる点。  
+なので、Dockerコンテナを作成するたびにパッケージのインストールが不要になる。  
+また、Windows環境限定の話なんだけれども、node\_modulesはコンテナ内に含まれ、ホストOSと同期していないので、ホストがWidowsのときに`npm install`したらシンボリックリンクのエラーやらなんやらでうごかねええみたいなイライラがなくなる。   
+個人的には、後者のコンテナ内に含まれるという点で、この方法を使ってた。
+
+### めんどくさい点
+
+#### パッケージを追加するとき
+
+しかし、パッケージが足りないから追加しようみたいなときに、困ったりする。 こういうときは、コンテナをバックグラウンドで実行した状態にしておいて、`exec`でコンテナ内に入って、`npm install --save hogehoge`とか叩いてる。
+
+**パッケージを追加したい**
+
+```
+$ docker-compose up -d app 
+$ docker-compose exec app /bin/ash
+```
+
+そもそも、コンテナ起動時に実行するコマンドがリソースをbuildだけして終わりみたいなときは、違うコマンドを実行するようにdocker-compose.ymlを修正するか、ttyのオプションを変更したりしている。
+
+また、コンテナを何らかの理由で消したときは、再度`docker-compose build app`等でイメージを作成しなおす必要がある。
+
+このへんのことをしていると何か間違っている気がして仕方がない。
+
+#### 実行するコマンドをかえたい
+
+前述の内容とかぶるのだけれども、`npm run build`じゃなくって、`npm run serve`したい！みたいなときに`docker-compose.yml`のコマンドを変更して、`docker-compose up`を叩いてる。
+
+たぶんこれは間違ってて、どちらかというと`docker-compose run`で都度コンテナを作っては捨てる、の考え方のほうがdockerっぽいのかしら。
+
+**コマンドをかえたいとき**
+
+```
+$ docker-compose run --rm app npm run serve
+```
+
+微妙にportとかdocker-composeの値を見てくれなかったりでちょっと不便。
+
+### 結果
+
+で、このへんのことをうんうんやってたんだけれども、ESLintとかの結果をIDEと連携したいとかになると、結局ホストOSにNodeを入れなきゃいけないような気がしてて、だったら最初からホストOSにそのまんまインストールすればよくないか、と思ったということでした。
+
+規模と用途と、そもそも何を解決したいのかを考えて使いわけができたらいいなあ。

@@ -1,0 +1,214 @@
+---
+title:  yumでPHPをインストールするメモ
+time: 2020-04-30 19:12
+---
+
+ちょっとしたメモだったりを、gistで書くようになったらブログを書かなくなってしまったでござる。 せっかくなので転機。
+
+# yumでPHPをインストールするメモ
+
+AmazonLinux2環境でphpをインストールしたときに毎回迷うのでメモ。
+
+## 基本的なこと
+
+- 古くはソースコードから自分でmakeして、実行ファイルを所定の場所に置くなりしてた。
+- とあるソースコードが別のソースコードに依存するのであれば、makeしてエラーになって気づいて、もってきてーの繰り返しが必要だった。
+- パッケージシステムができたことで、ほしいパッケージ名を叩くだけで、依存関係を管理しながらインストールができるようになった。
+
+ありがとうパッケージシステム。
+
+- パッケージ管理システムには、Debian系とRedHat系で採用されるRPM系がある。
+- AmazonLinuxはRPM系なので、ここではRPM系の話を書く。  
+※ラズパイとかはDebian系だったね！Dockerの軽量LinuxであるAlpineも`apk`みたいな別の管理システムがあったね！
+
+### RPM系の話
+
+パッケージは`rpm`っていう拡張子でまとめられている。 試しに適当にPHPの`rpm`をAmazonLinuxがデフォルトで提供する`amzn-core`リポジトリから取ってくる。`yum`については後述。
+
+```
+$ cd ~
+$ mkdir pkg
+// installって書いてあるけど、rpm形式のパッケージをとってくるだけ
+$ sudo yum install php --downloadonly --downloaddir=.
+php-5.4.16-46.amzn2.0.2.x86_64.rpm
+```
+
+ちょっと怪しいけど、パッケージにはこんな規則で名前がついてるっぽい。
+
+php: パッケージ名称  
+5.4.16: バージョン番号  
+46.amzn2.0.2: リリース番号  
+x86\_64: アーキテクチャ
+
+中身を覗いてみる。[https://www.atmarkit.co.jp/flinux/rensai/linuxtips/522rpmcpio.html](https://www.atmarkit.co.jp/flinux/rensai/linuxtips/522rpmcpio.html)
+
+```
+$ mkdir php && cd php
+$ rpm2cpio ../php-5.4.16-46.amzn2.0.2.x86_64.rpm | cpio -id
+```
+
+すると、ソースコードではなく、実行ファイルと設定ファイルが入ってることが確認できる。 ソースコードじゃないのでビルドする必要もなくお手軽なんだね。
+
+```
+$ tree
+.
+├── etc
+│ └── httpd
+│ ├── conf.d
+│ │ └── php.conf
+│ └── conf.modules.d
+│ └── 10-php.conf
+├── usr
+│ ├── lib64
+│ │ └── httpd
+│ │ └── modules
+│ │ └── libphp5.so
+│ └── share
+│ └── httpd
+│ └── icons
+│ └── php.gif
+└── var
+    └── lib
+        └── php
+            └── session
+```
+
+上記のように面倒なことをしなくても、`rpm -qlp`をするとパッケージの中身が確認できる。
+
+```
+$ rpm -qlp php-5.4.16-46.amzn2.0.2.x86_64.rpm
+/etc/httpd/conf.d/php.conf
+/etc/httpd/conf.modules.d/10-php.conf
+/usr/lib64/httpd/modules/libphp5.so
+/usr/share/httpd/icons/php.gif
+/var/lib/php/session
+```
+
+#### 横道にそれる
+
+ソースコードからビルドしないってなった場合、この実行ファイルってどの環境がサポートされてるのかが気になった。 AmazonLinux2が提供するパッケージなのでAmazonLinux2は当然なんだけど、これをCentOSとかに持ってたらどうなるのかが気になる。
+
+特に外部リポジトリを追加する場合、AmazonLinux2で動作するパッケージが含まれるリポジトリってどうやって判断するのだろう。
+
+外部リポジトリの`epel`とかのリンクをみると`CentOS`も`RHEL`もまとめられてるから、互換性があるのかな。[https://fedoraproject.org/wiki/EPEL](https://fedoraproject.org/wiki/EPEL)
+
+→ そもそも`CentOS`って`RHEL`の互換性があることを目指したフリーのディストリビューション。 だから、`CentOS`と`RHEL`は互換性があると思ってよさそう。  
+AmazonLinux2は、`RHEL`ベースっぽいので、`CentOS`、`RHEL`、`AmazonLinux2`間の互換性はありそう。[https://qiita.com/akira345/items/2a09c4d06d2e3415bc8d](https://qiita.com/akira345/items/2a09c4d06d2e3415bc8d)
+
+AWSの公式記事にも`epel`の追加方法が書いてあって、追加するリポジトリはRHEL7と同じことから、この認識であってそうな気がする。[https://aws.amazon.com/jp/premiumsupport/knowledge-center/ec2-enable-epel/](https://aws.amazon.com/jp/premiumsupport/knowledge-center/ec2-enable-epel/)
+
+冒頭に触れたDebian系とかは、そもそもパッケージ管理の仕組みが違うからepelとかもないのかしら？
+
+### yum
+
+パッケージは`rpm`でまとめられているんだけど、このrpmはwgetとかで個別にダウンロードしたり、ftpクライアントとかで上げたりといろんな取得方法がある。
+
+なんだけど、手軽に追加したり、消したりするのために`yum`を使うのが普通。`yum`を使うと、登録しているリポジトリからパッケージ名を検索して、`rpm`を取ってきて、インストールまでしてくれる。
+
+## AmazonLinux2にPHPをインストールする
+
+ようやく本題。
+
+### AmazonLinxu2が公式が提供するPHPを使う
+
+公式チュートリアルを見よう。[https://docs.aws.amazon.com/ja\_jp/AWSEC2/latest/UserGuide/ec2-lamp-amazon-linux-2.html](https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ec2-lamp-amazon-linux-2.html)
+
+さらっとみると、`Amazon Linux Extras`リポジトリを追加して、yumではない独自のコマンドでインストールできるみたい。
+
+### 特定バージョンのPHPをインストールする。
+
+PHPを提供しているリポジトリを追加しよう。`remi`っていうリポジトリがいろんなバージョンを提供してくれている。
+
+[https://rpms.remirepo.net/](https://rpms.remirepo.net/)
+
+リポジトリを追加する前に、せっかくなので今存在しているリポジトリをみてみよう。 いろいろ触っちゃった後なので、初期構築時からかわってるかもしれないけど、以下のようなリポジトリがあることがわかる。
+
+```
+$ yum repolist
+読み込んだプラグイン:extras_suggestions, langpacks, priorities, update-motd
+リポジトリー ID リポジトリー名 状態
+!amzn2-core/2/x86_64 Amazon Linux 2 core repository 19,545
+amzn2extra-docker/2/x86_64 Amazon Extras repo for docker
+```
+
+若干怪しいのだけど、remiをインストールした際にepelも追加してね！ってメッセージが出た気がするので、epelも追加するよ。  
+気になる人は、先にremiだけインストールしてみてね。
+
+```
+$ sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+$ sudo yum install -y http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
+```
+
+この後に、remiとかはデフォルトで有効になってないとのことなので、リポジトリを有効にしてあげます。
+
+```
+$ sudo yum-config-manager --enable epel
+$ sudo yum-config-manager --enable remi
+```
+
+リポジトリが増えていることが確認できました！
+
+```
+$ yum repolist
+読み込んだプラグイン:extras_suggestions, langpacks, priorities, update-motd
+250 packages excluded due to repository priority protections
+リポジトリー ID リポジトリー名 状態
+!amzn2-core/2/x86_64 Amazon Linux 2 core repository 19,545
+amzn2extra-docker/2/x86_64 Amazon Extras repo for docker 24
+epel/x86_64 Extra Packages for Enterprise Linux 7 - x86_64 13,054+192
+remi Remi's RPM repository for Enterprise Linux 7 - x86_64 6,092+55
+remi-safe Safe Remi's RPM repository for Enterprise Linux 7 - x86_64 3,791+3
+```
+
+次に、だいぶ古いPHPの5系を入れていこうと思います。
+
+まずは、現在の状態でどのバージョンのphpがインストールされるか確認してみる。
+
+```
+$ sudo yum info php
+名前 : php
+アーキテクチャー : x86_64
+バージョン : 5.4.16
+リリース : 46.amzn2.0.2
+容量 : 1.4 M
+リポジトリー : amzn2-core/2/x86_64
+```
+
+`remi`ではなく、`amzn2-core`のリポジトリからになってることがわかる。`yum`のコンフィグファイルを設定することで、どのリポジトリを優先するのか変更できるのですが、コマンドラインのオプションでも変更できるので以下のように`amzn2-core`を無効にしてみる。
+
+```
+$ sudo yum info php --disablerepo=amzn2-core
+名前 : php
+アーキテクチャー : x86_64
+バージョン : 5.4.45
+リリース : 18.el7.remi
+容量 : 2.8 M
+```
+
+`remi`の情報を参照してることがわかる！
+
+続いて、狙ったバージョンのPHPをインストールできるように以下のようにしてみる。
+
+```
+$ sudo yum info php --enablerepo=remi-php56 --disablerepo=amzn2-core
+名前 : php
+アーキテクチャー : x86_64
+バージョン : 5.6.40
+リリース : 20.el7.remi
+```
+
+`remi-php56`リポジトリは、phpの特定のバージョンが入ってるリポジトリとのこと。[https://blog.remirepo.net/pages/English-FAQ#scl](https://blog.remirepo.net/pages/English-FAQ#scl)
+
+ちなみに、`remi-php56`リポジトリではなく、`remi`リポジトリで`php56`のパッケージ名でもインストールできる。 これの違いは上記FAQにも書いてある通り、`remi-phpxx`は1環境にひとつのPHPを導入する前提のものっぽくて、インストールされる実行ファイルも`php`で実行できる。システムのデフォルトのPHPとして実行する感じ。
+
+一方、`php56`の方でインストールされるファイルは`php56`になり、デフォルトのPHPとは別でインストールすることができる。 複数バージョンのPHPを導入したいんであれば、こっちを使うのがいいんだね。
+
+```
+$ sudo yum info php56 --disablerepo=amzn2-core
+名前 : php56
+アーキテクチャー : x86_64
+バージョン : 3.0
+リリース : 1.el7.remi
+容量 : 4.0 k
+リポジトリー : remi
+```

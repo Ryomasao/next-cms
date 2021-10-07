@@ -1,0 +1,76 @@
+---
+title: コードと奮闘した記録
+time: 2017-07-05 12:01
+---
+
+# 前回の続き
+
+今回は、リクエストしたURLの内容に応じて、ブラウザ側の表示を変えます。
+
+## server.jsの修正
+
+**server.js(前回の状態)**
+
+```
+var http = require("http");
+
+var server = http.createServer();
+
+server.on("request",function(req, res){
+   console.log("リクエストがあったよ");
+   
+   //HTTPヘッダを編集する。
+   res.writeHead(200,{'Content-Type':'text/html','charset':'UTF-8'});
+   //サーバーにレスポンスを返す。
+   res.end("<h1>おはんきー！</h1>");
+});
+```
+
+上記の状態を、以下のように修正しました。
+
+**server.js(修正後)**
+
+```
+var http = require("http");
+
+var server = http.createServer();
+
+server.on("request",function(req, res){
+   console.log("リクエストがあったよ");
+   
+   //HTTPヘッダを編集する。
+   res.writeHead(200,{'Content-Type':'text/html','charset':'UTF-8'});
+   //サーバーにレスポンスを返す。
+   res.end("<h1>おはんきー！</h1>");
+});
+```
+
+```
+var http = require("http");
+
+var server = http.createServer();
+
+server.on("request",function(req, res){
+   console.log("リクエストがあったよ");
+   
+   //HTTPヘッダを編集する。
+   res.writeHead(200,{'Content-Type':'text/html','charset':'UTF-8'});
+   //サーバーにレスポンスを返す。
+   res.end("<h1>おはんきー！</h1>");
+});
+```
+
+```
+var http = require("http");
+
+var server = http.createServer();
+
+server.on("request",function(req, res){
+   console.log("リクエストがあったよ");
+   
+   //HTTPヘッダを編集する。
+   res.writeHead(200,{'Content-Type':'text/html','charset':'UTF-8'});
+   //サーバーにレスポンスを返す。
+   res.end("<h1>おはんきー！</h1>");
+});
+```

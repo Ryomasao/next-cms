@@ -1,0 +1,180 @@
+---
+title: ラズパイZeroでWringPiが使えるまでメモ
+time: 2017-04-30 16:31
+---
+
+ラズパイZeroで無事ssh接続ができたので、pythonの設定を行っていきます。
+
+[RaspBerry Pi Zeroの初期設定メモ - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/04/29/223718)<cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/04/29/223718">tohutokonsome.hatenablog.com</a></cite>
+
+ラズパイ3を購入したときに、同じことをやっているはずなんですが、全く記録に残してなかったので、新たな気持ちでメモをします。
+
+- [とりあえずOSのパッケージ関連を最新化](#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9AOS%E3%81%AE%E3%83%91%E3%83%83%E3%82%B1%E3%83%BC%E3%82%B8%E9%96%A2%E9%80%A3%E3%82%92%E6%9C%80%E6%96%B0%E5%8C%96)
+  - [sudo apt-get update](#sudo-apt-get-update)
+  - [sudo apt-get upgrade -y](#sudo-apt-get-upgrade--y)
+  - [sudo apt-get dist-upgrade](#sudo-apt-get-dist-upgrade)
+- [Pythonの環境構築](#Python%E3%81%AE%E7%92%B0%E5%A2%83%E6%A7%8B%E7%AF%89)
+  - [pythonのバージョン確認](#python%E3%81%AE%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3%E7%A2%BA%E8%AA%8D)
+  - [pyenvを入手する](#pyenv%E3%82%92%E5%85%A5%E6%89%8B%E3%81%99%E3%82%8B)
+    - [gitをインストール](#git%E3%82%92%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
+    - [pyenvのインストール](#pyenv%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
+  - [python3.5.1をインストール(1時間ぐらいかかるかも)](#python351%E3%82%92%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB1%E6%99%82%E9%96%93%E3%81%90%E3%82%89%E3%81%84%E3%81%8B%E3%81%8B%E3%82%8B%E3%81%8B%E3%82%82)
+  - [ちょっと注意(2017/9/21 追記)](#%E3%81%A1%E3%82%87%E3%81%A3%E3%81%A8%E6%B3%A8%E6%84%8F2017921-%E8%BF%BD%E8%A8%98)
+  - [WringPiをインストール](#WringPi%E3%82%92%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
+- [FTPの設定も行っておく](#FTP%E3%81%AE%E8%A8%AD%E5%AE%9A%E3%82%82%E8%A1%8C%E3%81%A3%E3%81%A6%E3%81%8A%E3%81%8F)
+
+## とりあえずOSのパッケージ関連を最新化
+
+こちらを参考にさせていただきました。   
+[[Ubuntu] apt-get まとめ - Qiita](http://qiita.com/white_aspara25/items/723ae4ebf0bfefe2115c#-apt-get-update)  
+[Raspberry PiでのPython 3.5環境構築 | MUDAなことをしよう。](http://make-muda.weblike.jp/2016/03/3631/)
+
+#### sudo apt-get update
+
+パッケージの「リスト」を最新化するコマンド。  
+最新のパッケージを落としてくるわけではなく、リストが新しくなる。
+
+```
+$ sudo apt-get update
+```
+
+#### sudo apt-get upgrade -y
+
+最新のパッケージをインストールする。
+
+```
+$ sudo apt-get upgrade -y
+```
+
+#### sudo apt-get dist-upgrade
+
+upgradeは追加で更新が必要になったパッケージがあれば、更新を止めるのに対して、こちらはそのへんもがんがん更新してくれるっぽい。  
+今回は、upgradeとdist-upgrade両方やっているのだけれども、こっちだけでよかったりするのかしら。
+
+```
+$ sudo apt-get dist-upgrade
+```
+
+## Pythonの環境構築
+
+OS周りのアップデートが終わったら、こっち。
+
+### pythonのバージョン確認
+
+現在、インストールされているpythonのバージョンを確認する。
+
+デフォルトで2.7.9がインストールされている。
+
+```
+pi@raspberrypi:~ $ python -V
+Python 2.7.9
+```
+
+pytnon3もデフォルトでインストールされているという内容をみた気がするのだけでども 「Raspbian Jessie Lite」にはないのかも。
+
+```
+pi@raspberrypi:~ $ pytnon3 -V
+-bash: pytnon3: command not found
+```
+
+### pyenvを入手する
+
+python3.5.1をインストールするのに最も手軽そうなのでpyenvを入手する。  
+pyenvはpythonのバージョンをインストールしたり、簡単に切り替えたりできる模様。  
+pyenvのプラグインっぽいものでvirtualenvというものもあって、こちらは同一バージョンのpython間でも切り替えができるというもの。  
+同一バージョンのpython3.5.1に対して、こっちは、このパッケージをいれて、こっちには入れないみたいな使い分けをするときに便利なのかな。  
+今回はとりあえずpyenvのみ導入。
+
+#### gitをインストール
+
+pyenvをインストールする前にpyenvのリソースがgithubにあるので、gitをインストール
+
+```
+pi@raspberrypi:~ $ sudo apt-get install git
+```
+
+#### pyenvのインストール
+
+githubからpyenvリソースを取得してホームディレクトリに置きます。
+
+```
+pi@raspberrypi:~ $ git clone https://github.com/yyuu/pyenv.git ~/.pyenv
+```
+
+pyenv用の環境変数の設定をします。
+
+```
+pi@raspberrypi:~ $ echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.profile
+pi@raspberrypi:~ $ echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.profile
+pi@raspberrypi:~ $ echo 'eval "$(pyenv init -)"' >> ~/.profile
+```
+
+環境変数を反映させます。
+
+```
+pi@raspberrypi:~ $ source .profile
+```
+
+### python3.5.1をインストール(1時間ぐらいかかるかも)
+
+と、ここまできたらpyenvを使って目的のバージョンをインストールします。
+
+```
+pi@raspberrypi:~ $ pyenv install 3.5.1
+```
+
+インストールが終わったらバージョンが追加されているかを、pyenvのコマンドで確認。   
+以下のように追加されてればOK。
+
+```
+pi@raspberrypi:~ $ pyenv versions
+* system (set by /home/pi/.pyenv/version)
+  3.5.1
+```
+
+使用するバージョンを3.5.1にする。
+
+```
+pi@raspberrypi:~ $ pyenv global 3.5.1
+pi@raspberrypi:~ $ pyenv versions
+  system
+* 3.5.1 (set by /home/pi/.pyenv/version)
+```
+
+### ちょっと注意(2017/9/21 追記)
+
+pyenvでpython3.5.1がインストールできなかった。  
+python3.5.3なら問題なくできた。
+
+[pyenvでpythonをインストールできなかった - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/09/22/235340)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/09/22/235340">www.tohuandkonsome.site</a></cite>
+
+### WringPiをインストール
+
+PythonでラズパイのGPIOを制御するためのモジュール。  
+pipはpythonのパッケージ管理システム。これを使ってwringpi2をインストール。
+
+```
+pi@raspberrypi:~ $sudo pip install wiringpi2
+```
+
+(2017/5/1　追記)sudoはいらない。[微妙にはまった。](http://tohutokonsome.hatenablog.com/entry/2017/05/01/234002)
+
+```
+pi@raspberrypi:~ $pip install wiringpi2
+```
+
+終わったら、wringpiがインストールされたかをpipのコマンドで確認する。  
+wringpiとwringpi2があればOK。
+
+```
+pi@raspberrypi:~/myproduct $ pip freeze
+wiringpi==2.32.1
+wiringpi2==2.32.3
+```
+
+## FTPの設定も行っておく
+
+以下を参考にしました。  
+[Raspberry Piの設定【FTPサーバ（vsftpd）の設定】 - Aldebaranな人のブログ](http://yamaryu0508.hatenablog.com/entry/2014/12/02/102648)<cite class="hatena-citation"><a href="http://yamaryu0508.hatenablog.com/entry/2014/12/02/102648">yamaryu0508.hatenablog.com</a></cite>
+
+以上。

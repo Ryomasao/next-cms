@@ -1,0 +1,335 @@
+---
+title: VirtualBoxで学ぶネットワークの知識(1)
+time: 2017-09-08 21:56
+---
+
+# お願い
+
+ご存知の方、最下段の私の疑問にお答えいただけると、大変助かります。
+
+* * *
+
+- [お願い](#%E3%81%8A%E9%A1%98%E3%81%84)
+- [どうでもよい経緯](#%E3%81%A9%E3%81%86%E3%81%A7%E3%82%82%E3%82%88%E3%81%84%E7%B5%8C%E7%B7%AF)
+- [本題](#%E6%9C%AC%E9%A1%8C)
+  - [やりたかったこと](#%E3%82%84%E3%82%8A%E3%81%9F%E3%81%8B%E3%81%A3%E3%81%9F%E3%81%93%E3%81%A8)
+    - [1.ゲストOSからインターネットに接続する](#1%E3%82%B2%E3%82%B9%E3%83%88OS%E3%81%8B%E3%82%89%E3%82%A4%E3%83%B3%E3%82%BF%E3%83%BC%E3%83%8D%E3%83%83%E3%83%88%E3%81%AB%E6%8E%A5%E7%B6%9A%E3%81%99%E3%82%8B)
+      - [ネットワークカードの状態を確認する](#%E3%83%8D%E3%83%83%E3%83%88%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%AB%E3%83%BC%E3%83%89%E3%81%AE%E7%8A%B6%E6%85%8B%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%99%E3%82%8B)
+      - [ネットワークアダプタを有効にする](#%E3%83%8D%E3%83%83%E3%83%88%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%83%80%E3%83%97%E3%82%BF%E3%82%92%E6%9C%89%E5%8A%B9%E3%81%AB%E3%81%99%E3%82%8B)
+      - [再度、ネットワークカードの状態を確認する](#%E5%86%8D%E5%BA%A6%E3%83%8D%E3%83%83%E3%83%88%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%AB%E3%83%BC%E3%83%89%E3%81%AE%E7%8A%B6%E6%85%8B%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%99%E3%82%8B)
+      - [/etc/network/interfacesの設定](#etcnetworkinterfaces%E3%81%AE%E8%A8%AD%E5%AE%9A)
+        - [auto enp0s3](#auto-enp0s3)
+        - [iface enp0s3 inet dhcp](#iface-enp0s3-inet-dhcp)
+  - [疑問](#%E7%96%91%E5%95%8F)
+
+# どうでもよい経緯
+
+転職して、エンジニアになるんだ！と意気込んでみたものの、最初の仕事は案件の見積もりという状態で少しだけ凹んでおります。  
+ただ、今後はvagrantとかdockerとかを使って環境をつくるからね、という言葉を聞きまして、やべえ、両方ともよくわからん！ということでさっそく調べ始めました。   
+以下の記事を参考にさせていただこうと思ったのですが、vagrantとかdockerの前に、VirtualBoxの話がでてきております。
+
+[VagrantとDockerについて名前しか知らなかったので試した - Qiita](http://qiita.com/hidekuro/items/fc12344d36d996198e96)<cite class="hatena-citation"><a href="http://qiita.com/hidekuro/items/fc12344d36d996198e96">qiita.com</a></cite>
+
+そもそも、VirtualBoxを使ったことないや！ということで、まずVirualBoxを使ってみようと思ったのです。
+
+が、VirtualBoxにUbuntuを入れてみて、すこし触ってみようとしたところ、ネットワークの設定で躓きました。  
+ええ、SSHでゲストOSに接続するところです。
+
+現状、設定は終えたのですが、なんだかすっきりしないというところもあり、少しだけ理屈を理解した上で、設定を終えておきたいということで、この記事を書くことにしました。
+
+本題に入る前に、もう少し。
+
+最近、以下の記事を読みました。  
+その中で、必要なときに、必要なものを勉強するという「パラシュート勉強法」というものに共感を覚えました。
+
+[ある文系プログラマがテックリードを任されるまでに学んだこと ── 最前線で生き延びる4つの戦略 - エンジニアHub｜若手Webエンジニアのキャリアを考える！](https://employment.en-japan.com/engineerhub/entry/2017/06/28/110000)<cite class="hatena-citation"><a href="https://employment.en-japan.com/engineerhub/entry/2017/06/28/110000">employment.en-japan.com</a></cite>
+
+共感というと、俺も普段からそう思ってた！という風に聞こえがちですが、そうではなく、反省という部分になります。
+
+この記事含め、本来の目的から大きく脱線して、結局目的に到達できないということが結構あります。 なので、今必要なのかどうかの判断をちゃんとしたいなと思います。　　
+
+ネットワークの知識は、今なのかなぁ。
+
+* * *
+
+# 本題
+
+以下の環境でVirtualBoxを使用しています。
+
+| ホスト/ゲスト | OS |
+| --- | --- |
+| ホスト | Windows10 |
+| ゲスト | Ubuntu |
+
+また、Ubuntuのバージョンは以下になります。
+
+```
+$ cat /etc/lsb-release
+DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=16.04
+DISTRIB_CODENAME=xenial
+DISTRIB_DESCRIPTION="Ubuntu 16.04.3 LTS"
+```
+
+## やりたかったこと
+
+今回、やりたかったことは、「VirtualBox　ネットワーク設定」で検索すると山ほどたくさん記事がでてくる以下の内容になります。
+
+1. ゲストOS:Ubuntuからインターネットに接続する
+2. ホストOS:WindowsからゲストOS:UbuntuにSSHで接続する<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170908/20170908210900.png" alt="f:id:konoemario:20170908210900p:plain:w500" title="f:id:konoemario:20170908210900p:plain:w500" class="hatena-fotolife" style="width:500px" itemprop="image"></span><figcaption>やりたかったこと</figcaption></figure>
+
+参考記事はたくさんあるのですが、なかなか苦労しました。
+
+### 1.ゲストOSからインターネットに接続する
+
+まずは、ゲストOSからインターネットの接続するところからです。  
+この設定を行わないと、外部からなにかしら落としてきたいとき困っちゃいます。
+
+**パッケージのアップデートもできないよ！**
+
+```
+tohu@ubuntu:~$ sudo apt-get update
+エラー:1 http://security.ubuntu.com/ubuntu xenial-security InRelease
+  'security.ubuntu.com' が一時的に解決できません
+エラー:2 http://jp.archive.ubuntu.com/ubuntu xenial InRelease
+  'jp.archive.ubuntu.com' が一時的に解決できません
+エラー:3 http://jp.archive.ubuntu.com/ubuntu xenial-updates InRelease
+  'jp.archive.ubuntu.com' が一時的に解決できません
+エラー:4 http://jp.archive.ubuntu.com/ubuntu xenial-backports InRelease
+  'jp.archive.ubuntu.com' が一時的に解決できません
+パッケージリストを読み込んでいます... 完了
+W: http://jp.archive.ubuntu.com/ubuntu/dists/xenial/InRelease の取得に失敗しました 'jp.archive.ubuntu.com' が一時的に解決できません
+W: http://jp.archive.ubuntu.com/ubuntu/dists/xenial-updates/InRelease の取得に失敗しました 'jp.archive.ubuntu.com' が一時的に解決できません
+W: http://jp.archive.ubuntu.com/ubuntu/dists/xenial-backports/InRelease の取得に失敗しました 'jp.archive.ubuntu.com' が一時的に解決できません
+W: http://security.ubuntu.com/ubuntu/dists/xenial-security/InRelease の取得に失 敗しました 'security.ubuntu.com' が一時的に解決できません
+W: いくつかのインデックスファイルのダウンロードに失敗しました。これらは無視され るか、古いものが代わりに使われます。
+```
+
+ゲストOSであるUbuntuになんかこう、USBディスクとかをマウントさせて～とかもできそうですが、そんなまわりくどいことはせずに素直にインターネットに接続しちゃいます。
+
+##### ネットワークカードの状態を確認する
+
+設定に入る前に、今現在、ゲストOSのUbuntuのネットワークがどんな状態がを確認ます。
+
+コンピューターがネットワークに接続するには、ネットワークカードというものが必要になります。
+
+以前、RaspBerryPi Zeroを購入したときにネットワークに接続しようとしたときに、USBのWifiトグルをつけて、いろいろと設定したことそ思い出しますね！
+
+[RaspBerry Pi Zeroの初期設定メモ - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/04/29/223718)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/04/29/223718">www.tohuandkonsome.site</a></cite>
+
+今回の仮想端末である、Ubuntuはどうかというと、以下のコマンドで確認できます。
+
+**ネットワークカードがあるかどうか**
+
+```
+$ lspci|grep Ethernet
+```
+
+実行すると、何もでてこないことが確認できるかと思います。  
+つまり、今のUbuntuはネットワークカードが挿ささっていないのです。
+
+##### ネットワークアダプタを有効にする
+
+仮想端末にネットワークカードをどうやって挿すんだよ！というところですが、VirtualBoxの機能を使います。 　　
+
+下図のVirtualBoxの仮想マシン設定ウインドウのネットワークという項目から設定を行います。  
+ゲストOSのUbuntuはシャットダウンしないと設定できません。  
+(VirtualBoxそのものの環境設定ウインドウでネットワークという項目もあったりしましが、こっちはまた別物です。)
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170908/20170908210902.png" alt="f:id:konoemario:20170908210902p:plain:w500" title="f:id:konoemario:20170908210902p:plain:w500" class="hatena-fotolife" style="width:500px" itemprop="image"></span><figcaption>ネットワークアダプタの設定</figcaption></figure>
+
+こちらの画面を開くと、「アダプタ」タブが１～４まであります。 これは、ネットワークカードを最大４枚挿せるという風に思っておけばいいんじゃないかと思います。
+
+いまいちネットワークカードを複数挿す必要性と、その場合のネットワークの仕組みがどうなっているのかが想像つきません。  
+（が、残念なことにアダプタ２を使う局面が登場します。)
+
+今回は、このアダプタ１を開き、以下の設定を行います。
+
+- ネットワークアダプターを有効化
+- 割り当て「NAT」
+
+![f:id:konoemario:20170908210905p:plain:w500](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170908/20170908210905.png "f:id:konoemario:20170908210905p:plain:w500")
+
+「高度の設定」もありますが、とりあえず今は置いておきます。 また、割り当てについても、いろいろあったりするのですが、こちらも置いておきます。
+
+##### 再度、ネットワークカードの状態を確認する
+
+上記の設定が終わったら、Ubuntuを起動してネットワークカードの状態を確認してみます。
+
+**ネットワークカードがあるかどうか**
+
+```
+$ lspci|grep Ethernet
+00:03.0 Ethernet controller: Intel Corporation 82540EM Gigabit Ethernet Controller (rev 0
+```
+
+なんか増えてることが確認できました！
+
+##### /etc/network/interfacesの設定
+
+ネットワークカードが認識されたので、次にネットワークカードにIPアドレスの設定を行います。
+
+これも、RsapBerryPi Zeroのときに「wlan0」みたいな設定をしたように、ネットワークカードを差したらすぐに使えるってわけでもないのね。 （といいつつ、参考記事によっては、定義がされてたりなかったり、謎)
+
+以下のコマンドで、ネットワークの状態を確認してみます。
+
+**ネットワーク状態の確認**
+
+```
+$ ifconfig
+lo Link encap:Local Loopback
+          inet addr:127.0.0.1 Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING MTU:65536 Metric:1
+          RX packets:10488 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:10488 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1
+          RX bytes:776960 (776.9 KB) TX bytes:776960 (776.9 KB)
+```
+
+上記のように「lo」しかありません。  
+loは、ネットワークカードに関わらず必ずあるものなので、新しく認識したネットワークカードの設定をする必要があります。  
+(loについては、ここでは気にしないよ！)
+
+それでは、Vimエディタ等で、interfaceファイルを修正します。
+
+**interfaceの設定**
+
+```
+$ sudo vim /etc/network/interfaces
+```
+
+**interface(修正前)**
+
+```
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+```
+
+**interface(修正後)**
+
+```
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+#ここから追加
+#The primary network interface
+auto enp0s3
+iface enp0s3 inet dhcp
+```
+
+たった2行ですが、上から見ていきます。 （そして、たった2行ですが、理解があやしい)
+
+参考元は、例のごとく以下のページになります。
+
+[第5章 ネットワークの設定](https://www.debian.org/doc/manuals/debian-reference/ch05.ja.html)
+
+###### auto enp0s3
+
+ネットワークインターフェース名「enp0s3」をシステム起動時に有効する、という設定になります。
+
+まず、ネットワークインタフェース名「enp0s3」ってどこからでてきたんだって話なんですが、Ubuntuの命名規則で決まっているっぽいです。（たぶん。。。）
+
+これが、VirtualBoxで設定したアダプタ１に対応しています。  
+ちなみに、アダプタ2は「enp0s8」になります。   
+(最初、アダプタ2を有効にして、interfacesには「enp0s3」を使ったらうまくいかなかったので、そんな気がする。でも、アダプタ３、アダプタ４は果たして何になるのだろうか。。。)
+
+つまり、システム起動時に、enp0s3(アダプタ１）を有効にするよ、っていう認識でいい気がします。
+
+余談ですが、Ubuntuの過去のバージョンでは、enp0s3ではなくeth0になるそうです。
+
+###### iface enp0s3 inet dhcp
+
+これは、enp0s3の設定はこっからだよっていう定義とともに、IPアドレスはDHCPで取得するよっていう認識です。
+
+仮に、DHCPで自動にIPを振るのではなく、固定で振り出す場合は、以下のように書けたりします。
+
+**固定IPにする場合**
+
+```
+iface enp0s3 inet static
+address xxx.xxx.xxx.xxx
+netmask xxx.xxx.xxx.xxx
+```
+
+とはいえ、VirtualBoxの設定でネットワークアダプタの割り当てを「NAT」にした場合、必ずDHCPサーバーからIPを取得するようにしないといけないみたいです。  
+なぜでしょう。
+
+[[VirtualBox] ネットワーキング構成を理解して選択する : Mac・iPhone・iPad を使い倒したい](http://c-through.blogto.jp/archives/14539119.html)<cite class="hatena-citation"><a href="http://c-through.blogto.jp/archives/14539119.html">c-through.blogto.jp</a></cite>
+
+なので、ここでは素直にDHCPからとってくるようにします。
+
+設定を終えたら、以下のコマンドで、ネットワークの設定を反映します。
+
+**ネットワークの再起動**
+
+```
+$ service network restart
+```
+
+また、上のコマンドが、なせかうまくいかないときがある。  
+その場合は、ifupコマンドでNIC名を指定して起動できる。
+
+**NICの起動**
+
+```
+$ ifup enp0s3
+```
+
+**ネットワーク状態の確認**
+
+```
+enp0s3 Link encap:Ethernet HWaddr 08:00:27:31:24:1b
+          inet addr:10.0.2.15 Bcast:10.0.2.255 Mask:255.255.255.0
+          inet6 addr: fe80::a00:27ff:fe31:241b/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST MTU:1500 Metric:1
+          RX packets:868 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:663 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:94915 (94.9 KB) TX bytes:107325 (107.3 KB)
+
+lo Link encap:Local Loopback
+          inet addr:127.0.0.1 Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING MTU:65536 Metric:1
+          RX packets:10488 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:10488 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1
+          RX bytes:776960 (776.9 KB) TX bytes:776960 (776.9 KB)
+```
+
+enp0s3が追加され、IPアドレス「10.0.2.15」が設定されていることは確認できました！
+
+これで、ゲストOSがインターネットに接続できるようになりました！
+
+やった！と思いきや、なんでこれでつながるようになったの？
+
+という疑問が残っております。
+
+解消されしだい、続きを書きたいと思います。
+
+### 疑問
+
+ネットワークアダプタの設定をNATにして、DHCPサーバーからIPを振るように設定したときのDHCPサーバーとは、VirtualBoxのことなのでしょうか。
+
+今回、DHCPサーバーからIPを振ってもらうのと同時に、DHCPサーバーがデフォルトゲートウェイも返してくれているから、ゲストOSからホストOS越しに外部のネットワークに接続できる、という認識なのですが、ゲストOSのUbuntuはどうやってDHCPサーバーを検出しているのでしょうか。
+
+DHCPサーバー検出の仕組みとして、ブロードキャストを利用して〜ということだと思いまして、以下のようにpingを叩いたのですが、ダメでした。
+
+```
+$ ping 255.255.255.255
+NetWork is unreachble
+```
+----- COMMENT: AUTHOR: SZ IP: 182.250.251.7 DATE: 08/19/2018 02:17:43 こんにちは。 VirtualBoxのネットワークについて悩みながらあれこれ調べている者です。 DHCPサーバーに関してですが、アダプターの割り当てをNATにした場合、10.0.2.15のIPアドレスが割り当てらるというVirtualBoxの仕様であると思われます。IPアドレスの取得先を"DHCP"としなければいけないのは、割り当てをNATネットワークとした場合に、ファイル設定を流用できるよう「便宜上」DHCPと書くように指定されているだけではないでしょうか。 参考 http://zorinos.seesaa.net/article/450304938.html https://www.virtualbox.org/manual/ch09.html#changenat（←9.11.1）

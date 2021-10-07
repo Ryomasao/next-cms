@@ -1,0 +1,533 @@
+---
+title: 3連休だしVue.jsをはじめよう：コンポーネントを使ってみる
+time: 2017-10-09 00:45
+---
+
+おはんきー！
+
+3連休だしVue.jsをはじめました。  
+(ビュー.jsって読むみたいです)
+
+すっごい楽しいので、みなさんもぜひいかがでしょうか。
+
+**javascirptもhtmlもなんとなくしかわからない** ポンコツでも楽しめています。
+
+### さっそくはじめてみよう
+
+ここに、いろいろと書こうと思ったのですが、以下のサイトの動画のチュートリアルがとてもわかりやすいので、こちらを見たほうがいいです！
+
+[Learn Vue 2: Step By Step](https://laracasts.com/series/learn-vue-2-step-by-step)<cite class="hatena-citation"><a href="https://laracasts.com/series/learn-vue-2-step-by-step">laracasts.com</a></cite>
+
+とはいえ、上記の動画は英語なので、見るだけだとよくわからない部分がでてきたりします。  
+自分自身もエピソード10まで進めてみたところで、頭がパンクしちゃいました。  
+なので、ここでは自分の中で消化しきれなかったことを書いていこうと思います。
+
+間違えだらけの理解の可能性も大いにありますので、その点はご容赦ください。  
+ツッコミをいただければ、嬉しいです。
+
+余談ですが、動画で説明してくれる方の作業スピードが早すぎるので、そこも注目です。
+
+- [さっそくはじめてみよう](#%E3%81%95%E3%81%A3%E3%81%9D%E3%81%8F%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%BF%E3%82%88%E3%81%86)
+- [心が折れるコンポーネント](#%E5%BF%83%E3%81%8C%E6%8A%98%E3%82%8C%E3%82%8B%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88)
+  - [まずは基本](#%E3%81%BE%E3%81%9A%E3%81%AF%E5%9F%BA%E6%9C%AC)
+  - [ちょっと休憩：コンポーネント生成の方法](#%E3%81%A1%E3%82%87%E3%81%A3%E3%81%A8%E4%BC%91%E6%86%A9%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E7%94%9F%E6%88%90%E3%81%AE%E6%96%B9%E6%B3%95)
+  - [コンポーネントに値を渡す：プロパティ](#%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AB%E5%80%A4%E3%82%92%E6%B8%A1%E3%81%99%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3)
+  - [コンポーネント(子)からVue(親側)のデータを更新する](#%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E5%AD%90%E3%81%8B%E3%82%89Vue%E8%A6%AA%E5%81%B4%E3%81%AE%E3%83%87%E3%83%BC%E3%82%BF%E3%82%92%E6%9B%B4%E6%96%B0%E3%81%99%E3%82%8B)
+
+### 心が折れるコンポーネント
+
+エピソード9やエピソード10あたりで、コンポーネントという概念がでてきます。  
+いろいろ調べてみるのですが、なかなか理解することができていないので、まずコンポーネントについて記載していこうと思います。
+
+#### まずは基本
+
+こんな風に、天気の内容を記載する画面があったとする。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171007/20171007160704.png" alt="f:id:konoemario:20171007160704p:plain:w300" title="f:id:konoemario:20171007160704p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><figcaption>基本の画面</figcaption></figure>
+
+HTMLソースはこんな感じ。
+
+**index.html**
+
+```
+<html>
+<head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Hello Vuetitle>
+<title>HTML5サンプルtitle>
+head>
+<body>
+
+    <div id="root">
+       <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+            <p class="title" style="background:#90BE6D;">今日の天気p>
+            <p class="body" style="">おはんきー！今日は雨p>
+       div>
+    div>
+
+body>
+html>
+```
+
+今日の天気だけじゃなくって、明日も明後日の天気も書くことにしよう。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171007/20171007161444.png" alt="f:id:konoemario:20171007161444p:plain:w300" title="f:id:konoemario:20171007161444p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><figcaption>もっと書いたとき</figcaption></figure>
+
+そうすると、当然HTMLソースもこんな感じになる。
+
+**index.html**
+
+```
+<html>
+<head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Hello Vuetitle>
+<title>HTML5サンプルtitle>
+head>
+<body>
+    <div id="root">
+       <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+            <p class="title" style="background:#90BE6D;">今日の天気p>
+            <p class="body" style="">おはんきー！今日は雨p>
+       div>
+       <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+            <p class="title" style="background:#90BE6D;">明日の天気p>
+            <p class="body" style="">おはんきー！明日もきっと雨p>
+       div>
+       <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+            <p class="title" style="background:#90BE6D;">明後日の天気p>
+            <p class="body" style="">おはんきー！もうずっと雨p>
+       div>
+    div>
+
+body>
+html>
+```
+
+これを、Vue.jsのコンポーネントの機能を使って書いてみよう。
+
+まずは、HTMLをこんな感じに修正します。   
+HTMLではみなれないタグ「message」がでてきましたね。
+
+また、Vue.js本体の読み込みと、後続のsample.jsも読み込んでおきます。  
+vue.jsに関してはCDNを利用していたのですが、読み込みがやけに遅かったのでコピペしてもってきています。
+
+**index.html**
+
+```
+<html>
+<head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Hello Vuetitle>
+<title>HTML5サンプルtitle>
+head>
+<body>
+    <div id="root">
+       <message>message>
+    div>
+
+<script src="vue.js">script>
+<script src="sample.js">script>
+body>
+html>
+```
+
+ここからは実際にVue.jsを書いていきます。
+
+おもむろに、変数messageというものを書きます。  
+message変数は連想配列でtemplateキーを設定してあげます。  
+templateキーの値に、さきほどのHTMLの内容を書いちゃいます。
+
+**sample.js**
+
+```
+//HTMLタグmessageのもと
+var message = {
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">今日の天気</p>
+    <p class="body" style="">おはんきー！今日は雨</p>
+    </div> `
+}
+```
+
+これだけでは、ただの変数を定義しただけなので、何も起きません。
+
+肝となるVueインスタンスを生成します。
+
+**sample.js**
+
+```
+//HTMLタグmessageのもと
+var message = {
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">今日の天気</p>
+    <p class="body" style="">おはんきー！今日は雨</p>
+    </div> `
+}
+
+//Vueインスタンスを生成する
+new Vue({
+    el:'#root',
+})
+```
+
+こんな感じで、Vueインスタンスを生成しました。  
+Vueインスタンスに、連想配列の形式で引数を渡すことで、いろいろな設定ができます。
+
+一番重要そうなのが、おそらくelementの略称である「el」キーです。  
+これにHTMLに記載されているroot要素を指定してあげます。
+
+こうすると、このVueインスタンスは、elに指定されたDOM要素を解析して、なんかこう紐付いてくれるわけですね。  
+要素の指定の仕方は、CSSセレクタと一緒みたいですね。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171008/20171008222935.png" alt="f:id:konoemario:20171008222935p:plain:w300" title="f:id:konoemario:20171008222935p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><figcaption>Vueインスタンスと指定した要素が紐づく</figcaption></figure>
+
+要素と紐付けたら、作成したVueインスタンスにメソッドやらデータやらを持たせることでいろいろ便利にできるのですが、今回はコンポーネントです。  
+root要素に紐付いているVueインスタンスを生成する際に引数componentsを使用することで、このVueインスタンス配下には、このコンポーネントがいるぜ！としてあげます。
+
+**sample.js**
+
+```
+//HTMLタグmessageのもと
+var message = {
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">今日の天気</p>
+    <p class="body" style="">おはんきー！今日は雨</p>
+    </div> `
+}
+
+new Vue({
+    el:'#root',
+    //このVueインスタンスにはmessageコンポーネントがいるのよ
+    components:{
+        message:message
+    }
+})
+```
+
+さて、これでindex.htmlをブラウザで表示してみましょう。
+
+一番最初の状態で表示されましたね。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171007/20171007160704.png" alt="f:id:konoemario:20171007160704p:plain:w300" title="f:id:konoemario:20171007160704p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><figcaption>Vue.jsを使った</figcaption></figure>
+
+試しに、こんな感じでタグをさらに並べてあげれば同じものがくりかえし表示されますね。
+
+**index.html**
+
+```
+<div id="root">
+       <message>message>
+       <message>message>
+       <message>message>
+    div>
+```
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171008/20171008223845.png" alt="f:id:konoemario:20171008223845p:plain:w300" title="f:id:konoemario:20171008223845p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><figcaption>繰り返しつかえる！</figcaption></figure>
+
+繰り返しになりますが、作成したVueインスタンスにtemplateというオプションをもったオブジェクトをひかっけてあげることでできるってことがわかりますね！
+
+![f:id:konoemario:20171008230909p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171008/20171008230909.png "f:id:konoemario:20171008230909p:plain:w300")
+
+#### ちょっと休憩：コンポーネント生成の方法
+
+休憩といいつつ大事な話なの！でも自分が今回一番わかってない部分なので休憩というタイトルででごまかすよ！
+
+さきほど、コンポーネントを生成する際に、こんな感じで定義しました。
+
+**sample.js**
+
+```
+//HTMLタグmessageのもと
+var message = {
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">今日の天気</p>
+    <p class="body" style="">おはんきー！今日は雨</p>
+    </div> `
+}
+```
+
+いろいろな記事を見ていたりすると、Vue.extendというメソッドを使ってコンポーネントを生成することが多いです。
+
+**sample.js**
+
+```
+//Vue.extendでも作れるのよ
+var message = Vue.extend({
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">今日の天気</p>
+    <p class="body" style="">おはんきー！今日は雨</p>
+    </div>
+    `
+});
+
+new Vue({
+    el:'#root',
+    //このVueインスタンスにはmessageコンポーネントがいるのよ
+    components:{
+        message:message
+    }
+})
+```
+
+Vue.extendはおそらくVueのクラスメソッド的なものだと思う。  
+Vue.extendで生成したこのインスタンスmessageも、連想配列を定義したものと同様に親（ここでいうとroot要素を指定しているVueインスタンス)のcomponentにひっかけてあげる感じで使えるようになる。
+
+このVue.extendで生成するのと、連想配列で書いてあげるので何か違いはあるのでしょうか。  
+ここがよくわかってないです。
+
+その他にも、Vue.componentっていう生成方法もあったりします。  
+これはわかりやすくって、Vue.extendだったりただの連想配列の場合は、Vueインスタンスにコンポーネントとして登録する必要がありました。  
+一方、Vue.componentは、Vueインスタンスに登録することなく使用することができます。
+
+こんな感じですね。
+
+**sample.js**
+
+```
+//Vue.componentを使用してみる
+var hello = {
+    template:"<h1>Hello</h1>"
+}
+Vue.component("hello",hello);
+
+var message = {
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">今日の天気</p>
+    <p class="body" style="">おはんきー！今日は雨</p>
+    </div>
+    `
+};
+
+new Vue({
+    el:'#root',
+    //このVueインスタンスにはmessageコンポーネントがいるのよ
+    components:{
+        message:message
+    }
+})
+```
+
+**index.html**
+
+```
+<div id="root">
+        <message>message>
+        <message>message>
+        <message>message>
+        <hello>hello>
+    div>
+```
+
+とはいえ、Vue.componentに登録すればいいというわけでもなく、Vueインスタンスは作成する必要があります。  
+そして、Vueインスタンス作成の前に定義しておかないと使えません。
+
+イメージ的に、Vue.componentに登録しておけば、Vueインスタンス生成時にVueインスタンスのcomponentsに勝手に登録してくれるっていう感じでしょうか。
+
+それでは、そろそろ本題に戻ります。
+
+#### コンポーネントに値を渡す：プロパティ
+
+さて、さきほどこんな感じでmessageタグを並べました。
+
+**index.html**
+
+```
+<div id="root">
+       <message>message>
+       <message>message>
+       <message>message>
+    div>
+```
+
+こちらを見て、あれ、でもおんなじ内容が並んでいるだけで、違う日の天気の内容が書けないじゃないか！と思いますよね。  
+こういう場合、htmlの属性として値を定義して、コンポーネントに渡すことができます。
+
+こんな感じです。
+
+**index.html**
+
+```
+<div id="root">
+ 　 <message-box title="今日の天気" body="おはんきー！今日は雨">message-box>
+       <message-box title="明日の天気" body="おはんきー！明日もきっと雨">message-box>
+       <message-box title="今日の天気" body="おはんきー！もうずっと雨">message-box>
+    div>
+```
+
+この値を受け取るために、コンポーネントも修正する必要があります。
+
+**sample.js**
+
+```
+//プロパティを追加する
+var message = {
+    props:['title','body'],
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">{{ title }}</p>
+    <p class="body" style="">{{ body }}</p>
+    </div>
+    `
+};
+```
+
+新しいオプション「props」を定義してあげます。  
+さらに、template内で、propsに定義したtitle、bodyを二重中括弧「{{ }}」を使ってhtml内に記載します。  
+二重中括弧でくくるのは、Vue.jsの重要な概念であるデータバインディング部分になるのですが、この辺は動画の最序盤であるので省略しちゃいます。
+
+さて、コンポーネントの修正が終われば無事表示されました！
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171007/20171007161444.png" alt="f:id:konoemario:20171007161444p:plain:w300" title="f:id:konoemario:20171007161444p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><figcaption>ちゃんと表示された</figcaption></figure>
+
+余談ですが、このコンポーネントを使う側を親、使われる側を子と言ったりするみたいです。  
+いろいろな記事で親から子に値を渡すとか、子側で親のメソッドを実行するとか、いろいろあるのですが最初にこの概念がいまいちわからなくて混乱しました。
+
+#### コンポーネント(子)からVue(親側)のデータを更新する
+
+さて、本題です。
+
+Vue.jsの動画のエピソード10では、モーダルウインドウを開いて閉じるという内容で進めていました。  
+ここではさらに簡単にするために、こんな感じにしました。
+
+<figure class="figure-image figure-image-fotolife"><div class="images-row mceNonEditable">
+<span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171009/20171009000209.png" alt="f:id:konoemario:20171009000209p:plain:w300" title="f:id:konoemario:20171009000209p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171009/20171009000211.png" alt="f:id:konoemario:20171009000211p:plain:w300" title="f:id:konoemario:20171009000211p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span>
+</div>
+<figcaption>こんな画面</figcaption></figure>
+
+HTMLはこんな感じです。
+
+**index.html**
+
+```
+<div id="root">
+       <button>押すとおはんきーが出るボタンbutton>
+       <message title="今日の天気" body="おはんきー！今日は雨">message>
+    div>
+```
+
+また、コンポーネント内におはんきーを閉じるボタンを追加しています。
+
+**sample.js**
+
+```
+var message = {
+    props:['title','body'],
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">{{ title }}</p>
+    <p class="body" style="">{{ body }}</p>
+    <button">おはんきーを閉じる
+    </div>
+    `
+};
+```
+
+このままだと、messageタグはボタンの押下に関係なく表示されてしまうので、v-showを使ってボタンが押されたときに表示するように変更します。
+
+**index.html**
+
+```
+<div id="root">
+       <button @click="isVisible = true">押すとおはんきーが出るボタンbutton>
+       <message title="今日の天気" body="おはんきー！今日は雨" v-show="isVisible">message>
+    div>
+```
+
+isVisibleを使って制御するので、VueインスタンスにデータisVisibleを持たせてあげます。
+
+**sample.js**
+
+```
+new Vue({
+    el:'#root',
+    components:{
+        message:message
+    },
+    data:{
+        isVisible:false
+    }
+})
+```
+
+こうすることで、「押すとおはんきーが出るボタン」を押すと、isVisibleがtrueとなり、無事おはんきーメッセージが表示されます。
+
+問題となるのが、コンポーネント内に用意したおはんきーを閉じるボタンになります。  
+おはんきーメッセージの表示の状態を管理しているのはisVisibleになります。
+
+なので、単純に考えるとコンポーネント側を以下のように修正するかもしれません。
+
+**sample.js**
+
+```
+var message = {
+    props:['title','body'],
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">{{ title }}</p>
+    <p class="body" style="">{{ body }}</p>
+     <!-- buttonの@clickでisVisibleを値を変更する-->
+     <button @click="isVisible = false">おはんきーを閉じる</button>
+    </div>
+    `
+};
+```
+
+しかし、これではうまくいきません。  
+isVisibleはVueインスタンスに保持されており、コンポーネント側からは直接触ることができません。  
+コンポーネントもインスタンスなので、異なるインスタンス同士で直接データを触ることはないという感じでしょうか。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171009/20171009001855.png" alt="f:id:konoemario:20171009001855p:plain:w300" title="f:id:konoemario:20171009001855p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><figcaption>さわっちゃだめ</figcaption></figure>
+
+こういう場合は、カスタムイベントを使うことで解決します。
+
+まず、親側にカスタムイベント「hoge」を追加します。  
+カスタムイベント「hoge」はisVisibleの値をfalseにするイベントです。
+
+**index.html**
+
+```
+<div id="root">
+       <button @click="isVisible = true">押すとおはんきーが出るボタンbutton>
+       <message title="今日の天気" body="おはんきー！今日は雨" v-show="isVisible" @hoge="isVisible = false">message>
+    div>
+```
+
+ちょっと自分で書いていてあれですが、親側ってVueインスタンスじゃないの？これってHTMLなんじゃ？と思ったりもします。  
+が、Vueインスタンスを生成する際にrootをelで指定しているので、このroot含めた配下のDOM要素とVueインスタンスは一心同体と考えていい気がします。
+
+話がそれました。
+
+次に、コンポーネントを修正します。
+
+**sample.js**
+
+```
+var message = {
+    props:['title','body'],
+    template:`
+    <div class="message-box" style="width:300px;height:100px;background:#EAEFBD;">
+    <p class="title" style="background:#90BE6D;">{{ title }}</p>
+    <p class="body" style="">{{ body }}</p>
+     <button @click="$emit('hoge')">おはんきーを閉じる</button>
+    </div>
+    `
+};
+```
+
+emit関数がでてきました。  
+これは、引数で指定したイベントを発火されるものだと思っています。  
+こうすることで、ボタンが押されたら、hogeイベントが発生し、isVisibleの値が変更されます。
+
+<figure class="figure-image figure-image-fotolife"><span itemscope itemtype="http://schema.org/Photograph"><img src="https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20171009/20171009003830.png" alt="f:id:konoemario:20171009003830p:plain:w300" title="f:id:konoemario:20171009003830p:plain:w300" class="hatena-fotolife" style="width:300px" itemprop="image"></span><figcaption>イベント経由で更新しよう</figcaption></figure>
+
+今回はこれで以上になります！ 動画を進めていく中でまたパンクしたら記事を書こうと思います。

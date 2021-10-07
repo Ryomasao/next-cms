@@ -1,0 +1,413 @@
+---
+title: React.jsのテストコードWorkshopの内容まとめ(1)
+time: 2019-01-19 19:44
+---
+
+UdemyのReact講座に学習が完了したので、この勢いでテストコードの書き方を学 ぶことにするよ。
+
+今回は、こちらのReactテストコードのworkshopの視聴した内容から学んだことを書いていきます。
+
+[https://www.udemy.com/react-redux/learn/v4/overview](https://www.udemy.com/react-redux/learn/v4/overview)
+
+workshopで使ったリポジトリは以下になります。
+
+[kentcdodds/react-testing-library-course](https://github.com/kentcdodds/react-testing-library-course)<cite class="hatena-citation"><a href="https://github.com/kentcdodds/react-testing-library-course">github.com</a></cite>
+
+- [テストコードを書く際に使うパッケージ](#%E3%83%86%E3%82%B9%E3%83%88%E3%82%B3%E3%83%BC%E3%83%89%E3%82%92%E6%9B%B8%E3%81%8F%E9%9A%9B%E3%81%AB%E4%BD%BF%E3%81%86%E3%83%91%E3%83%83%E3%82%B1%E3%83%BC%E3%82%B8)
+- [環境](#%E7%92%B0%E5%A2%83)
+- [準備](#%E6%BA%96%E5%82%99)
+- [とりあえずテストを実行してみる](#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9A%E3%83%86%E3%82%B9%E3%83%88%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B)
+- [テスト対象のコンポーネントを書く、その前に](#%E3%83%86%E3%82%B9%E3%83%88%E5%AF%BE%E8%B1%A1%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%82%92%E6%9B%B8%E3%81%8F%E3%81%9D%E3%81%AE%E5%89%8D%E3%81%AB)
+- [コンポーネントをテストする](#%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%82%92%E3%83%86%E3%82%B9%E3%83%88%E3%81%99%E3%82%8B)
+- [本格的なテストに入る前に](#%E6%9C%AC%E6%A0%BC%E7%9A%84%E3%81%AA%E3%83%86%E3%82%B9%E3%83%88%E3%81%AB%E5%85%A5%E3%82%8B%E5%89%8D%E3%81%AB)
+  - [jest-dom](#jest-dom)
+  - [dom-testing-library](#dom-testing-library)
+  - [react-testing-library](#react-testing-library)
+- [テストを行う 長くなったので次回](#%E3%83%86%E3%82%B9%E3%83%88%E3%82%92%E8%A1%8C%E3%81%86-%E9%95%B7%E3%81%8F%E3%81%AA%E3%81%A3%E3%81%9F%E3%81%AE%E3%81%A7%E6%AC%A1%E5%9B%9E)
+
+## テストコードを書く際に使うパッケージ
+
+Vue.jsのときもそうだったんだけれども、テストコードを書くにあたっては、いろんな観点・手法が存在するみたい。
+
+今回は、以下のパッケージをつかっていくよ！  
+説明はとてもてきとうなので、使用例だったり、公式ドキュメントだったり、動画をみてもらったほうがいいかも。 　
+
+- jest： javascriptのテストを行うための、テストフレームワーク
+- jest-dom：jestのマッチャ関数をDOMの検証用に便利に拡張したもの
+- dom-testing-library：ユーザー目線でDOMを検索・取得できるライブラリ
+- react-testing-library：dom-testing-libraryをReact用に特化したライブラリ
+
+いろいろ調べると、Reactのテストでは、enzymeという子コンポーネントをモックっぽい感じで使えるツールがよく使われているみたいなんだけど、今回は使われていない。
+
+講師のKent C. Doddsさんが以下の記事で理由を語ってくれているので、どこかでがんばってよんでみる。
+
+[Why I Never Use Shallow Rendering – kentcdodds](https://blog.kentcdodds.com/why-i-never-use-shallow-rendering-c08851a68bb7)<cite class="hatena-citation"><a href="https://blog.kentcdodds.com/why-i-never-use-shallow-rendering-c08851a68bb7">blog.kentcdodds.com</a></cite>
+
+## 環境
+
+さきほどのリポジトリをcloneして、そのままやるのが一番はやい。
+
+なんだけど、自分の勉強もかねてテスト環境は、`create-react-app`でつくることにするよ。  
+とはいえ`create-react-app`でつくってもデフォルトで`jest`が使えるのでとくにすることはない。  
+`react-testing-library`と`jest-dom`のみあとから追加しよう。
+
+**かんきょうじゅんび**
+
+```
+$ create-react-app sample-test
+$ cd sample-test
+$ yarn add react-testing-library jest-dom
+```
+
+こんな感じになりました。
+
+**package.json**
+
+```
+"dependencies": {
+    "jest-dom": "^3.0.0",
+    "react": "^16.7.0",
+    "react-dom": "^16.7.0",
+    "react-scripts": "2.1.3",
+    "react-testing-library": "^5.4.4"
+  },
+```
+
+※devDependenciesにいれればよかった。
+
+## 準備
+
+src配下に` __tests__ `ディレクトリを作成し、その配下に`simple-test.js`を作成する。  
+jestでは、` __tests__ `ディレクトリ配下のファイルがテストコードと認識される。  
+※他にも条件はあるみたいなんだけど割愛するよ！
+
+```
+.
+├── README.md
+├── package.json
+├── public
+│ ├── favicon.ico
+│ ├── index.html
+│ └── manifest.json
+├── src
+│ └── __tests__
+│ └── simple-test.js
+└── yarn.lock
+```
+
+また、テストコードをどこにおくかについては、同じく以下の記事に言及されてました。
+
+[What code comments can teach us about scaling a codebase](https://blog.kentcdodds.com/what-code-comments-can-teach-us-about-scaling-a-codebase-90bbfad8d70d)<cite class="hatena-citation"><a href="https://blog.kentcdodds.com/what-code-comments-can-teach-us-about-scaling-a-codebase-90bbfad8d70d">blog.kentcdodds.com</a></cite>
+
+` __tests__ `よりコンポーネントと同じ階層で運用したほうががわかりやすいのかな？
+
+## とりあえずテストを実行してみる
+
+テスト対象がそもそもないんだけど、jestがどんなものか確認するために、こんな感じのテストを書いてみます。
+
+**simple-tets.js**
+
+```
+test('Basic javascript', () => {
+  console.log('Hello Test')
+  const sum = 1+ 1
+  // 1 + 1 は2だよね
+  expect(sum).toBe(2)
+})
+```
+
+`expect`だったりマッチャ関数である`toBe()`等については公式ドキュメントを読んでみよう。
+
+[Expect · Jest](https://jestjs.io/docs/ja/expect)<cite class="hatena-citation"><a href="https://jestjs.io/docs/ja/expect">jestjs.io</a></cite>
+
+テストを書いたら、実行してみます。
+
+**テストを実行**
+
+```
+$ yarn run test
+  ✓ Basic javascript (14ms)
+
+  console.log src/ __tests__ /simple-test.js:2
+    Hello Test
+
+Test Suites: 1 passed, 1 total
+Tests: 1 passed, 1 total
+Snapshots: 0 total
+Time: 1.511s
+Ran all test suites related to changed files.
+
+Watch Usage
+ › Press a to run all tests.
+ › Press f to run only failed tests.
+ › Press p to filter by a filename regex pattern.
+ › Press t to filter by a test name regex pattern.
+ › Press q to quit watch mode.
+ › Press Enter to trigger a test run.
+```
+
+`create-react-app`のテストスクリプトは、デフォルトwatchモードで起動するみたいです。  
+上記のように、一度テストが実行されたあとに、watchモードのコマンドを叩くことができます。
+
+テスト対象だけをファイル名で絞ったり等できるのですが、テストファイルもひとつしかないので、そのまま使うことにします。
+
+ためしに、テストコードを変更してみると再度テストが走りますね。
+
+## テスト対象のコンポーネントを書く、その前に
+
+コンポーネントのテストを書く前に、どうやってテストをするのかを、Reactを使わないで、純粋にDOMを操作して確認してみます。
+
+ということで、テストコードをこんな感じにしてみます。
+
+**simple-tets.js**
+
+```
+test('Basic javascript', () => {
+  // DOMをつくる
+  const div = document.createElement('div')
+  const p = document.createElement('p')
+  div.appendChild(p)
+  const content = document.createTextNode('Hello')
+  p.appendChild(content)
+  // HTMLにしてみる
+  console.log(div.outerHTML)
+})
+```
+
+上記の`console.log`の結果は以下になります。
+
+**出力結果**
+
+```
+<div><label>Hello</label><input type="number"></div>
+```
+
+みなれたHTMLが出力されてます。
+
+これに対して、`input`タグのtypeがnumberであること、`label`タグのテキストが`Hello`であることテストとして表現するとこんな感じになります。
+
+**simple-tets.js**
+
+```
+test('Basic javascript', () => {
+  // DOMをつくる
+  const div = document.createElement('div')
+  const p = document.createElement('p')
+  div.appendChild(p)
+  const content = document.createTextNode('Hello')
+  p.appendChild(content)
+
+  // divノードからinutタグをとってきて、inputのタイプがnumberであること
+  expect(div.querySelector('input').type).toBe('number')
+  // divノードからlabelタグをとってきて、中のテキストが'Hello'であること
+  expect(div.querySelector('label').textContent).toBe('Hello')
+})
+```
+
+当たり前ですが上記テストは無事パスします。  
+これだけだとシンプルすぎて、一体何をテストしたんだろう、と思ってしまいますが、少なくともDOMを通して、想定したHTMLがレンダリングされるだろうということが確認できたよう気がします。
+
+## コンポーネントをテストする
+
+早速、テスト対象のコンポーネントを書いていきます。 ろくに機能がありませんが、こんな感じにしました。
+
+**Form.js**
+
+```
+import React from 'react'
+
+class Form extends React.Component {
+  render() {
+    return (
+      <form>
+        <label htmlFor="name">Name</label>
+        <input id="name" type="text" name="name"/>
+        <label htmlFor="age">Age</label>
+        <input id="age" type="number" name="age"/>
+        <button>Submit</button>
+      </form>
+    )
+  }
+}
+
+export default Form
+```
+
+作ったコンポーネントを、テストコードでimportするようにします。  
+`expect`を書く前に、Reactにより出力されるDOMがどんな感じか見てみます。
+
+**simple-tets.js**
+
+```
+import React from 'react'
+import ReactDOM from 'react-dom'
+import Form from '../components/Form'
+
+test('Form Test', () => {
+  const div = document.createElement('div')
+  ReactDOM.render(<Form />, div)
+  console.log(div.outerHTML)
+})
+```
+
+上記の`console.log`の結果は以下になります。
+
+**出力結果**
+
+```
+console.log src/ __tests__ /simple-test.js:8
+    <div><form><label for="name">Name</label><input id="name" type="text" name="name"><label for="age">Age</label><input id="age" type="number" name="age"><button>Submit</button></form></div>
+```
+
+わかってる方には当然と思われるかもしれませんが、個人的に衝撃でした。  
+DOMが！できている！
+
+ということは、Reactを使わないでやったときとおなじようなことができてしまいます。
+
+**simple-tets.js**
+
+```
+import React from 'react'
+import ReactDOM from 'react-dom'
+import Form from '../components/Form'
+
+test('Form Test', () => {
+  const div = document.createElement('div')
+  ReactDOM.render(<Form />, div)
+  // さきほど同じのりで検証ができる！
+  expect(div.querySelector('label').textContent).toBe('Name')
+  expect(div.querySelector('input').type).toBe('text')
+})
+```
+
+おおーんすげえ！
+
+## 本格的なテストに入る前に
+
+さて、ここからは冒頭で紹介した以下のライブラリを使ってみよう。
+
+- jest-dom：jestのマッチャ関数をDOMの検証用に便利に拡張したもの
+- dom-testing-library：ユーザー目線でDOMを検索・取得できるライブラリ
+- react-testing-library：dom-testing-libraryをReact用に特化したライブラリ
+
+### jest-dom
+
+さきほどのテストコードをさくっとjest-domを使って置き換えて見ます。
+
+**simple-tets.js**
+
+```
+import React from 'react'
+import ReactDOM from 'react-dom'
+import 'jest-dom/extend-expect'
+import Form from '../components/Form'
+
+test('Form Test', () => {
+  const div = document.createElement('div')
+  ReactDOM.render(<Form />, div)
+  // jest-domのマッチャ関数を使う
+  expect(div.querySelector('label')).toHaveTextContent('Name')
+  expect(div.querySelector('input')).toHaveAttribute('type', 'text')
+})
+```
+
+今までは、DOMに対象のテキストが存在かなどを確認する際は、DOMのプロパティを意識する必要がありましたが、置き換え後は、その必要がなくなりましたね。
+
+上記以外にも便利そうなものがいっぱいあるので、公式を参照してみてください。
+
+[gnapse/jest-dom](https://github.com/gnapse/jest-dom)<cite class="hatena-citation"><a href="https://github.com/gnapse/jest-dom">github.com</a></cite>
+
+### dom-testing-library
+
+こちらも、まずは置き換え後のコードを先に貼ります。
+
+**simple-tets.js**
+
+```
+import React from 'react'
+import ReactDOM from 'react-dom'
+import 'jest-dom/extend-expect'
+import { getQueriesForElement } from 'dom-testing-library'
+import Form from '../components/Form'
+
+test('Form Test', () => {
+  const div = document.createElement('div')
+  ReactDOM.render(<Form />, div)
+
+  // querySelectorではなく、dom-tesiting-libraryのセレクタ(クエリ)を使う
+  const { getByLabelText } = getQueriesForElement(div)
+
+  // テキストNameをもつラベルに紐づくコントロールを取得する
+  const input = getByLabelText('Name')
+  expect(input).toHaveAttribute('type', 'text')
+
+  // inputをlabelから取得できているのでこのテストはもういらない
+  //expect(div.querySelector('label')).toHaveTextContent('Name')
+})
+```
+
+お？ってなりませんか。  
+`input`のノードを取得する際に、`input`そのものを指定するのではなく、それに紐づく`label`を指定してます。  
+さらにいえば、そのラベルを取得するのも、`label`のテキストを指定しています。
+
+なぜこんな取得の仕方をしているんでしょうか。
+
+こちらですが、今回の講師兼、開発者であるKent C. Doddsさんのフロントエンドのテストに対する考え方が反映されています。
+
+ここで綺麗にまとめることができれば、いいのですが自分もまだすっきりとしていないのですが、以下の記事が大変参考になります。
+
+[フロントエンドでTDDを実践する（理論編） - Qiita](https://qiita.com/taneba/items/48db2ad9cf10ad644908)<cite class="hatena-citation"><a href="https://qiita.com/taneba/items/48db2ad9cf10ad644908">qiita.com</a></cite>
+
+雑に書くと、
+
+フロントエンドは単体テストよりも、統合テストのほうがコストパフォーマンスもいいよね。ユーザーが意識しない内部の修正を行ったことにより、テストが通らなくなるとか、テストコードをメンテして行くだけで疲弊しちゃうよ。  
+ユーザー目線のテストを多くしていこうよ。
+
+みたいな感じでしょうか。
+
+上記を受けてこちらの`input`ノードの取得の方法を見ると、なんとなくですが「ユーザーは`input`タグそのものを認識しているわけではなく、`input`に用意されている`label`を見てる」みたいなものが伝わってくる気がします。
+
+**simple-tets.js(抜粋)**
+
+```
+// テキストNameをもつラベルに紐づくコントロールを取得する
+  const input = getByLabelText('Name')
+  expect(input).toHaveAttribute('type', 'text')
+})
+```
+
+`label`から取得する以外にも、テキストから検索する`getByText`だったり、コンポーネントの要素に`data-testid`属性を付与しておいて、それをもとに取得する`getByTestId`だったりがあります。
+
+`data-testid`で取得と聞くと、もはやclassやid属性で取得すればいいのではと思ったりもしたのですが、クラス名を変えるとテストぶっこわれるでしょ！というところでしょうか。
+
+### react-testing-library
+
+最後に`react-testing-library`になります。  
+こちらは`dom-testing-library`をラップしてReact用に特化したものなので、importする際は、`react-testing-library`をimportするように切り替えます。
+
+以下は、置き換えたあとのコードになります。
+
+**simple-tets.js**
+
+```
+import React from 'react'
+import 'jest-dom/extend-expect'
+import { render } from 'react-testing-library'
+import Form from '../components/Form'
+
+test('Form Test', () => {
+  // react-testing-libraryのrenderを使う
+  const { getByLabelText } = render(<Form />)
+  // テキストNameをもつラベルに紐づくコントロールを取得する
+  const input = getByLabelText('Name')
+  expect(input).toHaveAttribute('type', 'text')
+})
+```
+
+上記では、`div`をつくって`ReactDOM.reder`をして〜の流れがなくなり、さきほどりも、すっきりしましたね。
+
+上記では`render`のみ使っていますが、テスト後にコンポーネントをunmoutする`cleanup`だったり、debug用関数があったりします。
+
+## テストを行う 長くなったので次回
+
+イベントのテストだったり、肝心な部分を書こうとおもったのですが、長くなったので次回にします。

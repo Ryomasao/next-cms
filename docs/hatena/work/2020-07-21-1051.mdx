@@ -1,0 +1,348 @@
+---
+title: javascriptのモジュールのメモ
+time: 2020-07-21 10:51
+tag: ['js']
+---
+
+ライブラリを作成する際の脳内の辻褄を合わせるためのメモ。
+
+# やりたいこと
+
+ES6形式で書かれたライブラリを作成したい。  
+ライブラリを作成するときにいろんなフォーマットがあるので整理。
+
+## 対象のjavascript(ES6)
+
+エントリーポイント
+
+index.js
+```js
+import parent from './parent';
+
+export { parent };
+```
+
+parent.js
+
+```
+import { child } from './child';
+
+export default () => {
+  const name = 'taro';
+
+  child(name);
+};
+```
+
+child.js
+
+```
+export const child = name => {
+  console.log(name);
+};
+```
+
+## 使うバンドルツール
+
+ES6形式で複数モジュールから構成されるライブラリなので、ひとつのファイルにまとめる。 まとめる際に、`webpack`や`rollup`等がある。 ライブラリにまとめる際には、バンドルサイズが小さくなる`rollup`がよいとのことなので、こっちを使ってみる。
+
+[webpackとRollup：似て非なるもの | POSTD](https://postd.cc/webpack-and-rollup-the-same-but-different)<cite class="hatena-citation"><a href="https://postd.cc/webpack-and-rollup-the-same-but-different">postd.cc</a></cite>
+
+> アプリケーションにはwebpackを、ライブラリにはRollupを使おう
+
+最近では、Go言語で実装されたバンドルツール`esbuild`なるものも最近よさげなので、これは別の機会に。
+
+rollupでは、バンドル後の形式に以下を選ぶことができる。
+
+- iife
+- cjs
+- es6
+- amd
+- umd
+- system
+
+[rollup.js](https://rollupjs.org/guide/en/#command-line-flags)<cite class="hatena-citation"><a href="https://rollupjs.org/guide/en/#command-line-flags">rollupjs.org</a></cite>
+
+## 結果
+
+* * *
+
+### iife
+
+いきなりなんぞってやつなんだけど、中身を見ると理解しやすい。 この形式は、ライブラリをほんとにそのまま実行できるようになっている形式。  
+HTMLの<script></script>に直接書いてもいい。
+
+```
+var bundle = (function (exports) {
+  'use strict';
+
+  const child = name => {
+    console.log(name);
+  };
+
+  var parent = () => {
+    const name = 'taro';
+
+    child(name);
+  };
+
+  exports.parent = parent;
+
+  return exports;
+
+}({}));
+```
+
+即時関数があるのでぱっとみわかりにくいので、分解するとこんな感じになる。
+
+```
+function foo(export) {
+        export.parent = exportする関数
+      }
+      var bundle = foo({})
+```
+
+`export`って名前があるので、おや？って思うんだけどただの仮引数名ね。
+
+#### 使ってみる
+
+シンプルにグローバル変数を介してこんな感じで使える。
+
+```
+<script src="bundle.js" >script>
+  <script>
+　bundle.parent()
+　script>
+```
+
+| 方式 | 結果 | 補足 |
+| --- | --- | --- |
+| ブラウザNative | ○ | |
+| ブラウザNative(module) | × | ライブラリ側がexportしてないのでimportできない |
+| Webpack | × | 同様 |
+| Node.js | × | ライブラリ側がexportしてないので、requireできない |
+
+* * *
+
+### cjs
+
+この辺から理解が怪しくなってくる。cjsとはCommonJS形式のもの。  
+CommonJS=Node.jsと思いがちだけど、CommonJSはただの仕様で実装ではない。  
+jsをブラウザ以外でも使えるようにしたいってなったときに規定した仕様。  
+Node.jsはCommonJSに大きく影響を受けてるけど、100%その仕様を満たしているわけではないとのこと。
+
+とてもわかりやすい記事。
+
+[JavaScriptのモジュール管理(CommonJSとかAMDとかBrowserifyとかwebpack)](https://tsuchikazu.net/javascript-module/)<cite class="hatena-citation"><a href="https://tsuchikazu.net/javascript-module/">tsuchikazu.net</a></cite>
+
+[- — — — — CommonJS vs AMD vs RequireJS vs ES6 Modules — — — — -](https://medium.com/computed-comparisons/commonjs-vs-amd-vs-requirejs-vs-es6-modules-2e814b114a0b)<cite class="hatena-citation"><a href="https://medium.com/computed-comparisons/commonjs-vs-amd-vs-requirejs-vs-es6-modules-2e814b114a0b">medium.com</a></cite>
+
+※ `Browserify`使ったことないけど、webpackと同じ感じってことがわかった。
+
+> Browserifyは、実行時にrequireに指定されたモジュールを読み込むというアプローチではなく、事前にrequire部分を書き換えるビルドプロセスというアプローチをとっています。本題の依存関係もそのビルドプロセスで解決してくれます。実際にブラウザが実行するファイルは、Browserifyによってビルドされたものになります。
+
+話がそれまくったけど、cjs形式でビルドされたものがこちら。
+
+```
+'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+const child = name => {
+  console.log(name);
+};
+
+var parent = () => {
+  const name = 'taro';
+
+  child(name);
+};
+
+exports.parent = parent
+```
+
+`Object.defineProperty`をする必要性が現時点ではわからない。
+
+#### 使ってみる
+
+cjs形式なのでNode.jsで問題なく実行することができる。
+
+```
+const bundle = require('./bundle');
+bundle.parent();
+```
+
+| 方式 | 結果 | 補足 |
+| --- | --- | --- |
+| ブラウザNative | × | グローバル変数exportsは存在しないのでエラー 。varでexportsを定義してあげればいけそうな気配はある？ |
+| ブラウザNative(module) | × | ライブラリはcjsでexport。使う側はes6でimportなので互換性がない |
+| Webpack | ○ | Webpackはcjs形式のものを解釈できるのでいける。 |
+| Node.js | ○ | |
+
+※ 冒頭で、Node.jsはCommonJSに100%沿ったものではないって書いたけど、今回みたいにES6形式のものをCommonJSとしてビルドしたときに、Node.jsで動作しないパターンってあるんだろうか。rollupが解決してくれるものが、モジュールのimprot/export周りだけでなのであれば、問題ないのかな。
+
+* * *
+
+#### es6
+
+続いては、見慣れたes6形式。1ファイルにまとまっただけで、あとは見慣れた構文。
+
+```
+const child = name => {
+  console.log(name);
+};
+
+var parent = () => {
+  const name = 'taro';
+
+  child(name);
+};
+
+export { parent };
+```
+
+#### 使ってみる
+
+これは馴染みがあるので、予想通り。
+
+| 方式 | 結果 | 補足 |
+| --- | --- | --- |
+| ブラウザNative | × | import/exportは存在しないのでエラー |
+| ブラウザNative(module) | ○ | |
+| Webpack | ○ | Webpackはes6形式を解釈できるのでいける |
+| Node.js | × | ES6のexport {}を解釈できないのでエラー |
+
+* * *
+
+#### amd
+
+もう忘れてもよさそうな形式。webpackとかがCommonJS形式のものをブラウザで使えるようにビルドすることが流行る前に存在していたやつ。  
+`RequireJS`と呼ばれるものをブラウザで読み込んで、実行時に依存解決を行う。
+
+```
+define(['exports'], function (exports) { 'use strict';
+
+  const child = name => {
+    console.log(name);
+  };
+
+  var parent = () => {
+    const name = 'taro';
+
+    child(name);
+  };
+
+  exports.parent = parent;
+
+  Object.defineProperty(exports, '__esModule', { value: true });
+
+});
+```
+
+#### 使ってみる
+
+割愛。
+
+* * *
+
+#### umd
+
+ライブラリを使う側の環境に応じてAMDとCommonJS形式のいずれかになるやつ。 AMDを忘れていい形式だとしたら、これも忘れていいのかな。
+
+```
+(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined'
+    ? factory(exports)
+    : typeof define === 'function' && define.amd
+    ? define(['exports'], factory)
+    : ((global = global || self), factory((global.myModule = {})));
+})(this, function(exports) {
+  'use strict';
+
+  const child = name => {
+    console.log(name);
+  };
+
+  var parent = () => {
+    const name = 'taro';
+
+    child(name);
+  };
+
+  exports.parent = parent;
+
+  Object.defineProperty(exports, '__esModule', { value: true });
+});
+```
+
+読みやすいように分解すると、こんな感じ。
+
+```
+// これはcjs形式のやつと同じ
+const bar = function(exports) {
+  'use strict';
+
+  const child = name => {
+    console.log(name);
+  };
+
+  var parent = () => {
+    const name = 'taro';
+
+    child(name);
+  };
+  exports.parent = parent;
+  Object.defineProperty(exports, '__esModule', { value: true });
+};
+
+function foo(global, factory) {
+  // Node.jsとかにあるexportsオブジェクトがあるんであれば、cjs形式に
+  typeof exports === 'object' && typeof module !== 'undefined'
+    ? factory(exports)
+     // amdのdefineがあればamd
+    : typeof define === 'function' && define.amd
+    ? define(['exports'], factory)
+    // いずれでもない場合は全然わからん
+    : ((global = global || self), factory((global.myModule = {})));
+}
+
+foo(this, bar);
+```
+
+#### 使ってみる
+
+割愛。
+
+* * *
+
+#### system
+
+一番謎のやつ。
+
+たぶんもう忘れてよさそう？UMDと同じような感じでAMDとCommonJS形式両方をサポートするっぽい形式。AMDがRequireJSを必要とするのとおんなじ感じで、SystemJSなるものを読み込んどくんだと思う。  
+違いがよくわからない。
+
+```
+System.register([], function (exports) {
+  'use strict';
+  return {
+    execute: function () {
+
+      const child = name => {
+        console.log(name);
+      };
+
+      var parent = exports('parent', () => {
+        const name = 'taro';
+
+        child(name);
+      });
+
+    }
+  };
+})
+```
+
+#### 使ってみる
+
+割愛。

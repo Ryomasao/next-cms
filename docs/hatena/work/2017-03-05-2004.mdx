@@ -1,0 +1,118 @@
+---
+title: RaspBerryPiでモーターを動かす(1)
+time: 2017-03-05 20:04
+---
+
+### 前回からの続き
+
+前回は、RaspBerryにOS「Raspbian」をインストールしました！  
+最終目的は、ラジコンを作る、というところまでやりたいのだけども、段階を踏んでいきたいので、とりあえずモーターを動かすところまでやっていきます。
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/02/27/170623" title="ラズパイ(RaspberryPi3)を買ってきた：セットアップ編 - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/02/27/170623">tohutokonsome.hatenablog.com</a></cite>
+
+### なにはともあれ材料を買う
+
+先週に引き続き、2度目の秋葉原。
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/02/26/005009" title="ラズパイ（RaspberyyPi3)を買ってきた - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/02/26/005009">tohutokonsome.hatenablog.com</a></cite>
+
+モータを回すのに必要な部品といっても、さっぱりなのですが、以下の本を参考にしました。
+
+[![ラズパイマガジン 2016年6月号(日経BPパソコンベストムック)](https://images-fe.ssl-images-amazon.com/images/I/61kgL2zA-xL._SL160_.jpg "ラズパイマガジン 2016年6月号(日経BPパソコンベストムック)")](http://www.amazon.co.jp/exec/obidos/ASIN/4822236404/hatena-blog-22/)
+
+[ラズパイマガジン 2016年6月号(日経BPパソコンベストムック)](http://www.amazon.co.jp/exec/obidos/ASIN/4822236404/hatena-blog-22/)
+
+- 作者: 日経Linux
+- 出版社/メーカー: 日経BP社
+- 発売日: 2016/04/18
+- メディア: 単行本
+- [この商品を含むブログ (1件) を見る](http://d.hatena.ne.jp/asin/4822236404/hatena-blog-22)
+
+本の内容から必要なものを抜粋しましたが、ミニ四駆以上のものを触ってない私には、あまりピンこない。
+
+※Amazon商品の内容はイメージです。  
+ 実際に使った部品ではないです。
+
+- 
+
+ブレッドボード
+
+[![普通のブレッドボード](https://images-fe.ssl-images-amazon.com/images/I/31ZNGqED7pL._SL160_.jpg "普通のブレッドボード")](http://www.amazon.co.jp/exec/obidos/ASIN/B009ALRR9M/hatena-blog-22/)
+
+[普通のブレッドボード](http://www.amazon.co.jp/exec/obidos/ASIN/B009ALRR9M/hatena-blog-22/)
+
+  - 出版社/メーカー: スイッチサイエンス
+  - メディア: エレクトロニクス
+  - [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B009ALRR9M/hatena-blog-22)
+
+- モーター
+
+- 
+
+モータードライバー
+
+[![モータードライバー　TA7291P　2個セット](https://images-fe.ssl-images-amazon.com/images/I/317NcSs3GYL._SL160_.jpg "モータードライバー　TA7291P　2個セット")](http://www.amazon.co.jp/exec/obidos/ASIN/B01KNRWRUU/hatena-blog-22/)
+
+[モータードライバー　TA7291P　2個セット](http://www.amazon.co.jp/exec/obidos/ASIN/B01KNRWRUU/hatena-blog-22/)
+
+  - 出版社/メーカー: 株式会社東芝セミコンダクター社(TOSHIBA)
+  - メディア: その他
+  - [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B01KNRWRUU/hatena-blog-22)
+
+- 電池
+
+- ジャンパー線
+
+[![ブレッドボード・ジャンパーワイヤ（メス-オス）（20cm）40本](https://images-fe.ssl-images-amazon.com/images/I/41-7rhrfkDL._SL160_.jpg "ブレッドボード・ジャンパーワイヤ（メス-オス）（20cm）40本")](http://www.amazon.co.jp/exec/obidos/ASIN/B00P9BVKOK/hatena-blog-22/)
+
+[ブレッドボード・ジャンパーワイヤ（メス-オス）（20cm）40本](http://www.amazon.co.jp/exec/obidos/ASIN/B00P9BVKOK/hatena-blog-22/)
+
+- 出版社/メーカー: oem
+- メディア: エレクトロニクス
+- [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B00P9BVKOK/hatena-blog-22)
+
+- コンデンサー
+[![オレンジドロップ コンデンサー 0.022uF SPRAGUE ORANGE DROP 715P 223 600V](https://images-fe.ssl-images-amazon.com/images/I/31r4TebzlbL._SL160_.jpg "オレンジドロップ コンデンサー 0.022uF SPRAGUE ORANGE DROP 715P 223 600V")](http://www.amazon.co.jp/exec/obidos/ASIN/B00BG46J5O/hatena-blog-22/)
+
+[オレンジドロップ コンデンサー 0.022uF SPRAGUE ORANGE DROP 715P 223 600V](http://www.amazon.co.jp/exec/obidos/ASIN/B00BG46J5O/hatena-blog-22/)
+
+  - 出版社/メーカー: SPRAGUE
+  - メディア: 
+  - [この商品を含むブログを見る](http://d.hatena.ne.jp/asin/B00BG46J5O/hatena-blog-22)
+
+とりあえず、以上のラインナップを頭の片隅にいれつつ、本に紹介されていた秋月電子通商へ行くと、そこには大量の部品と人が、、、  
+（圧倒されて、写真撮ることも忘れてた）
+
+店員さんに、欲しいものをいうと、いろいろなアドバイスをくれるという情報もあったので気楽に行ったのだけど、かなりの混雑っぷりに、そんな余裕もなさそう。
+
+これは出直したほうがいいかもしらん、と思ったところで目に付いた、「ラズパイマガジン　電子工作入門部品セット」を購入することにした。
+
+「ラズパイマガジン」ではLEDライトをつけたり、モーターを動かしたりとする場合の必要な部品が掲載されているのだけれども、それをセットにまとめたものみたい。   
+また、秋月電子通商では、通販も取り扱っているみたいで、わざわざ買いにいかなくても大丈夫みたいです。
+
+[ラズパイマガジン２０１７年２月号＆４月号企画部品セット: マイコン関連 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gK-11419/)<cite class="hatena-citation"><a href="http://akizukidenshi.com/catalog/g/gK-11419/">akizukidenshi.com</a></cite>
+
+ということで、買ってきました。
+
+![f:id:konoemario:20170305193606j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170305/20170305193606.jpg "f:id:konoemario:20170305193606j:plain:w300")
+
+買ったセットが、ラズパイマガジン2017年2月号、4月号共通のものだったので、ラズパイマガジンも新しいものを購入しました。
+
+セットが5000円ぐらいで、ラズパイマガジンが2000円くらいです。  
+先入観でセットが2000円くらいと踏んでおり、かつ財布の中身も確認していないという失態が重なり、会計時にお金が足りないことに気づく、という恐ろしい出来事があったのは内緒です。  
+（店外をうろついていた奥さんが、たまたま戻ってきてくれて、事なきを得ました。)
+
+開封してみると、ものっそいいろんな部品と、部品の明細が入っています。  
+明細には「ご購入後には、まず上記部品が揃っているかご確認ください。」との一文が書かれているんだけれども、はっきりいって、どれが何の部品なのかよくわからないので、揃っているかどうかも確認することができなかった。
+
+![f:id:konoemario:20170305195009j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170305/20170305195009.jpg "f:id:konoemario:20170305195009j:plain:w300")
+
+以下のように、袋に部品名が書いてあるものはわかるのだけれども、書いてない袋の中身については、なんだろうこれ状態でした。
+
+![f:id:konoemario:20170305195436j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170305/20170305195436.jpg "f:id:konoemario:20170305195436j:plain:w300")
+
+これは、あとあと思ったのですが、モーターを動かす！という具体的な目的があるのであれば、ラズパイマガジンに必要な部品の通販コードが書いてあるので、それをもとに秋月電子通商に通販で買ったほうが、お手軽だったなぁと思います。
+
+長くなったので次回にわけます！
+
+<iframe src="http://tohutokonsome.hatenablog.com/embed/2017/03/06/223721" title="RaspBerryPiでモーターを動かす(2) - 豆腐とコンソメ" class="embed-card embed-blogcard" scrolling="no" frameborder="0" style="display: block; width: 100%; height: 190px; max-width: 500px; margin: 10px 0px;"></iframe><cite class="hatena-citation"><a href="http://tohutokonsome.hatenablog.com/entry/2017/03/06/223721">tohutokonsome.hatenablog.com</a></cite>

@@ -1,0 +1,242 @@
+---
+title: ラズパイ：ステアリングのためのサーボモータ制御(1)
+time: 2017-08-24 10:12
+---
+
+pythonのwiringpiを用いた記事になります。
+
+- [雑談](#%E9%9B%91%E8%AB%87)
+- [サーボモータの制御](#%E3%82%B5%E3%83%BC%E3%83%9C%E3%83%A2%E3%83%BC%E3%82%BF%E3%81%AE%E5%88%B6%E5%BE%A1)
+  - [とりあえずコード](#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9A%E3%82%B3%E3%83%BC%E3%83%89)
+  - [PWMとduty比](#PWM%E3%81%A8duty%E6%AF%94)
+    - [dititalWrite関数で1を設定した状態](#dititalWrite%E9%96%A2%E6%95%B0%E3%81%A71%E3%82%92%E8%A8%AD%E5%AE%9A%E3%81%97%E3%81%9F%E7%8A%B6%E6%85%8B)
+    - [dititalWrite関数で0を設定した状態](#dititalWrite%E9%96%A2%E6%95%B0%E3%81%A70%E3%82%92%E8%A8%AD%E5%AE%9A%E3%81%97%E3%81%9F%E7%8A%B6%E6%85%8B)
+    - [pwmWrite関数のイメージ](#pwmWrite%E9%96%A2%E6%95%B0%E3%81%AE%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8)
+- [duty比とは](#duty%E6%AF%94%E3%81%A8%E3%81%AF)
+- [サーボモータの仕様](#%E3%82%B5%E3%83%BC%E3%83%9C%E3%83%A2%E3%83%BC%E3%82%BF%E3%81%AE%E4%BB%95%E6%A7%98)
+- [pwmWrite関数に設定する値](#pwmWrite%E9%96%A2%E6%95%B0%E3%81%AB%E8%A8%AD%E5%AE%9A%E3%81%99%E3%82%8B%E5%80%A4)
+- [次回](#%E6%AC%A1%E5%9B%9E)
+
+# 雑談
+
+以前、ラジコンが完成した！と騒いでいたことがある。
+
+**問題のラジコン**  
+ ![f:id:konoemario:20170619215744j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170619/20170619215744.jpg "f:id:konoemario:20170619215744j:plain:w300")
+
+**コントロール画面**  
+ ![f:id:konoemario:20170807223610p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170807/20170807223610.png "f:id:konoemario:20170807223610p:plain:w300")
+
+正直に言おう。
+
+このラジコン、ステアリングのタイヤを右に曲げるか、左に曲げるかを制御できるのだが、一度曲げたら最後、タイヤを真っ直ぐに戻すことができないのである。
+
+![f:id:konoemario:20170822234357j:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170822/20170822234357.jpg "f:id:konoemario:20170822234357j:plain:w300")
+
+というのも、サーボモータの制御をほとんど理解しないまま、固定の角度が曲がるようにコントロールしていたから。
+
+なので、そろそろサーボモータの制御に向き合いたいと思う。
+
+# サーボモータの制御
+
+この記事を書くにあたっては、以下の記事を参考にさせていただきました。
+
+正直なところ、参考記事のほうがわかりやすいのは内緒。
+
+[Raspberry Piでブラウザからサーボモータをちゃんと制御する | MUDAなことをしよう。](http://make-muda.weblike.jp/2015/11/3343/#comments)  
+[コンピュータ | Myブーム & My備忘録](http://blog.enjel.chips.jp/?cid=1)
+
+## とりあえずコード
+
+まずは、サーボモータをwiringpiで制御するため、未完成ではあるが、NewServoMotorクラスを書いた。
+
+```
+class NewServoMotor:
+    '''
+    サーボモータを制御するクラス
+    少しだけ仕組みを理解した上で、かいてみる
+　このコードは未完成。  
+    '''
+
+    def __init__ (self, servo_motor_pin1):
+        self.motor_pin1 = servo_motor_pin1
+
+        #wiringpiの初期設定
+        pi.wiringPiSetupGpio()
+        #ピンの割り当て
+        pi.pinMode( self.motor_pin1, pi.GPIO.PWM_OUTPUT )
+        #PWMに必要な設定。詳細はあんまり把握してない。
+        pi.pwmSetMode( pi.GPIO.PWM_MODE_MS )
+        pi.pwmSetClock(375)
+
+    def handle(self,duty):
+        pi.pwmWrite(self.motor_pin1, duty)
+```
+
+NewServoMotorクラスのコンストラクタは、wiringpiでGPIO制御をするのに必要な設定をしている。 なので、このへんの説明はとくにない。   
+ただ、「pwmSetMode」[pwmSetClock」というDCモーターを制御する際には見られない関数が見受けられる。  
+これは、後述する、PWM(Pulse Width Modulation、パルス幅変調)とよばれる制御をするのに必要な設定。   
+肝心のサーボモータの角度を制御するための、handleメソッドは、pwmWrite関数を呼ぶシンプルなメソッド。  
+LEDやDCモータあれば、digitalWrite関数を使っていたけれども、サーボモータではPWMを使って制御することになる。
+
+**LEDやDCモーターのときに使ってた関数**
+
+```
+pi.digitalWrite(GPIO番号,0 or 1)
+```
+
+**サーボモータ制御で使う関数**
+
+```
+pwmWrite(GPIO番号、 duty比)
+```
+
+次に、PWMとpwmWrite関数の引数であるduty比というものについて見てみる。
+
+## PWMとduty比
+
+PWM(Pulse Width Modulation、パルス幅変調)とは周期的に、電圧がかかっている状態とかかっていない状態を繰り返す、信号方式とのこと。
+
+PWMの特徴を知るためにも、digitalWrite関数と対比してみる。
+
+##### dititalWrite関数で1を設定した状態
+
+以下の雑な絵をみてほしい。 縦軸に電圧、横軸に時間をおいたグラフである。  
+ digitalWrite関数で1を設定した状態を表している。
+
+![f:id:konoemario:20170824084059p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170824/20170824084059.png "f:id:konoemario:20170824084059p:plain:w300")
+
+```
+pi.digitalWrite(GPIO番号, 1)
+```
+
+##### dititalWrite関数で0を設定した状態
+
+そして以下は、digitalWrite関数で0を設定した状態を表している。
+
+![f:id:konoemario:20170824084102p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170824/20170824084102.png "f:id:konoemario:20170824084102p:plain:w300")
+
+```
+pi.digitalWrite(GPIO番号, 0)
+```
+
+何が言いたいかというと、digitalWrite関数では、電圧がかかっている状態とかかっていない状態の2値のみの状態のみ表現することができるという点。
+
+##### pwmWrite関数のイメージ
+
+一方、pwmWrite関数は、以下のイメージになる。
+
+![f:id:konoemario:20170824085103p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170824/20170824085103.png "f:id:konoemario:20170824085103p:plain:w300")
+
+```
+pwmWrite(GPIO番号、 duty比)
+```
+
+上記のように、電圧がかかっている状態とかかっていない状態を繰り返す方式となる。
+
+なんで、こんなことしているの？という点だけれども、本当にやりたいことは以下の微妙に電圧がかかっている状態をつくりたいんだと思う。
+
+![f:id:konoemario:20170824085901p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170824/20170824085901.png "f:id:konoemario:20170824085901p:plain:w300")
+
+でも、電圧がかかっているか、かかっていないか状態しかつくりだすことができないので、擬似的に一定の期間内で電圧をかけたり、やめたりを繰り返して微妙に電圧がかかっている状態を表現しているみたい。
+
+### duty比とは
+
+次に、pwmWrite関数のduty比について触れる。
+
+```
+pwmWrite(GPIO番号、 duty比)
+```
+
+duty比とは、とある周期の間に、電圧がかかっている状態がどれくらいあったかを表すものである。
+
+下の図でいえば、周期が20ミリ秒の間に、青線の状態がどれくらいあったのか、ということを表す。
+
+![f:id:konoemario:20170824090514p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170824/20170824090514.png "f:id:konoemario:20170824090514p:plain:w300")
+
+具体的な数字をいれてみると、以下のようになる。
+
+![f:id:konoemario:20170824091046p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170824/20170824091046.png "f:id:konoemario:20170824091046p:plain:w300")
+
+duty比が高くなればなるほど、電圧がかかっている状態が長くなり、逆にduty比が低いということは、電圧がかかっている状態が短いということになる。
+
+（もしかしたら20ミリ秒の間で繰り返すといよりかは、20ミリ秒の間に電圧がかかっている状態が一定期間あって、以降はかからないというイメージの方が正しいかもしれない。)
+
+### サーボモータの仕様
+
+ここで、そろそろサーボモータの仕様をみてみる。  
+参考にするサーボモーターはSG-5010。よく使うSG90も同じ仕様みたいなので、どちらでもいい。
+
+[マイクロサーボ ＳＧ−５０１０: サーボ 秋月電子通商 電子部品 ネット通販](http://akizukidenshi.com/catalog/g/gM-08913/)
+
+秋月電気通商に記載されている仕様をみると、以下を確認することができる。
+
+・ＰＷＭサイクル：２０ｍＳ  
+・制御パルス：０．５ｍｓ～２．４ｍｓ
+
+これを、日本語にすると以下の仕様になる。
+
+- 20msの周期の中で、0.5msのパルス信号を送るとサーボモータは-90度になる
+- 20msの周期の中で、2.4msのパルス信号を送ると、サーボモーターは90度になる
+
+もしかしたら、0.5msと2.4msのときでサーボモータの向きが逆になることもあるかもしれないけれども、とりあえす仕様としてはこんな感じみたい。
+
+これを図にすると、以下のようなイメージである。
+
+![f:id:konoemario:20170824092629p:plain:w300](https://cdn-ak.f.st-hatena.com/images/fotolife/k/konoemario/20170824/20170824092629.png "f:id:konoemario:20170824092629p:plain:w300")
+
+20msの間に青い線の合計が0.5msのとき、サーボモーターは-90度になる。  
+つまり、duty比は、2.5%のときサーボモータは-90度になる。
+
+```
+0.5ms ÷ 20ms = 0.025 = 2.5%
+```
+
+同様にduty比が12%のときにサーボモーターが90度になる。
+
+```
+2.4ms ÷ 20ms = 0.12 = 12%
+```
+
+角度を0度にしたいときは、0.5msと2.4msの間である1.45msで考えればよい。
+
+```
+1.45ms ÷ 20ms = 0.0725= 7.25%
+```
+
+## pwmWrite関数に設定する値
+
+さて、ようやくpwmWrite関数に設定するduty比をなんとなく理解することができた。
+
+ただ残念なことに、サーボモータを-90度にするときは、duty比2.5%だから、こうすればいいんじゃ！と以下のようにするとうまくいかない。
+
+```
+pwmWrite(GPIO番号、 2.5)
+```
+
+というのも、pwmWrite関数のduty比は0〜100という値ではなく、0〜1024の値を取るとのこと。
+
+なので、割合を1024の範囲に合わせてあげる必要がある。  
+ふとしたときにこの辺の計算ができなくて焦るのけれども、以下のように求めることができる。
+
+```
+2.5 : 100 = 知りたい値 : 1024 
+知りたい値 = 1024 × 2.5 / 100 = 25.6 ≒ 26
+※pwmWriteのduty比はintなので、四捨五入した値を設定する。
+```
+
+まとめると以下のようになる。
+
+| サーボの仕様 | duty比 | pwmWriteに設定する値 |
+| --- | --- | --- |
+| -90度 | 2.5 | 26 |
+| 0度 | 7.25 | 74 |
+| 90度 | 12 | 123 |
+
+長くなってしまったので、実際にサーボモーターを動かすのは次回に回したいと思います。
+
+# 次回
+
+[ラズパイ：ステアリングのためのサーボモータ制御(2) - 豆腐とコンソメ](http://www.tohuandkonsome.site/entry/2017/08/31/164511)<cite class="hatena-citation"><a href="http://www.tohuandkonsome.site/entry/2017/08/31/164511">www.tohuandkonsome.site</a></cite>
+
+----- COMMENT: AUTHOR: konoemario IP: 126.94.66.69 DATE: 08/31/2017 16:46:30 コメントありがとうございます！ 無職最終日ということで、いろいろと嘆いていましたがうれしさのあまり、記事を書くことにしました。 取り急ぎ記載したので、不明点等あればご指摘ください。 ----- COMMENT: AUTHOR: dubudda URL: http://www.dubudda.com IP: 61.205.90.119 DATE: 08/31/2017 08:46:37 とても楽しく勉強させて頂いています。 続きも楽しみにいています。 よろしくお願い致します。

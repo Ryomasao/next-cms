@@ -1,0 +1,158 @@
+---
+title: gitをコマンドラインで操作するときにブランチ名を補完できるようする
+time: 2019-03-21 23:03
+---
+
+今までgitはGUIツールをメインで使ってきたけれども、もう少しちゃんと理解するためにコマンドで操作することにしている。  
+その中で、ブランチを切り替えたりする際に、ブランチ名が長いとコピペで面倒なので、補完できるように設定する。  
+設定に関しては、ググればでてくるのだけどハマったのでメモ。
+
+- [環境](#%E7%92%B0%E5%A2%83)
+- [Bashのバージョンをあげる](#Bash%E3%81%AE%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3%E3%82%92%E3%81%82%E3%81%92%E3%82%8B)
+- [Gitのタグ名を補完する設定をする](#Git%E3%81%AE%E3%82%BF%E3%82%B0%E5%90%8D%E3%82%92%E8%A3%9C%E5%AE%8C%E3%81%99%E3%82%8B%E8%A8%AD%E5%AE%9A%E3%82%92%E3%81%99%E3%82%8B)
+- [おまけ プロンプトにブランチ名を表示させる。](#%E3%81%8A%E3%81%BE%E3%81%91-%E3%83%97%E3%83%AD%E3%83%B3%E3%83%97%E3%83%88%E3%81%AB%E3%83%96%E3%83%A9%E3%83%B3%E3%83%81%E5%90%8D%E3%82%92%E8%A1%A8%E7%A4%BA%E3%81%95%E3%81%9B%E3%82%8B)
+- [おまけ VSCodeの統合ターミナルで新しいBashを使用する](#%E3%81%8A%E3%81%BE%E3%81%91-VSCode%E3%81%AE%E7%B5%B1%E5%90%88%E3%82%BF%E3%83%BC%E3%83%9F%E3%83%8A%E3%83%AB%E3%81%A7%E6%96%B0%E3%81%97%E3%81%84Bash%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B)
+
+## 環境
+
+```
+$ sw_vers
+ProductName: Mac OS X
+ProductVersion: 10.13.6
+BuildVersion: 17G65
+```
+
+## Bashのバージョンをあげる
+
+これをやらなかったことでハマった。   
+OSXにデフォルトで入ってるBashのバージョンはライセンスの関係？で古いものが入ってるみたい。  
+古いBashだと、ブランチを補完する設定をしても、うまくいかなかった。  
+なので、まずはBashのバージョンをあげる。
+
+バージョンをあげるにあたってはこちらの記事を参考にさせていただいた。
+
+[https://itnext.io/upgrading-bash-on-macos-7138bd1066ba](https://itnext.io/upgrading-bash-on-macos-7138bd1066ba)
+
+**Bashのバージョンをチェックする**
+
+```
+$ echo $BASH_VERSION
+3.2.57(1)-release
+```
+
+**BashのPathを確認する**
+
+```
+$ which -a bash
+/bin/bash
+```
+
+**新しいBashをインストール**
+
+```
+$ brew install bash
+```
+
+HomebrewでインストールしたあとにPathを確認すると`/usr/local/bin/bash`に新しいBashがインストールされたことが確認できる。
+
+**Pathを再度確認する**
+
+```
+$ which -a bash
+/usr/local/bin/bash
+/bin/bash
+```
+
+次にターミナルを起動したときのBashが新しくインストールした`/usr/local/bin/bash`を参照するようにする。
+
+ログインシェルとして指定する前に、このBashは大丈夫だぜみたいな情報を登録する必要があるみたい。
+
+**shellのwhitelist的なものに登録**
+
+```
+$ sudo vim /etc/shells
+```
+
+`/usr/local/bin/bash`を追加する。
+
+**/etc/shells**
+
+```
+/bin/bash
+/bin/csh
+/bin/ksh
+/bin/sh
+/bin/tcsh
+/bin/zsh
+# 追加
+/usr/local/bin/bash
+```
+
+追加したら、ログインシェルを新しいものにかえる。
+
+**ログインシェルを変更するコマンドを叩く**
+
+```
+$ chsh -s /usr/local/bin/bash
+```
+
+Bashのバーションを確認すると`5.0.3`になってることが確認できた！
+
+```
+$ echo $BASH_VERSION
+5.0.3(1)-release
+```
+
+## Gitのタグ名を補完する設定をする
+
+タグ補完をするには、`git-completion.bash`を`.bashrc`とかで読み込む設定を書けばいいだけみたい。  
+肝心の`git-completion.bash`は、gitをインストールするとデフォルトで入ってるとのことなので、検索してみるとたしかにありました。  
+※なければgithubとかに公式ソースを取得できるみたい。
+
+**git-completion.bashを探す**
+
+```
+$ find / -name git-completion.bash 2>/dev/null
+/usr/local/git/contrib/completion/git-completion.bash
+```
+
+上記のシェルスクリプトを`.bashrc`で読み込むようにする。
+
+**.bashrcに追加**
+
+```
+$ vim ~/.bashrc
+```
+
+**.bashrcに追加**
+
+```
+#gitのブランチ名補完
+source /usr/local/git/contrib/completion/git-completion.bash
+```
+
+これで`source ~/.bashrc`をするなりして、gitで管理しているディレクトリに移動すると無事ブランチ名が補完させることが確認できた。
+
+## おまけ プロンプトにブランチ名を表示させる。
+
+こちらの記事を参考にさせていただきました。
+
+[Add git branch name to bash prompt (Example)](https://coderwall.com/p/fasnya/add-git-branch-name-to-bash-prompt)<cite class="hatena-citation"><a href="https://coderwall.com/p/fasnya/add-git-branch-name-to-bash-prompt">coderwall.com</a></cite>
+
+**.bash\_profileに書いただけ**
+
+```
+#ブランチ名を表示する
+parse_git_branch() {
+     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+}
+export PS1="\u@\h \[\033[32m\]\w\[\033[33m\]\$(parse_git_branch)\[\033[00m\] $ "
+```
+
+## おまけ VSCodeの統合ターミナルで新しいBashを使用する
+
+VSCodeの統合ターミナルを使う場合も、デフォルトのBashを変更しておく。
+
+```
+"terminal.integrated.shell.osx": "/usr/local/bin/bash"
+```
