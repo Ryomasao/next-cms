@@ -33,9 +33,13 @@ img {
   margin: 20px 0;
 }
 
-ul {
+/*
+　これ以降はPostTemplateで利用する想定なので、ファイルを切り出したほうがいいかも
+*/
+
+ul, ol {
   padding-left: 1em;
-  margin: 1.4em 0;
+  margin: 0.5em 0;
 }
 
 li {
@@ -59,9 +63,14 @@ li > a {
   text-decoration: underline;
 }
 
-// 黄色マーカー
+// 黄色マーカー **name**
 strong {
   background: linear-gradient(transparent 70%, yellow 70%); 
+}
+
+// ``で囲ったとき
+code {
+  background:#f5f2f0
 }
 
 // コードブロックを囲むコンテナ
@@ -81,10 +90,45 @@ strong {
   z-index: 1;
 }
 
+// 引用
+blockquote {
+  font-size: .97em;
+  margin: 1.4rem 0;
+  border-left: 3px solid #b3bfc7;
+  padding: 2px 0 2px .7em;
+  color: #626e77;
+}
+
+
 
 h1 {
-  font-size: 1.6em;
+  font-size: 2.8rem;
   font-weight: bold;
   margin-top: 1em;
   margin-bottom: .5em;
 }
+
+h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: .5em;
+}
+
+h3 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: .5em;
+}
+
+h4 {
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: .5em;
+}
+
+/*
+　ここまでPostTemplateで利用するスタイル
+*/
