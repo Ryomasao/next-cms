@@ -112,7 +112,8 @@ export async function getPostData(id: string) {
           { tagName: 'div', attributes: { className: 'code-container' } },
         ],
         // prismをremarkじゃなくってrehypeに寄せた理由が思い出せない
-        prism,
+        // ignoreMissing: prismに対応していないcodeblockがあってもエラーにしない
+        [prism, { ignoreMissing: true }],
       ],
     },
   })

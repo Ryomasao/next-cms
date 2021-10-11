@@ -11,9 +11,7 @@ const visit = require('unist-util-visit')
  * @param {*} options
  */
 
-export default function addFileName(options) {
-  const settings = options || {}
-
+export default function addFileName() {
   return transformer
 
   function transformer(tree) {
@@ -33,45 +31,18 @@ export default function addFileName(options) {
     const code = node.children[0]
     if (code.properties.title) {
       const fileName = code.properties.title
-      const fileNameNode = createFileNameNode(fileName)
-      parent.children = parent.children.map((node) =>
-        node.tagName === 'pre'
-          ? wrap(node, fileNameNode, settings.attributes)
-          : node,
-      )
+      node.children = [createFileNameNode(fileName), ...node.children]
     }
   }
 
   function createFileNameNode(fileName) {
     return {
       type: 'element',
-      tagName: 'p',
+      tagName: 'span',
       properties: {
         className: ['file-name'],
       },
       children: [{ type: 'text', value: fileName }],
-    }
-  }
-
-  /**
-   * divでwrapする
-   * @param {*} node
-   * @param {*} fileNameNode
-   * @param {*} attributes
-   * @returns
-   */
-  function wrap(node, fileNameNode, attributes = {}) {
-    return {
-      type: 'element',
-      tagName: settings.tagName || 'div',
-      properties: Object.assign(
-        {},
-        {
-          className: ['code-container'],
-        },
-        attributes,
-      ),
-      children: [fileNameNode, node],
     }
   }
 }

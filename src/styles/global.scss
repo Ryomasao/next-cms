@@ -73,14 +73,16 @@ code {
   background:#f5f2f0
 }
 
-// コードブロックを囲むコンテナ
-.code-container {
+// コードブロックのファイル名の親要素
+pre {
   position: relative;
 }
 
 // コードブロックのファイル名
 .file-name {
   position: absolute;
+  top:0;
+  left:0;
   font-family: Roboto Mono, monospace;
   font-size: 0.9em;
   color: black;

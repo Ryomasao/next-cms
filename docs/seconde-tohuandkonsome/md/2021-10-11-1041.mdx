@@ -20,14 +20,22 @@ HeadlessCMSという名前を聞いてからずいぶん時間がたった。
 
 ## contentful
 
+- contentfulのアカウントを作って、space〜contentmodelまでつくる
+- markdownはfiledstypeはtextのlongtext
+
+- 作成した記事は、
+
 https://github.com/contentful/contentful.js
 
-```
+
+```foo 
 yarn add contentful
 ```
 
-```.env.local
+
+```env title=.env.local
 NEXT_PUBLIC_CONTENTFUL_ACCESS_TOKEN=<Token>
 NEXT_PUBLIC_CONTENTFUL_SPACE_ID=<SpaceId>
 ```
+
 

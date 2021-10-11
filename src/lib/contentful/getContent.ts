@@ -41,7 +41,6 @@ export const getPost = async (id: string) => {
 
 const genMdxSource = async (md: string) => {
   const { content } = matter(md)
-  console.log(content)
   const mdxSource = await serialize(content, {
     mdxOptions: {
       rehypePlugins: [

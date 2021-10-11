@@ -1,8 +1,9 @@
 import { InferGetStaticPropsType } from 'next'
-import { getAllUser, getUser } from 'lib/firebase/getUser'
+//import { getAllUser } from 'lib/firebase/getUser'
 
 export async function getStaticProps() {
-  const users = await getAllUser()
+  //const users = await getAllUser()
+  const users = [{ id: 'a', name: 'a' }]
 
   return {
     props: { users },
