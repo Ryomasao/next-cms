@@ -11,6 +11,9 @@
  */
 
 // データベースは確認が終わり次第セキュリティ設定を変更しよう
+// eg) 全開放
+//     ".read": "now < 1636124400000",  // 2021-11-6
+//     ".write": "now < 1636124400000",  // 2021-11-6
 const ENDPOINT = 'https://cms-test-3ba62-default-rtdb.firebaseio.com/users'
 const KEY = '-MlP3lTSo6oLUDHG0rcn'
 

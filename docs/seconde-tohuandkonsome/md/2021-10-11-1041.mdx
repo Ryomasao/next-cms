@@ -1,0 +1,33 @@
+---
+title: Next.jsのCMS運用についてのメモ
+time: 2021-10-11 10:41
+tag: ['vue']
+---
+
+# はじめに
+
+HeadlessCMSという名前を聞いてからずいぶん時間がたった。  
+次にCMS案件があれば導入しようしようと思いつつ、なにもしてなかったので今回検証することにする。  
+
+# エディタ/プレビュー機能について
+
+記事を書く際の環境はどうすればいいんだろう。 `wysiwyg`まわり。
+
+
+# CSR/SSR/SSG/ISR
+
+## 環境
+
+## contentful
+
+https://github.com/contentful/contentful.js
+
+```
+yarn add contentful
+```
+
+```.env.local
+NEXT_PUBLIC_CONTENTFUL_ACCESS_TOKEN=<Token>
+NEXT_PUBLIC_CONTENTFUL_SPACE_ID=<SpaceId>
+```
+
