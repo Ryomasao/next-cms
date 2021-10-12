@@ -33,3 +33,5 @@ https://twitter.com/youyuxi/status/1440864427532644352
 `yarn@1/npm@6`ともに試したんだけど、こけちゃう。
 
 こちらの[issue](https://github.com/vitejs/vite/issues/5187)通り、`yarn add -D esbuild@0.13.4`を個別につっこんだら解決した。peerDependencies でもなかったのでなんでだろ。謎。
+
+→ うーむ。直ったかのようにみえたけど直ってない。素直に version を落とす。
