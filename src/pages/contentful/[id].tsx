@@ -1,9 +1,9 @@
 import { InferGetStaticPropsType, GetStaticPropsContext } from 'next'
 import { MDXRemote } from 'next-mdx-remote'
-import { getPost, getAllPost } from 'lib/contentful/getContent'
+import { ContentFulRepository } from 'lib/contentful/getContent'
 
 export async function getStaticPaths() {
-  const posts = await getAllPost()
+  const posts = await ContentFulRepository.getAllPost()
   const paths = posts.items.map((post) => ({ params: { id: post.sys.id } }))
 
   return {
@@ -14,11 +14,14 @@ export async function getStaticPaths() {
 
 export async function getStaticProps({
   params,
+  preview,
 }: GetStaticPropsContext<{ id: string }>) {
   if (!params?.id) {
     throw new Error('missing id')
   }
-  const post = await getPost(params.id)
+  const post = await ContentFulRepository.getPostById(params.id, {
+    isPreview: preview,
+  })
   return {
     props: { post },
   }

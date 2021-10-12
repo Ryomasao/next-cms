@@ -1,0 +1,64 @@
+---
+title: 2021年Nextjsの足回りメモ
+time: 2021-10-12 00:00
+tag: ['nextjs']
+---
+
+# はじめに
+
+# 参考にさせていただいた記事
+
+https://zenn.dev/teppeis/articles/2021-02-eslint-prettier-vscode
+
+ポイントは、eslintとprettierは独立して動かすこと。eslint経由でprettierを実行とかはもうしない。
+
+## 具体的な設定ファイル
+
+```sh
+yarn add -D prettier eslint-config-prettier
+```
+
+```json title=.vscode/setting.json
+{
+  "editor.tabSize": 2,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "editor.codeActionsOnSave": [
+    "source.fixAll.eslint"
+  ]
+}
+```
+
+```json title=.prettierrc
+{
+	"trailingComma": "all",
+	"endOfLine": "lf",
+	"semi": false,
+	"singleQuote": true,
+	"printWidth": 80,
+	"tabWidth": 2
+}
+```
+
+```json title=.eslintrc.json
+{
+  "extends": ["next/core-web-vitals", "prettier"]
+}
+```
+
+```json title=package.json
+	"scripts": {
+    "fix:eslint": "eslint --ext .ts,.tsx --fix .",
+    "format": "prettier --write '**/*.{js,jsx,ts,tsx,md,json}'"
+	}
+```
+
+```json title=tsconfig.json
+    "jsx": "preserve",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+```
