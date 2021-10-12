@@ -1,6 +1,7 @@
 import { InferGetStaticPropsType, GetStaticPropsContext } from 'next'
 import { MDXRemote } from 'next-mdx-remote'
 import { ContentFulRepository } from 'lib/contentful/getContent'
+import { genMdxSource } from 'lib/genMdxSource'
 
 export async function getStaticPaths() {
   const posts = await ContentFulRepository.getAllPost()
@@ -22,8 +23,9 @@ export async function getStaticProps({
   const post = await ContentFulRepository.getPostById(params.id, {
     isPreview: preview,
   })
+  const mdxSource = await genMdxSource(post.fields.markdown)
   return {
-    props: { post },
+    props: { ...post, mdxSource },
   }
 }
 
@@ -31,10 +33,8 @@ export default function Post(
   props: InferGetStaticPropsType<typeof getStaticProps>,
 ) {
   const {
-    post: {
-      fields: { title },
-      mdxSource,
-    },
+    fields: { title },
+    mdxSource,
   } = props
   return (
     <div>
