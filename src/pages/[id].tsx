@@ -19,7 +19,6 @@ export async function getStaticProps({
   // nextが提供する型としてはありえるみたいだけど。
   // https://github.com/vercel/next.js/discussions/16522
   // ひとまずparamsは絶対あるよと伝える
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const post = await getPostData(params!.id)
   return {
     props: { post },

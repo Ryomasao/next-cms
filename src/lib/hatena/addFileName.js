@@ -1,6 +1,4 @@
-/*eslint-env node*/
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const visit = require('unist-util-visit')
+import { visit } from 'unist-util-visit'
 
 /**
  * 以下のようなmarkdownのcodeblockをhtmlにする際にファイル名fooをnodeに追加する

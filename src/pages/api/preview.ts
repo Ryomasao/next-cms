@@ -2,7 +2,7 @@ import { ContentFulRepository } from 'lib/contentful/getContent'
 
 const previewToken = process.env.NEXT_PUBLIC_CONTENTFUL_PREVIEW_TOKEN as string
 
-export default async (req: any, res: any) => {
+const preview = async (req: any, res: any) => {
   if (req.query.secret !== previewToken || !req.query.id) {
     return res.status(401).json({ message: 'Invalid token' })
   }
@@ -19,3 +19,5 @@ export default async (req: any, res: any) => {
 
   res.redirect(`/contentful/${post.sys.id}`)
 }
+
+export default preview

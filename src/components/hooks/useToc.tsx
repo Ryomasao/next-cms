@@ -19,5 +19,6 @@ export default function useToc({
       headingSelector,
     })
     return () => tocbot.destroy()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }

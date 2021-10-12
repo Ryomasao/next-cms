@@ -8,6 +8,7 @@ export default function HeroSection() {
         width={500}
         height={100}
         layout="responsive"
+        alt="hero"
       />
     </section>
   )
