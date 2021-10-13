@@ -34,7 +34,9 @@ export async function getStaticProps({
     return post
   }
 
-  const mdxSource = await genMdxSource(post.fields.markdown)
+  // contentfulで値をセットしない場合、undefinedになったので
+  const mdxSource = await genMdxSource(post.fields.markdown || '')
+
   return {
     props: { ...post, mdxSource },
   }
