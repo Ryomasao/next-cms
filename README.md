@@ -18,6 +18,14 @@ https://qiita.com/282Haniwa/items/dcce1ba6bb6ae541893e
 感謝！
 https://gist.github.com/naoty/6019913a52e6af27088fd8098047dbc0
 
+## デプロイ
+
+### ver s3
+
+```sh
+aws s3 sync ./out s3://tohu-hosting
+```
+
 ## そのほかのメモ
 
 ### next-mdx-remote を update したら esbuild でこけるようになった
