@@ -1,7 +1,7 @@
 import clsx from 'clsx'
+import PostLink from '@/components/mols/PostLink'
+import { Post } from '@/models/Post.model'
 import style from './LandingPage.module.scss'
-import PostLink from 'components/mols/PostLink'
-import { Post } from 'models/Post.model'
 
 type Props = {
   posts: Post[]

@@ -1,7 +1,7 @@
 import Link from 'next/link'
+import { Post } from '@/models/Post.model'
+import A from '@/components/atoms/A'
 import style from './PostLink.module.scss'
-import { Post } from 'models/Post.model'
-import A from 'components/atoms/A'
 
 type Props = Post & {
   className?: string

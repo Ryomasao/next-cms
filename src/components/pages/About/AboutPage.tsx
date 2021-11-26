@@ -1,4 +1,4 @@
-import BaseTemplate from 'components/temps/BaseTemplate'
+import BaseTemplate from '@/components/temps/BaseTemplate'
 
 export default function AboutPage() {
   return (

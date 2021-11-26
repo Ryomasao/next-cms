@@ -6,7 +6,7 @@ export default function Header() {
     <header>
       <div className={style.container}>
         <Link href="/">TOP</Link>
-        <p>header</p>
+        <Link href="/about">このサイトについて</Link>
       </div>
     </header>
   )

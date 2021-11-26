@@ -2,8 +2,8 @@ import HeroSection from './HeroSection'
 import PostSection from './PostSection'
 import FooContent from './FooContent'
 import style from './LandingPage.module.scss'
-import { Post } from 'models/Post.model'
-import BaseTemplate from 'components/temps/BaseTemplate'
+import { Post } from '@/models/Post.model'
+import BaseTemplate from '@/components/temps/BaseTemplate'
 
 type Props = {
   posts: Post[]

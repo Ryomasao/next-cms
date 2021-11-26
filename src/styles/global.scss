@@ -3,10 +3,11 @@
 moduleはスコープありきなので、pureなscssにする
 **/
 // ベースは、以下の記事を参考にdestyleでリセットをかけることにした
-// https://webdesign-trends.net/entry/8137#A_Modern_CSS_Reset
-@import 'destyle.css';
+// https://coliss.com/articles/build-websites/operation/css/reset-and-normalizer-reseter-css.html
+@use '../../node_modules/reseter.css/css/reseter.min.css';
 // コードハイライトのテーマ
-@import './prism-material-oceanic.css';
+@use './prism-material-oceanic.css';
+@use './utils' as utils;
 
 :root {
   --c-bg: #f5fffa;
@@ -24,6 +25,10 @@ body {
   font-size: 1.5rem;
   background-color: var(--c-bg);
   color: var(--c-text);
+  
+  @include utils.mq(md) {
+    font-size: 1.8rem;
+  }
 }
 
 img {

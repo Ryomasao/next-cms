@@ -1,4 +1,4 @@
-@import 'styles/mixin.scss';
+@use '@/styles/utils' as utils;
 
 .pageContainer {  
   max-width: 1200px;
@@ -24,7 +24,7 @@
   display: grid;
   grid-template-columns: 1fr;
 
-  @include mq(lg) {
+  @include utils.mq(lg) {
     grid-template-columns: 1fr 250px;
   }
 }
@@ -35,7 +35,7 @@
   line-height: 1.9;
   border-radius: 10px;
 
-  @include mq(lg) {
+  @include utils.mq(lg) {
     margin-right: 10px;
   }
 }
@@ -43,7 +43,7 @@
 .tocContainer {
   display: none;
 
-  @include mq(lg) {
+  @include utils.mq(lg) {
     display: block;
   }
 }

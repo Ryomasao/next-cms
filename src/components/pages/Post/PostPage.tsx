@@ -1,10 +1,10 @@
 import { MDXRemote } from 'next-mdx-remote'
 import style from './PostPage.module.scss'
-import BaseTemplate from 'components/temps/BaseTemplate'
-import { PostDetail } from 'models/Post.model'
-import { H1 } from 'components/atoms/Heading'
-import useToc from 'components/hooks/useToc'
-import tocStyle from 'components/hooks/Toc.module.scss'
+import BaseTemplate from '@/components/temps/BaseTemplate'
+import { PostDetail } from '@/models/Post.model'
+import { H1 } from '@/components/atoms/Heading'
+import useToc from '@/components/hooks/useToc'
+import tocStyle from '@/components/hooks/Toc.module.scss'
 
 type Props = {
   post: PostDetail

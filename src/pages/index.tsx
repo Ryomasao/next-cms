@@ -1,6 +1,6 @@
 import { InferGetStaticPropsType } from 'next'
-import { getAllPostData } from 'lib/hatena/getPostMd'
-import LandingPage from 'components/pages/LP/LandingPage'
+import { getAllPostData } from '@/lib/hatena/getPostMd'
+import LandingPage from '@/components/pages/LP/LandingPage'
 
 // この非同期の関数は、build時に実行される
 export async function getStaticProps() {

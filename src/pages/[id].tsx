@@ -1,6 +1,6 @@
 import { InferGetStaticPropsType, GetStaticPropsContext } from 'next'
-import { getAllPostIds, getPostData } from 'lib/hatena/getPostMd'
-import PostPage from 'components/pages/Post/PostPage'
+import { getAllPostIds, getPostData } from '@/lib/hatena/getPostMd'
+import PostPage from '@/components/pages/Post/PostPage'
 
 // URLが外部データに依存する場合に利用する
 export async function getStaticPaths() {
