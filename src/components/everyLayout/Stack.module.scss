@@ -1,0 +1,13 @@
+.stack {
+	& > * + *	 {
+		// コンポーネント側で cssカスタム変数を定義することで
+		// jsから動的にcssの値を変更しようとした。
+		// わりといいアイデアだと思ったんだけど、Stackが再帰になったときに破綻する。
+		// →StackModuleで対応できた。
+  	//const style = props.space ?
+  	//  { '--mt': `${props.space}rem` } as React.CSSProperties
+  	//  : undefined
+		margin-top: var(--mt, var(--s1));
+		//margin-top: var(--s1);
+	}
+}
