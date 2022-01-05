@@ -1,7 +1,7 @@
 import { InferGetStaticPropsType } from 'next'
 import Link from 'next/link'
-import A from 'components/atoms/A'
-import { ContentFulRepository } from 'lib/contentful/getContent'
+import A from '@/components/atoms/A'
+import { ContentFulRepository } from '@/lib/contentful/getContent'
 
 export async function getStaticProps() {
   const posts = await ContentFulRepository.getAllPost()

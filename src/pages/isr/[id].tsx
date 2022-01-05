@@ -1,5 +1,5 @@
 import { InferGetStaticPropsType, GetStaticPropsContext } from 'next'
-//import { getAllUser, getUser } from 'lib/firebase/getUser'
+//import { getAllUser, getUser } from '@/lib/firebase/getUser'
 
 export async function getStaticPaths() {
   //const users = await getAllUser()

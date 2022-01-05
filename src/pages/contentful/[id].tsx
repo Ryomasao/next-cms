@@ -1,8 +1,8 @@
 import { InferGetStaticPropsType, GetStaticPropsContext } from 'next'
 import { useRouter } from 'next/router'
 import { MDXRemote } from 'next-mdx-remote'
-import { ContentFulRepository } from 'lib/contentful/getContent'
-import { genMdxSource } from 'lib/genMdxSource'
+import { ContentFulRepository } from '@/lib/contentful/getContent'
+import { genMdxSource } from '@/lib/genMdxSource'
 
 export async function getStaticPaths() {
   const posts = await ContentFulRepository.getAllPost()

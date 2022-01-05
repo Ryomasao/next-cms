@@ -1,4 +1,4 @@
-import { ContentFulRepository } from 'lib/contentful/getContent'
+import { ContentFulRepository } from '@/lib/contentful/getContent'
 
 const previewToken = process.env.NEXT_PUBLIC_CONTENTFUL_PREVIEW_TOKEN as string
 

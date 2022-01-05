@@ -1,5 +1,5 @@
 import { InferGetStaticPropsType } from 'next'
-//import { getAllUser } from 'lib/firebase/getUser'
+//import { getAllUser } from '@/lib/firebase/getUser'
 
 export async function getStaticProps() {
   //const users = await getAllUser()

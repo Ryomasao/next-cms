@@ -1,7 +1,7 @@
 import matter from 'gray-matter'
 import { serialize } from 'next-mdx-remote/serialize'
 import prism from '@mapbox/rehype-prism'
-import addFileName from 'lib/hatena/addFileName'
+import addFileName from '@/lib/hatena/addFileName'
 
 export const genMdxSource = async (md: string) => {
   const { content } = matter(md)

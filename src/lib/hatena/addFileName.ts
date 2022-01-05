@@ -12,11 +12,11 @@ import { visit } from 'unist-util-visit'
 export default function addFileName() {
   return transformer
 
-  function transformer(tree) {
+  function transformer(tree: any) {
     visit(tree, 'element', visitor)
   }
 
-  function visitor(node, index, parent) {
+  function visitor(node: any, index: any, parent: any) {
     // pre > code 以外のnodeは対象外
     if (
       !parent ||
@@ -33,7 +33,7 @@ export default function addFileName() {
     }
   }
 
-  function createFileNameNode(fileName) {
+  function createFileNameNode(fileName: string) {
     return {
       type: 'element',
       tagName: 'span',
