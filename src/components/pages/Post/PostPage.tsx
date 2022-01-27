@@ -4,6 +4,7 @@ import BaseTemplate from '@/components/temps/BaseTemplate'
 import { PostDetail } from '@/models/Post.model'
 import { H1 } from '@/components/atoms/Heading'
 import useToc from '@/components/hooks/useToc'
+import { Stack } from '@/components/everyLayout'
 import tocStyle from '@/components/hooks/Toc.module.scss'
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 
 const components = {
   h1: H1,
+  Stack,
 }
 
 export default function PostPage(props: Props) {
