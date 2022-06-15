@@ -1,6 +1,7 @@
 ---
-title: 2021年Nextjsの足回りメモ
+title: 2022年Nextjsの足回りメモ
 time: 2021-10-12 00:00
+updated: 2022-06-15 00:00
 tag: ['nextjs']
 ---
 
@@ -10,7 +11,7 @@ tag: ['nextjs']
 
 https://zenn.dev/teppeis/articles/2021-02-eslint-prettier-vscode
 
-ポイントは、eslintとprettierは独立して動かすこと。eslint経由でprettierを実行とかはもうしない。
+ポイントは、eslint と prettier は独立して動かすこと。eslint 経由で prettier を実行とかはもうしない。
 
 ## 具体的な設定ファイル
 
@@ -18,27 +19,25 @@ https://zenn.dev/teppeis/articles/2021-02-eslint-prettier-vscode
 yarn add -D prettier eslint-config-prettier
 ```
 
-```json title=.vscode/setting.json
+```json title=.vscode/settings.json
 {
   "editor.tabSize": 2,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "editor.formatOnType": true,
-  "editor.codeActionsOnSave": [
-    "source.fixAll.eslint"
-  ]
+  "editor.codeActionsOnSave": ["source.fixAll.eslint"]
 }
 ```
 
 ```json title=.prettierrc
 {
-	"trailingComma": "all",
-	"endOfLine": "lf",
-	"semi": false,
-	"singleQuote": true,
-	"printWidth": 80,
-	"tabWidth": 2
+  "trailingComma": "all",
+  "endOfLine": "lf",
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 80,
+  "tabWidth": 2
 }
 ```
 
@@ -63,7 +62,8 @@ yarn add -D prettier eslint-config-prettier
     }
 ```
 
-### 備忘
+next.js の場合は以下も設定
 
-- 2021/10/12現在 Node.jsのLTSは14.18.0。vercelも環境もLTSとともに用意されるので、vercel利用するのであればローカルもあわせる。
-- nextjsのeslintはv8だけど、[現状v8だとこける](https://github.com/vercel/next.js/issues/29770)の対応されるまでv7にダウングレードする。
+```json title=.eslintrc.json
+  "extends": ["next/core-web-vitals", "prettier"],
+```
